@@ -79,6 +79,19 @@
             return icons[name] || null;
         };
 
+        // --- Color Utils ---
+        const gustToColor = (gust) => {
+            if (gust === null || gust === undefined || Number.isNaN(gust)) return '#cbd5e1';
+            const clamped = Math.max(0, Math.min(gust, 80));
+            const hue = 120 - (clamped / 80) * 120; // 0=אדום (חזק), 120=ירוק (חלש)
+            return `hsl(${hue}, 70%, 55%)`;
+        };
+
+        const gustTextColor = (gust) => {
+            if (gust === null || gust === undefined || Number.isNaN(gust)) return 'text-slate-900';
+            return gust > 45 ? 'text-white' : 'text-slate-900';
+        };
+
         // --- Geometry Utils ---
         const getDistance = (p1, p2) => {
             const R = 6371e3;
@@ -147,6 +160,8 @@
 
             // Weather & DTM
             const [weather, setWeather] = useState(null);
+            const [hourlyForecast, setHourlyForecast] = useState(null);
+            const [dailyGusts, setDailyGusts] = useState([]);
             const [dtmData, setDtmData] = useState(null);
             const [isFetchingDTM, setIsFetchingDTM] = useState(false);
             const [dtmStats, setDtmStats] = useState(null);
@@ -155,6 +170,8 @@
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
+
+            const selectedDay = useMemo(() => flightDate.slice(0, 10), [flightDate]);
 
             // --- Geolocation ---
             useEffect(() => {
@@ -168,27 +185,69 @@
             }, []);
 
             // --- Weather ---
+            const buildDailyGusts = useCallback((hourly) => {
+                if(!hourly?.time) return [];
+                const buckets = {};
+                hourly.time.forEach((t, idx) => {
+                    const dayKey = t.slice(0, 10);
+                    const gust = hourly.wind_gusts_10m?.[idx];
+                    if (gust === null || gust === undefined) return;
+                    if(!buckets[dayKey]) buckets[dayKey] = [];
+                    buckets[dayKey].push(gust);
+                });
+                return Object.entries(buckets).map(([day, gusts]) => ({
+                    day,
+                    avg: gusts.reduce((a,b)=>a+b,0) / gusts.length
+                }));
+            }, []);
+
+            const updateWeatherFromForecast = useCallback((forecastOverride = null) => {
+                const src = forecastOverride || hourlyForecast;
+                if(!src?.time) { setWeather(null); return; }
+                const targetTimeStr = flightDate.slice(0, 13) + ":00";
+                const idx = src.time.findIndex(t => t === targetTimeStr);
+                if(idx !== -1) {
+                    setWeather({
+                        wind: src.wind_speed_10m[idx],
+                        gusts: src.wind_gusts_10m[idx],
+                        clouds: src.cloud_cover[idx],
+                        rain: src.rain[idx] + src.showers[idx]
+                    });
+                } else {
+                    setWeather(null);
+                }
+            }, [hourlyForecast, flightDate]);
+
             const fetchWeather = async () => {
                 if(!mapCenter) return;
                 try {
                     const [lat, lng] = mapCenter;
-                    const targetTimeStr = flightDate.slice(0, 13) + ":00";
-                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,rain,showers,cloud_cover,wind_speed_10m,wind_gusts_10m&timezone=auto`;
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,rain,showers,cloud_cover,wind_speed_10m,wind_gusts_10m&timezone=auto&forecast_days=7`;
                     const res = await fetch(url);
                     const data = await res.json();
-                    
-                    const idx = data.hourly.time.findIndex(t => t === targetTimeStr);
-                    if(idx !== -1) {
-                        setWeather({
-                            wind: data.hourly.wind_speed_10m[idx],
-                            gusts: data.hourly.wind_gusts_10m[idx],
-                            clouds: data.hourly.cloud_cover[idx],
-                            rain: data.hourly.rain[idx] + data.hourly.showers[idx]
-                        });
+
+                    if (data?.hourly) {
+                        setHourlyForecast(data.hourly);
+                        setDailyGusts(buildDailyGusts(data.hourly));
+                        updateWeatherFromForecast(data.hourly);
                     }
                 } catch(e) { console.error(e); }
             };
-            useEffect(() => { fetchWeather() }, [mapCenter, flightDate]);
+
+            useEffect(() => { fetchWeather() }, [mapCenter]);
+            useEffect(() => { updateWeatherFromForecast(); }, [flightDate, updateWeatherFromForecast]);
+
+            const hourlyBySelectedDay = useMemo(() => {
+                if(!hourlyForecast?.time) return [];
+                return hourlyForecast.time.map((t, i) => {
+                    if(!t.startsWith(selectedDay)) return null;
+                    return {
+                        time: t.slice(11, 16),
+                        gust: hourlyForecast.wind_gusts_10m?.[i],
+                        wind: hourlyForecast.wind_speed_10m?.[i],
+                    };
+                }).filter(Boolean);
+            }, [hourlyForecast, selectedDay]);
 
             // --- DTM (With Fallback) ---
             const fetchDTM = async () => {
@@ -447,6 +506,50 @@
                                         <div className="bg-slate-700 p-1 rounded"><div className="font-bold text-blue-400">{weather.rain.toFixed(1)}mm</div><div className="text-[9px]">גשם</div></div>
                                     </div>
                                 ) : <div className="text-[10px] text-slate-500 text-center">טוען...</div>}
+
+                                {dailyGusts.length > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                        <div className="text-[10px] text-slate-400">לוח ימים עם משבים ממוצעים באזור</div>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {dailyGusts.map(day => {
+                                                const label = new Date(day.day).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                                                return (
+                                                    <button
+                                                        key={day.day}
+                                                        onClick={() => setFlightDate(`${day.day}T${flightDate.slice(11, 16)}`)}
+                                                        className={`rounded p-2 text-xs font-semibold shadow-inner transition transform hover:scale-[1.01] ${gustTextColor(day.avg)}`}
+                                                        style={{ background: gustToColor(day.avg) }}
+                                                    >
+                                                        <div>{label}</div>
+                                                        <div className="text-[10px] font-normal">משבים {day.avg.toFixed(1)}</div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {hourlyBySelectedDay.length > 0 && (
+                                    <div className="mt-3 space-y-2">
+                                        <div className="text-[10px] text-slate-400 flex justify-between items-center">
+                                            <span>שעות היום לפי משבים</span>
+                                            <span className="text-[10px] text-slate-500">{selectedDay}</span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto custom-scroll pr-1">
+                                            {hourlyBySelectedDay.map(slot => (
+                                                <button
+                                                    key={slot.time}
+                                                    onClick={() => setFlightDate(`${selectedDay}T${slot.time}`)}
+                                                    className={`rounded p-2 text-[11px] font-semibold shadow-inner transition transform hover:scale-[1.01] ${gustTextColor(slot.gust)}`}
+                                                    style={{ background: gustToColor(slot.gust) }}
+                                                >
+                                                    <div>{slot.time}</div>
+                                                    <div className="text-[10px] font-normal">{slot.gust?.toFixed(1) ?? '-'} קמ"ש</div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Flight Params */}
