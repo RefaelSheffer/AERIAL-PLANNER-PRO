@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>מערכת תכנון משימה - DTM & Stats</title>
+    <title>מתכנן משימה - DTM יציב</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -54,7 +54,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- Drone Database (Added Sensor Height for Image Count) ---
+        // --- Drone Database ---
         const DRONE_PRESETS = {
             'matrice_30_t': { name: 'DJI Matrice 30T', sensorWidth: 6.4, sensorHeight: 4.8, focalLength: 9.1, imageWidth: 4000, type: 'Thermal' },
             'mavic_3_e': { name: 'DJI Mavic 3 Enterprise', sensorWidth: 17.3, sensorHeight: 13.0, focalLength: 12.29, imageWidth: 5280, type: 'Mapping' },
@@ -73,7 +73,8 @@
                 trash: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
                 rotate: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>,
                 camera: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
-                clock: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                clock: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+                warning: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             };
             return icons[name] || null;
         };
@@ -150,6 +151,7 @@
             const [isFetchingDTM, setIsFetchingDTM] = useState(false);
             const [dtmStats, setDtmStats] = useState(null);
             const [terrainShadows, setTerrainShadows] = useState([]);
+            const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
@@ -188,52 +190,95 @@
             };
             useEffect(() => { fetchWeather() }, [mapCenter, flightDate]);
 
-            // --- DTM ---
+            // --- DTM (With Fallback) ---
             const fetchDTM = async () => {
                 if (polygon.length < 3) return alert("סמן אזור תחילה");
                 setIsFetchingDTM(true);
-                
+                setDtmData(null);
+                setTerrainShadows([]);
+                setIsSimulatedDTM(false);
+
+                // Grid generation
                 const latLngs = polygon.map(p => L.latLng(p.lat, p.lng));
                 const bounds = L.latLngBounds(latLngs);
                 const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
                 
-                let locs = [];
-                for(let r=0; r<=10; r++) {
-                    for(let c=0; c<=10; c++) {
-                        locs.push({
-                            lat: sw.lat + (ne.lat-sw.lat)*(r/10),
-                            lng: sw.lng + (ne.lng-sw.lng)*(c/10)
+                const rows = 20, cols = 20; // Higher resolution
+                let locations = [];
+                for(let r=0; r<=rows; r++) {
+                    for(let c=0; c<=cols; c++) {
+                        locations.push({
+                            lat: sw.lat + (ne.lat-sw.lat)*(r/rows),
+                            lng: sw.lng + (ne.lng-sw.lng)*(c/cols)
                         });
                     }
                 }
                 
-                const locStr = locs.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
                 try {
-                    const res = await fetch(`https://api.opentopodata.org/v1/aster30m?locations=${locStr}`);
+                    // Try Real API
+                    const locStr = locations.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
+                    const url = `https://api.opentopodata.org/v1/aster30m?locations=${locStr}`;
+                    
+                    // Create a promise that rejects if it takes too long (timeout)
+                    const fetchPromise = fetch(url);
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+                    
+                    const res = await Promise.race([fetchPromise, timeoutPromise]);
+                    
+                    if (!res.ok) throw new Error('API Error');
                     const data = await res.json();
+                    
                     if(data.results) {
                         const grid = data.results.map(r => ({lat: r.location.lat, lng: r.location.lng, ele: r.elevation || 0}));
-                        setDtmData(grid);
-                        const eles = grid.map(p => p.ele);
-                        setDtmStats({min: Math.min(...eles), max: Math.max(...eles), avg: eles.reduce((a,b)=>a+b,0)/eles.length});
-                        calcShadows(grid);
+                        processDTM(grid, false);
                     }
-                } catch(e) { alert("שגיאה בטעינת DTM"); }
-                finally { setIsFetchingDTM(false); }
+                } catch(e) {
+                    console.warn("DTM API Failed, switching to simulation.", e);
+                    // Fallback: Generate Simulated Terrain based on Perlin-like noise
+                    const simGrid = locations.map((loc, i) => {
+                        // Simple fake terrain: Base height + Math.sin waves
+                        const baseEle = 100; 
+                        const noise = Math.sin(loc.lat * 1000) * Math.cos(loc.lng * 1000) * 20;
+                        return { lat: loc.lat, lng: loc.lng, ele: baseEle + noise };
+                    });
+                    processDTM(simGrid, true);
+                } finally {
+                    setIsFetchingDTM(false);
+                }
             };
+
+            const processDTM = (grid, isSim) => {
+                setDtmData(grid);
+                setIsSimulatedDTM(isSim);
+                const eles = grid.map(p => p.ele);
+                setDtmStats({min: Math.min(...eles), max: Math.max(...eles), avg: eles.reduce((a,b)=>a+b,0)/eles.length});
+                calcShadows(grid);
+            }
 
             const calcShadows = (grid) => {
                 if(!SunCalc) return;
                 const sun = SunCalc.getPosition(new Date(flightDate), mapCenter[0], mapCenter[1]);
-                if(sun.altitude <= 0) return;
+                if(sun.altitude <= 0) return; // Night
                 
                 const shadows = [];
+                const minEle = dtmStats ? dtmStats.min : Math.min(...grid.map(p=>p.ele));
+
                 grid.forEach(pt => {
-                    const len = ((pt.ele - (dtmStats?.min || 0)) * 0.8) / Math.tan(sun.altitude); 
-                    if(len > 5) {
+                    // Calculate shadow based on height relative to local minimum
+                    const relativeHeight = pt.ele - minEle;
+                    if (relativeHeight <= 1) return;
+
+                    // Shadow Length = h / tan(alpha)
+                    // Exaggerate slightly for visibility
+                    const len = (relativeHeight * 1.2) / Math.tan(sun.altitude); 
+                    
+                    // Cap shadow length to avoid map artifacts
+                    const displayLen = Math.min(len, 500); 
+
+                    if (displayLen > 5) {
                         const az = sun.azimuth + Math.PI; 
-                        const dLat = (Math.cos(az) * len) / 111111;
-                        const dLng = (Math.sin(az) * len) / (111111 * Math.cos(pt.lat * Math.PI/180));
+                        const dLat = (Math.cos(az) * displayLen) / 111111;
+                        const dLng = (Math.sin(az) * displayLen) / (111111 * Math.cos(pt.lat * Math.PI/180));
                         shadows.push([[pt.lat, pt.lng], [pt.lat+dLat, pt.lng+dLng]]);
                     }
                 });
@@ -242,7 +287,7 @@
 
             useEffect(() => { if(dtmData) calcShadows(dtmData); }, [flightDate]);
 
-            // --- Path Generation (With Calc) ---
+            // --- Path Generation ---
             const generatePath = () => {
                 if (polygon.length < 3) {
                     setTotalDistance(0);
@@ -295,12 +340,10 @@
                     const start = unrotatePoint(line[0], -angle, center);
                     const end = unrotatePoint(line[1], -angle, center);
                     
-                    // Calculate distance for strip
                     dist += getDistance(start, end);
 
-                    // Calculate connection distance (Turn) if not first line
                     if (index > 0) {
-                        const prevPoint = finalPath[finalPath.length - 1]; // Previous point [lat, lng]
+                        const prevPoint = finalPath[finalPath.length - 1];
                         const currentStart = (index % 2 === 0) ? start : end;
                         dist += getDistance({lat: prevPoint[0], lng: prevPoint[1]}, currentStart);
                     }
@@ -323,7 +366,7 @@
                 }
             }, [polygon, autoOrient]);
 
-            // --- Map Init & Rendering ---
+            // --- Map Rendering ---
             useEffect(() => {
                 if (!mapRef.current) {
                     const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri'});
@@ -353,30 +396,28 @@
                 }
 
                 if (terrainShadows.length > 0) {
-                    Lr.shadows = L.layerGroup(terrainShadows.map(l => L.polyline(l, {color: 'black', weight: 4, opacity: 0.5}))).addTo(map);
+                    // Draw Shadows
+                    Lr.shadows = L.layerGroup(terrainShadows.map(l => L.polyline(l, {color: 'black', weight: 4, opacity: 0.6}))).addTo(map);
                 }
+                
                 if (dtmData) {
+                    // Draw Heatmap Points
                     const dots = dtmData.map(pt => {
                         const normalized = (pt.ele - dtmStats.min) / (dtmStats.max - dtmStats.min || 1);
-                        const color = normalized > 0.5 ? '#ef4444' : '#22c55e';
-                        return L.circleMarker([pt.lat, pt.lng], {radius: 2, color: color, fillOpacity: 0.6, stroke: false});
+                        // Color scale: Green (Low) -> Red (High)
+                        const color = `hsl(${120 - normalized * 120}, 100%, 50%)`; 
+                        return L.circleMarker([pt.lat, pt.lng], {radius: 3, color: color, fillOpacity: 0.8, stroke: false});
                     });
                     Lr.heat = L.layerGroup(dots).addTo(map);
                 }
 
-            }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, speed]); // Added speed to refresh path if needed (though path geometry doesn't change with speed)
+            }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, speed]);
 
             // Stats Calc
             const stats = useMemo(() => {
                 const d = DRONE_PRESETS[selectedDrone];
                 const gsd = (d.sensorWidth * altitude * 100) / (d.focalLength * d.imageWidth);
-                
-                // Flight Time
                 const timeMin = totalDistance > 0 ? Math.ceil((totalDistance / speed) / 60) : 0;
-
-                // Image Count
-                // Trigger Distance = FootprintHeight * (1 - FrontOverlap)
-                // FootprintHeight (Along path) = (SensorHeight * Altitude) / FocalLength
                 const footprintH = (d.sensorHeight * altitude) / d.focalLength;
                 const triggerDist = footprintH * (1 - overlapFront/100);
                 const imgCount = totalDistance > 0 ? Math.ceil(totalDistance / triggerDist) : 0;
@@ -454,7 +495,8 @@
                                     {isFetchingDTM ? 'טוען גבהים...' : 'טען DTM וחשב צל'}
                                 </button>
                                 {dtmStats && (
-                                    <div className="mt-2 text-[10px] text-green-400 text-center bg-green-900/30 p-2 rounded border border-green-700/50">
+                                    <div className={`mt-2 text-[10px] text-center p-2 rounded border ${isSimulatedDTM ? 'bg-yellow-900/30 border-yellow-700 text-yellow-400' : 'bg-green-900/30 border-green-700 text-green-400'}`}>
+                                        {isSimulatedDTM && <div className="flex justify-center items-center gap-1 mb-1 font-bold"><Icon name="warning"/> סימולציית שטח (Offline Mode)</div>}
                                         גבהים: {dtmStats.min.toFixed(0)}m - {dtmStats.max.toFixed(0)}m
                                     </div>
                                 )}
@@ -487,6 +529,21 @@
                         <div id="map"></div>
                         <button onClick={()=>{setPolygon([]); setDtmData(null); setTotalDistance(0)}} className="absolute top-4 right-4 z-[1000] bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"><Icon name="trash"/></button>
                         {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
+                        {/* Heatmap Legend */}
+                        {dtmData && (
+                            <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
+                                <div className="font-bold mb-1">גבהים</div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-3 h-3 bg-red-500 rounded-full"></div> גבוה
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div> נמוך
+                                </div>
+                                <div className="flex items-center gap-1 mt-1 border-t pt-1">
+                                    <div className="w-4 h-1 bg-black/60"></div> צל
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
