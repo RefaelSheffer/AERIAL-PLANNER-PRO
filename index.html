@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>מערכת תכנון משימה אווירית מתקדמת</title>
+    <title>מערכת תכנון משימה - DTM Edition</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,30 +28,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
 
     <style>
-        /* Global Styles */
         html, body, #root { height: 100%; margin: 0; overflow: hidden; } 
-        body { font-family: 'Heebo', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+        body { font-family: 'Heebo', sans-serif; background-color: #f8fafc; color: #0f172a; }
         
-        /* Map Styling */
         #map { height: 100%; width: 100%; z-index: 0; }
-        .leaflet-control-layers { border-radius: 8px !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important; border: none !important; }
+        .leaflet-control-layers { border-radius: 8px !important; border: none !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important; }
         
-        /* UI Components */
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.5); }
-        .input-field { @apply w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all bg-white/50 focus:bg-white; }
+        .input-field { @apply w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none bg-white text-slate-800; }
+        .btn-primary { @apply bg-slate-900 text-white py-2 px-4 rounded-lg font-bold text-sm hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2; }
         
         /* Custom Scrollbar */
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
-        
-        /* Animations */
-        @keyframes pulse-ring {
-            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        .custom-scroll::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 10px; }
+
+        /* Mobile Fixes */
+        @media (max-width: 768px) {
+            .mobile-panel { max-height: 45vh; }
         }
-        .user-marker-pulse { animation: pulse-ring 2s infinite; }
     </style>
 </head>
 <body>
@@ -60,481 +54,400 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-        // --- Gemini Config ---
-        const API_KEY = ""; 
-        const GEMINI_MODEL = 'gemini-2.5-flash-preview-09-2025';
-
-        // --- Drone Database (Expanded) ---
+        // --- Expanded Drone Database ---
         const DRONE_PRESETS = {
-            'mavic_3_e': { name: 'DJI Mavic 3 Enterprise', sensorWidth: 17.3, focalLength: 12.29, imageWidth: 5280, type: 'Survey' }, // 4/3 CMOS
-            'matrice_30_t': { name: 'DJI Matrice 30T', sensorWidth: 6.4, focalLength: 4.5, imageWidth: 4000, type: 'Thermal/Inspection' }, // 1/2 CMOS
-            'evo_ii_640t': { name: 'Autel Evo II Dual 640T V3', sensorWidth: 9.8, focalLength: 6, imageWidth: 4000, type: 'Thermal/Rescue' }, // .8" CMOS
-            'mavic_mini_2': { name: 'DJI Mini 2/SE', sensorWidth: 6.17, focalLength: 4.49, imageWidth: 4000, type: 'Hobby' },
+            // DJI Enterprise
+            'matrice_350_p1': { name: 'DJI Matrice 350 RTK (P1)', sensorWidth: 35.9, focalLength: 35, imageWidth: 8192, type: 'Survey Full Frame' },
+            'matrice_30_t': { name: 'DJI Matrice 30T', sensorWidth: 6.4, focalLength: 9.1, imageWidth: 4000, type: 'Inspection/Thermal' },
+            'mavic_3_e': { name: 'DJI Mavic 3 Enterprise', sensorWidth: 17.3, focalLength: 12.29, imageWidth: 5280, type: 'Mapping' },
+            'mavic_3_t': { name: 'DJI Mavic 3 Thermal', sensorWidth: 6.4, focalLength: 4.5, imageWidth: 4000, type: 'Thermal' },
+            'mavic_3_m': { name: 'DJI Mavic 3 Multispectral', sensorWidth: 17.3, focalLength: 12.29, imageWidth: 5280, type: 'Agriculture' },
+            'phantom_4_rtk': { name: 'DJI Phantom 4 RTK', sensorWidth: 13.2, focalLength: 8.8, imageWidth: 5472, type: 'Survey Legacy' },
+            
+            // DJI Consumer
             'mavic_3_pro': { name: 'DJI Mavic 3 Pro', sensorWidth: 17.3, focalLength: 12.29, imageWidth: 5280, type: 'Cinema' },
+            'air_3': { name: 'DJI Air 3', sensorWidth: 9.6, focalLength: 6.72, imageWidth: 8064, type: 'Consumer' },
+            'mini_3_pro': { name: 'DJI Mini 3 Pro', sensorWidth: 9.6, focalLength: 6.72, imageWidth: 8064, type: 'Compact' },
+            'mini_4_pro': { name: 'DJI Mini 4 Pro', sensorWidth: 9.6, focalLength: 6.72, imageWidth: 8064, type: 'Compact' },
+
+            // Autel Robotics
+            'evo_max_4t': { name: 'Autel Evo Max 4T', sensorWidth: 12.8, focalLength: 8.5, imageWidth: 8192, type: 'Enterprise' },
+            'evo_ii_pro_v3': { name: 'Autel Evo II Pro V3', sensorWidth: 13.2, focalLength: 10.5, imageWidth: 5472, type: 'Mapping' },
+            'evo_ii_dual_640t': { name: 'Autel Evo II Dual 640T', sensorWidth: 9.8, focalLength: 6, imageWidth: 4000, type: 'Thermal' },
+            
+            // Others
+            'skydio_x2': { name: 'Skydio X2', sensorWidth: 6.17, focalLength: 4.5, imageWidth: 4056, type: 'Autonomous' },
+            'parrot_anafi_ai': { name: 'Parrot Anafi AI', sensorWidth: 23.5, focalLength: 23, imageWidth: 8000, type: 'Survey' }
         };
 
-        // --- Utility: API Call ---
-        const callGeminiApi = async (systemPrompt, userQuery) => {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: userQuery }] }],
-                        systemInstruction: { parts: [{ text: systemPrompt }] }
-                    })
-                });
-                const data = await res.json();
-                return data?.candidates?.[0]?.content?.parts?.[0]?.text || "שגיאה בקבלת תשובה.";
-            } catch (e) {
-                console.error(e);
-                return "שגיאת תקשורת.";
-            }
-        };
-
-        // --- Icons Component ---
+        // --- Icons ---
         const Icon = ({ name, size = 18, className = "" }) => {
             const icons = {
-                menu: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
-                map: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>,
-                crosshair: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>,
-                drone: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M3.5 12h2.5"/><path d="M18 12h2.5"/><path d="M12 3.5v2.5"/><path d="M12 18v2.5"/><path d="M4 7l3 3"/><path d="M17 7l3 -3"/><path d="M4 17l3 -3"/><path d="M17 17l3 3"/></svg>,
-                ai: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>,
-                cloud: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17.5 19c0-1.7-1.3-3-3-3h-11a4 4 0 1 1 .9-7.9 13 13 0 0 1 24.2 2.6A6 6 0 0 1 17.5 19z"/></svg>,
-                trash: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
-                chevronDown: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>
+                map: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>,
+                mountain: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+                layers: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
+                drone: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>,
+                sun: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+                trash: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+                gps: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             };
             return icons[name] || null;
         };
 
-        // --- Accordion Component ---
-        const Accordion = ({ title, icon, isOpen, onClick, children }) => (
-            <div className="border border-slate-200 rounded-xl overflow-hidden mb-3 bg-white shadow-sm transition-all hover:shadow-md">
-                <button 
-                    onClick={onClick}
-                    className={`w-full flex items-center justify-between p-4 text-right transition-colors ${isOpen ? 'bg-slate-50 text-blue-600' : 'text-slate-700'}`}
-                >
-                    <div className="flex items-center gap-3 font-bold text-sm">
-                        <div className={`p-2 rounded-lg ${isOpen ? 'bg-blue-100' : 'bg-slate-100'}`}>
-                            <Icon name={icon} size={18} />
-                        </div>
-                        {title}
-                    </div>
-                    <Icon name="chevronDown" size={16} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-                </button>
-                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                    <div className="p-4 border-t border-slate-100 text-sm">
-                        {children}
-                    </div>
-                </div>
-            </div>
-        );
-
         const App = () => {
-            // --- App State ---
-            const [missionName, setMissionName] = useState(`משימה ${new Date().toLocaleDateString()}`);
-            const [activeSection, setActiveSection] = useState('drone'); // 'drone', 'flight', 'weather', 'stats'
-            const [mapCenter, setMapCenter] = useState(null);
+            // State
+            const [missionName, setMissionName] = useState('משימה חדשה');
+            const [mapCenter, setMapCenter] = useState([32.0853, 34.7818]); // Default: Tel Aviv
+            const [polygon, setPolygon] = useState([]);
             
-            // Flight Params
+            // Flight
             const [selectedDrone, setSelectedDrone] = useState('mavic_3_e');
-            const [altitude, setAltitude] = useState(50);
+            const [altitude, setAltitude] = useState(60);
             const [overlapFront, setOverlapFront] = useState(75);
             const [overlapSide, setOverlapSide] = useState(70);
-            const [speed, setSpeed] = useState(10);
             const [azimuth, setAzimuth] = useState(0);
             const [flightDate, setFlightDate] = useState(new Date().toISOString().slice(0, 16));
 
-            // Data & AI
-            const [weather, setWeather] = useState(null);
-            const [aiBriefing, setAiBriefing] = useState("");
-            const [isAiLoading, setIsAiLoading] = useState(false);
-            const [aiDroneQuery, setAiDroneQuery] = useState("");
-            const [isAiDroneLoading, setIsAiDroneLoading] = useState(false);
+            // DTM & Shadows
+            const [useDTM, setUseDTM] = useState(false);
+            const [isFetchingDTM, setIsFetchingDTM] = useState(false);
+            const [dtmData, setDtmData] = useState(null); // Array of {lat, lng, ele}
+            const [terrainShadows, setTerrainShadows] = useState([]); // Polygons for shadows
 
-            // Map Data
-            const [polygon, setPolygon] = useState([]);
-            const [pathLength, setPathLength] = useState(0);
+            // Refs
             const mapRef = useRef(null);
             const layersRef = useRef({});
 
-            // --- Logic: Geolocation ---
+            // --- 1. Geolocation ---
             const locateUser = useCallback(() => {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
                             const { latitude, longitude } = pos.coords;
                             setMapCenter([latitude, longitude]);
-                            if (mapRef.current) {
-                                mapRef.current.flyTo([latitude, longitude], 18, { duration: 1.5 });
-                            }
+                            if (mapRef.current) mapRef.current.setView([latitude, longitude], 17);
                         },
-                        (err) => alert("לא ניתן לאתר מיקום. ודא שה-GPS פעיל."),
-                        { enableHighAccuracy: true }
+                        (err) => {
+                            let msg = "";
+                            switch(err.code) {
+                                case 1: msg = "המשתמש סירב לגישה למיקום."; break;
+                                case 2: msg = "מיקום לא זמין."; break;
+                                case 3: msg = "תם הזמן לאיתור מיקום."; break;
+                                default: msg = "שגיאה לא ידועה באיתור מיקום.";
+                            }
+                            console.warn("GPS Notice:", msg);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000 }
                     );
+                } else {
+                    console.warn("GPS not supported by browser.");
                 }
             }, []);
 
-            // Init Geolocation
-            useEffect(() => {
-                locateUser();
-            }, [locateUser]);
+            useEffect(() => locateUser(), [locateUser]);
 
-            // --- Logic: Weather ---
-            const fetchWeather = async () => {
-                if (!mapCenter) return;
+            // --- 2. Fetch DTM (Elevation) ---
+            const fetchDTM = async () => {
+                if (polygon.length < 3) return alert("יש לסמן אזור (פוליגון) קודם");
+                setIsFetchingDTM(true);
+                setDtmData(null);
+                setTerrainShadows([]);
+
+                // Generate Grid Points within Polygon bounds
+                const bounds = L.latLngBounds(polygon);
+                const southWest = bounds.getSouthWest();
+                const northEast = bounds.getNorthEast();
+                
+                // Create a coarse grid (e.g., 10x10 points for demo, real app needs more)
+                const rows = 10;
+                const cols = 10;
+                const latStep = (northEast.lat - southWest.lat) / rows;
+                const lngStep = (northEast.lng - southWest.lng) / cols;
+                
+                let locations = [];
+                for(let r=0; r<=rows; r++) {
+                    for(let c=0; c<=cols; c++) {
+                        const lat = southWest.lat + r * latStep;
+                        const lng = southWest.lng + c * lngStep;
+                        locations.push({lat, lng});
+                    }
+                }
+
+                // API Request string
+                const locString = locations.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
+                
                 try {
-                    const dateIso = new Date(flightDate).toISOString().slice(0, 13) + ":00";
-                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${mapCenter[0]}&longitude=${mapCenter[1]}&hourly=temperature_2m,precipitation_probability,cloudcover,windspeed_80m,winddirection_80m&forecast_days=3`;
+                    // Using OpenTopoData (aster30m is global) instead of test-dataset
+                    const url = `https://api.opentopodata.org/v1/aster30m?locations=${locString}`;
                     const res = await fetch(url);
+                    
+                    if (!res.ok) throw new Error(`API returned status ${res.status}`);
+                    
                     const data = await res.json();
                     
-                    const idx = data.hourly.time.findIndex(t => t === dateIso);
-                    if (idx !== -1) {
-                        setWeather({
-                            temp: data.hourly.temperature_2m[idx],
-                            rain: data.hourly.precipitation_probability[idx],
-                            clouds: data.hourly.cloudcover[idx],
-                            wind: data.hourly.windspeed_80m[idx],
-                            windDir: data.hourly.winddirection_80m[idx]
-                        });
+                    if(data.results) {
+                        const elevationGrid = data.results.map(r => ({
+                            lat: r.location.lat,
+                            lng: r.location.lng,
+                            ele: r.elevation !== null ? r.elevation : 0 // Handle nulls
+                        }));
+                        setDtmData(elevationGrid);
+                        calculateTerrainShadows(elevationGrid);
                     }
-                } catch (e) { console.error(e); }
-            };
-
-            // Auto fetch weather when location/time changes
-            useEffect(() => { if(mapCenter) fetchWeather(); }, [mapCenter, flightDate]);
-
-            // --- Logic: AI Briefing ---
-            const generateBriefing = async () => {
-                if (!weather) return;
-                setIsAiLoading(true);
-                const prompt = `אתה מומחה רחפנים. נתח את הנתונים הבאים ותן תדריך קצר בעברית (בולטים). התייחס במיוחד לסיכויי הגשם (${weather.rain}%) והרוח בגובה (${weather.wind} קמש).`;
-                const query = `משימה: ${missionName}. רחפן: ${DRONE_PRESETS[selectedDrone].name}. גובה: ${altitude}מ. חפיפה: ${overlapFront}/${overlapSide}.`;
-                const res = await callGeminiApi(prompt, query);
-                setAiBriefing(res);
-                setIsAiLoading(false);
-            };
-
-            // --- Logic: AI Drone Selector ---
-            const selectDroneByAi = async () => {
-                if (!aiDroneQuery) return;
-                setIsAiDroneLoading(true);
-                
-                const droneList = Object.entries(DRONE_PRESETS).map(([k, v]) => `${k}: ${v.name} (${v.type})`).join(", ");
-                const prompt = `You are a drone expert. Select the BEST single drone key from this list: [${droneList}] based on user requirements. Return ONLY the key string (e.g. 'mavic_3_e'). No text.`;
-                
-                const key = await callGeminiApi(prompt, aiDroneQuery);
-                const cleanKey = key.trim().replace(/['"`]/g, ''); // Clean response
-                
-                if (DRONE_PRESETS[cleanKey]) {
-                    setSelectedDrone(cleanKey);
-                    alert(`ה-AI בחר עבורך: ${DRONE_PRESETS[cleanKey].name}`);
-                } else {
-                    alert("ה-AI לא מצא התאמה מדויקת, נסה לפרט יותר.");
+                } catch (e) {
+                    alert("שגיאה בטעינת נתוני גובה (DTM). נסה שוב מאוחר יותר.");
+                    console.error("DTM Fetch Error:", e);
+                } finally {
+                    setIsFetchingDTM(false);
                 }
-                setIsAiDroneLoading(false);
             };
 
-            // --- Logic: Map & Path ---
+            // --- 3. Calculate Terrain Shadows ---
+            const calculateTerrainShadows = (elevationPoints) => {
+                if (typeof SunCalc === 'undefined') {
+                    console.warn("SunCalc ספריית לא נטענה, מדלג על חישוב צל.");
+                    return;
+                }
+
+                // 1. Sun Position
+                const center = mapCenter || [32, 34];
+                const sunPos = SunCalc.getPosition(new Date(flightDate), center[0], center[1]);
+                const sunAzimuth = (sunPos.azimuth * 180 / Math.PI) + 180;
+                const sunAltitude = sunPos.altitude * 180 / Math.PI;
+
+                if (sunAltitude <= 0) return; // Night
+
+                // 2. Simple Shadow Casting Logic
+                const shadows = [];
+                
+                elevationPoints.forEach(point => {
+                    // Calculate relative height from neighbor min
+                    const shadowLenMeters = (point.ele) * (1 / Math.tan(sunPos.altitude)); 
+                    
+                    // Limit shadow length for visual clarity in map
+                    const displayLen = Math.min(shadowLenMeters, 200); 
+
+                    if (displayLen > 5) {
+                        const shadowAzRad = ((sunAzimuth + 180) % 360) * (Math.PI / 180);
+                        
+                        const latOffset = (displayLen / 111111) * Math.cos(shadowAzRad);
+                        const lngOffset = (displayLen / (111111 * Math.cos(point.lat * Math.PI/180))) * Math.sin(shadowAzRad);
+                        
+                        shadows.push([
+                            [point.lat, point.lng],
+                            [point.lat + latOffset, point.lng + lngOffset]
+                        ]);
+                    }
+                });
+                setTerrainShadows(shadows);
+            };
+
+            // --- Map Effect ---
             useEffect(() => {
-                if (!mapRef.current && document.getElementById('map')) {
-                    // Init Map with Layer Control
-                    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' });
-                    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri' });
-
+                if (!mapRef.current) {
+                    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM'});
+                    const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri'});
+                    
                     mapRef.current = L.map('map', {
-                        center: mapCenter || [32.08, 34.78],
+                        center: mapCenter, // Use initialized center
                         zoom: 13,
-                        layers: [osm], // Default layer
-                        zoomControl: false // We'll add it elsewhere or leave mobile gestures
+                        layers: [sat] // Default Satellite
                     });
+                    
+                    L.control.layers({"לווין": sat, "מפה": osm}).addTo(mapRef.current);
 
-                    const baseMaps = { "מפה רגילה": osm, "תצלום אוויר": satellite };
-                    L.control.layers(baseMaps).addTo(mapRef.current);
-
-                    // Event Listeners
                     mapRef.current.on('click', e => {
                         setPolygon(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
                     });
                 }
             }, []);
 
-            // Draw Polygon & Path
+            // --- Drawing Layers ---
             useEffect(() => {
                 if (!mapRef.current) return;
-                
-                // Cleanup
-                if (layersRef.current.poly) mapRef.current.removeLayer(layersRef.current.poly);
-                if (layersRef.current.path) mapRef.current.removeLayer(layersRef.current.path);
-                
+                const map = mapRef.current;
+                const L_refs = layersRef.current;
+
+                // Clear old
+                if (L_refs.poly) map.removeLayer(L_refs.poly);
+                if (L_refs.path) map.removeLayer(L_refs.path);
+                if (L_refs.shadows) map.removeLayer(L_refs.shadows);
+                if (L_refs.markers) map.removeLayer(L_refs.markers);
+
+                // Draw Polygon
                 if (polygon.length > 0) {
-                    // Draw Polygon
-                    layersRef.current.poly = L.polygon(polygon, { color: '#ef4444', fillOpacity: 0.1 }).addTo(mapRef.current);
+                    L_refs.poly = L.polygon(polygon, {color: 'yellow', weight: 2, fillOpacity: 0.1}).addTo(map);
+                }
+
+                // Draw Path (Snake)
+                if (polygon.length > 2) {
+                    const drone = DRONE_PRESETS[selectedDrone];
+                    const footprintW = (drone.sensorWidth * altitude) / drone.focalLength; // Approx
+                    const spacing = footprintW * (1 - overlapSide/100);
                     
-                    // Draw Path (Snake) if > 2 points
-                    if (polygon.length > 2) {
-                        const drone = DRONE_PRESETS[selectedDrone];
-                        const footprintW = (drone.sensorWidth * altitude) / drone.focalLength;
-                        const stripSpacing = footprintW * (1 - overlapSide / 100);
-                        
-                        // Simplified path gen logic for demo (bounding box based)
-                        const bounds = L.latLngBounds(polygon);
-                        const path = [];
-                        // Roughly convert meters to degrees (very approx)
-                        const step = stripSpacing / 111000; 
-                        
-                        let currLat = bounds.getNorth();
-                        let dir = 1;
-                        let len = 0;
+                    // Simple Snake Logic
+                    const bounds = L.latLngBounds(polygon);
+                    const path = [];
+                    let currLat = bounds.getNorth();
+                    let dir = 1;
+                    const step = spacing / 111000;
 
-                        while(currLat > bounds.getSouth()) {
-                            const p1 = L.latLng(currLat, bounds.getWest());
-                            const p2 = L.latLng(currLat, bounds.getEast());
-                            if(dir === 1) { path.push(p1, p2); } else { path.push(p2, p1); }
-                            len += p1.distanceTo(p2);
-                            currLat -= step;
-                            dir *= -1;
+                    while(currLat > bounds.getSouth()) {
+                        if(dir===1) {
+                            path.push([currLat, bounds.getWest()], [currLat, bounds.getEast()]);
+                        } else {
+                            path.push([currLat, bounds.getEast()], [currLat, bounds.getWest()]);
                         }
-                        
-                        layersRef.current.path = L.polyline(path, { color: '#3b82f6', weight: 3 }).addTo(mapRef.current);
-                        setPathLength(len);
+                        currLat -= step;
+                        dir *= -1;
                     }
+                    L_refs.path = L.polyline(path, {color: '#0ea5e9', weight: 2}).addTo(map);
                 }
-            }, [polygon, selectedDrone, altitude, overlapSide]);
 
-            // User Marker Update
-            useEffect(() => {
-                if(mapRef.current && mapCenter) {
-                    if(layersRef.current.user) mapRef.current.removeLayer(layersRef.current.user);
-                    const icon = L.divIcon({
-                        html: `<div class="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg user-marker-pulse"></div>`,
-                        className: 'bg-transparent',
-                        iconSize: [16, 16]
-                    });
-                    layersRef.current.user = L.marker(mapCenter, {icon}).addTo(mapRef.current);
+                // Draw DTM Shadows
+                if (useDTM && terrainShadows.length > 0) {
+                    L_refs.shadows = L.layerGroup(
+                        terrainShadows.map(line => L.polyline(line, {color: 'black', weight: 5, opacity: 0.4, lineCap: 'round'}))
+                    ).addTo(map);
                 }
-            }, [mapCenter]);
 
-            // --- Calculated Stats ---
+                // Draw User Location
+                if (mapCenter) {
+                    const icon = L.divIcon({html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow"></div>', className: 'bg-transparent'});
+                    L_refs.markers = L.marker(mapCenter, {icon}).addTo(map);
+                }
+
+            }, [polygon, selectedDrone, altitude, overlapSide, terrainShadows, useDTM, mapCenter]);
+
+            // Stats
             const stats = useMemo(() => {
                 const d = DRONE_PRESETS[selectedDrone];
                 const gsd = (d.sensorWidth * altitude * 100) / (d.focalLength * d.imageWidth);
-                const timeMin = Math.floor((pathLength / speed) / 60);
-                return { gsd: gsd.toFixed(2), time: timeMin };
-            }, [selectedDrone, altitude, speed, pathLength]);
+                return { gsd: gsd.toFixed(2) };
+            }, [selectedDrone, altitude]);
 
             return (
                 <div className="flex flex-col md:flex-row h-full">
                     
-                    {/* Sidebar Controls */}
-                    <div className="w-full md:w-[420px] bg-white shadow-2xl z-20 flex flex-col h-[50vh] md:h-full border-l border-slate-200 relative">
+                    {/* Sidebar */}
+                    <div className="w-full md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll">
                         
-                        {/* Top Bar */}
-                        <div className="p-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-md shrink-0">
+                        <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30">
                             <div className="flex items-center justify-between mb-2">
-                                <h1 className="text-lg font-black tracking-wide flex items-center gap-2">
-                                    <Icon name="drone" className="text-blue-400" /> AERIAL PLANNER PRO
-                                </h1>
-                                <div className="text-[10px] bg-blue-600 px-2 py-0.5 rounded-full font-bold">V2.0</div>
+                                <h1 className="font-black text-lg tracking-wider text-blue-400">DTM PLANNER</h1>
+                                <button onClick={locateUser} className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps" /></button>
                             </div>
-                            <input 
-                                type="text" 
-                                value={missionName} 
-                                onChange={e => setMissionName(e.target.value)}
-                                className="w-full bg-white/10 border border-white/20 text-white placeholder-white/50 text-sm rounded px-2 py-1 focus:ring-2 focus:ring-blue-400 focus:outline-none text-center font-bold"
-                            />
+                            <input type="text" value={missionName} onChange={e=>setMissionName(e.target.value)} className="w-full bg-transparent border-b border-slate-600 pb-1 text-center font-bold focus:outline-none focus:border-blue-500"/>
                         </div>
 
-                        {/* Scrollable Sections */}
-                        <div className="flex-1 overflow-y-auto p-3 custom-scroll bg-slate-50">
+                        <div className="p-4 space-y-6 flex-1">
                             
-                            {/* Section 1: Drone Selection (Manual / AI) */}
-                            <Accordion 
-                                title="בחירת רחפן וציוד" 
-                                icon="drone" 
-                                isOpen={activeSection === 'drone'} 
-                                onClick={() => setActiveSection(activeSection === 'drone' ? '' : 'drone')}
-                            >
-                                <div className="space-y-4">
-                                    {/* AI Selector */}
-                                    <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg">
-                                        <label className="text-xs font-bold text-purple-800 mb-1 block flex items-center gap-1">
-                                            <Icon name="ai" size={12}/> בחירה חכמה (AI)
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="text" 
-                                                placeholder='לדוגמה: "מיפוי תרמי למבנה בלילה"'
-                                                className="input-field text-xs"
-                                                value={aiDroneQuery}
-                                                onChange={e => setAiDroneQuery(e.target.value)}
-                                            />
-                                            <button 
-                                                onClick={selectDroneByAi}
-                                                disabled={isAiDroneLoading}
-                                                className="bg-purple-600 text-white px-3 rounded-lg text-xs font-bold whitespace-nowrap"
-                                            >
-                                                {isAiDroneLoading ? '...' : 'בחר'}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="relative">
-                                        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
-                                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-gray-500">או ידנית</span></div>
-                                    </div>
-
-                                    <select 
-                                        value={selectedDrone} 
-                                        onChange={e => setSelectedDrone(e.target.value)}
-                                        className="input-field font-bold text-slate-700"
-                                    >
-                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => (
-                                            <option key={k} value={k}>{v.name}</option>
-                                        ))}
-                                    </select>
-                                    
-                                    <div className="text-xs text-slate-500 bg-white p-2 rounded border">
-                                        סוג: {DRONE_PRESETS[selectedDrone].type} | חיישן: {DRONE_PRESETS[selectedDrone].sensorWidth}mm
-                                    </div>
+                            {/* Drone Selection */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                                    <Icon name="drone" size={14}/> דגם רחפן
+                                </label>
+                                <select 
+                                    value={selectedDrone} 
+                                    onChange={e=>setSelectedDrone(e.target.value)}
+                                    className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                >
+                                    {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                        <option key={k} value={k}>{v.name}</option>
+                                    ))}
+                                </select>
+                                <div className="text-[10px] text-slate-500 flex justify-between px-1">
+                                    <span>{DRONE_PRESETS[selectedDrone].type}</span>
+                                    <span>{DRONE_PRESETS[selectedDrone].sensorWidth}mm Sensor</span>
                                 </div>
-                            </Accordion>
+                            </div>
 
-                            {/* Section 2: Weather & AI Briefing */}
-                            <Accordion 
-                                title="תנאי סביבה ותדריך AI" 
-                                icon="cloud" 
-                                isOpen={activeSection === 'weather'} 
-                                onClick={() => setActiveSection(activeSection === 'weather' ? '' : 'weather')}
-                            >
-                                <div className="space-y-3">
-                                    <input 
-                                        type="datetime-local" 
-                                        value={flightDate} 
-                                        onChange={e => setFlightDate(e.target.value)}
-                                        className="input-field"
-                                    />
-                                    
-                                    {weather ? (
-                                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                                            <div className="bg-blue-50 p-2 rounded border border-blue-100">
-                                                <div className="font-bold text-blue-700">{weather.rain}%</div>
-                                                <div className="text-slate-500">סיכוי גשם</div>
-                                            </div>
-                                            <div className="bg-orange-50 p-2 rounded border border-orange-100">
-                                                <div className="font-bold text-orange-700">{weather.wind}</div>
-                                                <div className="text-slate-500">רוח (80m)</div>
-                                            </div>
-                                            <div className="bg-yellow-50 p-2 rounded border border-yellow-100">
-                                                <div className="font-bold text-yellow-700">{weather.clouds}%</div>
-                                                <div className="text-slate-500">עננות</div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="text-xs text-center text-gray-400">טוען נתונים לפי מיקום המפה...</div>
-                                    )}
-
-                                    <button 
-                                        onClick={generateBriefing}
-                                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2 rounded-lg text-xs font-bold shadow-md flex items-center justify-center gap-2 hover:opacity-90 transition"
-                                    >
-                                        <Icon name="ai" size={14}/> צור תדריך משימה חכם
-                                    </button>
-
-                                    {isAiLoading && <div className="text-xs text-center text-purple-600 animate-pulse">מנתח נתונים...</div>}
-                                    
-                                    {aiBriefing && (
-                                        <div className="text-xs bg-white p-3 rounded border border-purple-100 text-slate-700 leading-relaxed whitespace-pre-line shadow-inner max-h-40 overflow-y-auto">
-                                            {aiBriefing}
-                                        </div>
-                                    )}
+                            {/* Flight Parameters */}
+                            <div className="space-y-4 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div>
+                                    <div className="flex justify-between text-xs font-bold mb-1">
+                                        <span>גובה טיסה (AGL)</span>
+                                        <span className="text-blue-400">{altitude} מ'</span>
+                                    </div>
+                                    <input type="range" min="20" max="200" value={altitude} onChange={e=>setAltitude(Number(e.target.value))} className="w-full accent-blue-500 h-1 bg-slate-600 rounded cursor-pointer"/>
                                 </div>
-                            </Accordion>
-
-                            {/* Section 3: Flight Params */}
-                            <Accordion 
-                                title="פרמטרים לטיסה" 
-                                icon="map" 
-                                isOpen={activeSection === 'flight'} 
-                                onClick={() => setActiveSection(activeSection === 'flight' ? '' : 'flight')}
-                            >
-                                <div className="space-y-4">
+                                
+                                <div className="grid grid-cols-2 gap-2">
                                     <div>
-                                        <div className="flex justify-between text-xs font-bold mb-1">
-                                            <span>גובה טיסה (מטר)</span>
-                                            <span className="text-blue-600">{altitude}</span>
-                                        </div>
-                                        <input type="range" min="10" max="200" value={altitude} onChange={e => setAltitude(Number(e.target.value))} className="w-full accent-blue-600 h-1 bg-gray-200 rounded appearance-none cursor-pointer"/>
+                                        <label className="text-[10px] text-slate-400">חפיפה קדמית</label>
+                                        <input type="number" value={overlapFront} onChange={e=>setOverlapFront(Number(e.target.value))} className="w-full bg-slate-700 border border-slate-600 rounded p-1 text-center text-sm"/>
                                     </div>
-                                    
                                     <div>
-                                        <div className="flex justify-between text-xs font-bold mb-1">
-                                            <span>מהירות טיסה (מ/ש)</span>
-                                            <span className="text-blue-600">{speed}</span>
-                                        </div>
-                                        <input type="range" min="2" max="20" value={speed} onChange={e => setSpeed(Number(e.target.value))} className="w-full accent-blue-600 h-1 bg-gray-200 rounded appearance-none cursor-pointer"/>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-xs font-bold block mb-1">חפיפה קדמית</label>
-                                            <input type="number" value={overlapFront} onChange={e => setOverlapFront(Number(e.target.value))} className="input-field text-center" />
-                                        </div>
-                                        <div>
-                                            <label className="text-xs font-bold block mb-1">חפיפה צידית</label>
-                                            <input type="number" value={overlapSide} onChange={e => setOverlapSide(Number(e.target.value))} className="input-field text-center" />
-                                        </div>
+                                        <label className="text-[10px] text-slate-400">חפיפה צידית</label>
+                                        <input type="number" value={overlapSide} onChange={e=>setOverlapSide(Number(e.target.value))} className="w-full bg-slate-700 border border-slate-600 rounded p-1 text-center text-sm"/>
                                     </div>
                                 </div>
-                            </Accordion>
+                            </div>
 
-                            {/* Live Stats Box */}
-                            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mt-2">
-                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">סטטיסטיקות בזמן אמת</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="text-center border-l border-slate-100">
-                                        <div className="text-2xl font-black text-slate-800">{stats.gsd}</div>
-                                        <div className="text-[10px] text-slate-500">GSD (cm/px)</div>
+                            {/* DTM & Environment */}
+                            <div className="space-y-3 border-t border-slate-700 pt-4">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
+                                        <Icon name="mountain" size={14}/> טופוגרפיה וצל
+                                    </label>
+                                    <label className="flex items-center cursor-pointer">
+                                        <span className="text-[10px] mr-2 text-slate-300">הצג DTM</span>
+                                        <div className="relative">
+                                            <input type="checkbox" className="sr-only" checked={useDTM} onChange={e => setUseDTM(e.target.checked)} />
+                                            <div className={`w-8 h-4 rounded-full shadow-inner transition ${useDTM ? 'bg-blue-600' : 'bg-slate-600'}`}></div>
+                                            <div className={`dot absolute w-2 h-2 bg-white rounded-full top-1 right-1 transition ${useDTM ? '-translate-x-4' : ''}`}></div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <input 
+                                    type="datetime-local" 
+                                    value={flightDate} 
+                                    onChange={e=>setFlightDate(e.target.value)}
+                                    className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm text-slate-300 text-center"
+                                />
+
+                                <button 
+                                    onClick={fetchDTM}
+                                    disabled={isFetchingDTM || polygon.length < 3}
+                                    className={`w-full py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-2 ${useDTM ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                                >
+                                    {isFetchingDTM ? 'טוען נתוני גובה...' : 'חישוב טופוגרפיה וצל (OpenTopo)'}
+                                </button>
+                                
+                                {dtmData && (
+                                    <div className="text-[10px] text-green-400 text-center">
+                                        ✓ נטענו {dtmData.length} נקודות גובה. הצללות חושבו.
                                     </div>
-                                    <div className="text-center">
-                                        <div className="text-2xl font-black text-blue-600">{stats.time}</div>
-                                        <div className="text-[10px] text-slate-500">זמן דקות (משוער)</div>
-                                    </div>
+                                )}
+                            </div>
+
+                            {/* Stats */}
+                            <div className="grid grid-cols-2 gap-2 text-center mt-4">
+                                <div className="bg-slate-800 p-2 rounded border border-slate-700">
+                                    <div className="text-2xl font-black">{stats.gsd}</div>
+                                    <div className="text-[10px] text-slate-400">GSD (cm/px)</div>
+                                </div>
+                                <div className="bg-slate-800 p-2 rounded border border-slate-700">
+                                    <div className="text-2xl font-black text-blue-400">{useDTM ? 'DTM' : 'Flat'}</div>
+                                    <div className="text-[10px] text-slate-400">מצב קרקע</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Bottom Actions */}
-                        <div className="p-3 bg-white border-t border-slate-200 flex gap-2 shrink-0">
-                            <button onClick={() => setPolygon([])} className="p-2 text-red-500 border border-red-100 rounded-lg hover:bg-red-50">
-                                <Icon name="trash" />
-                            </button>
-                            <button className="flex-1 bg-slate-900 text-white rounded-lg font-bold text-sm py-2 hover:bg-slate-800 transition shadow-lg">
-                                ייצא תוכנית (KML/CSV)
-                            </button>
+                        <div className="p-4 bg-slate-800 border-t border-slate-700 flex gap-2 sticky bottom-0">
+                            <button onClick={()=>{setPolygon([]); setDtmData(null); setTerrainShadows([])}} className="p-2 bg-red-600/20 text-red-400 rounded hover:bg-red-600/40"><Icon name="trash"/></button>
+                            <button className="flex-1 bg-blue-600 text-white rounded font-bold text-sm hover:bg-blue-500">שמור תוכנית</button>
                         </div>
                     </div>
 
-                    {/* Map Area */}
-                    <div className="flex-1 relative h-[50vh] md:h-full">
-                        <div id="map" className="bg-slate-200"></div>
+                    {/* Map */}
+                    <div className="flex-1 relative h-[50vh] md:h-full bg-black">
+                        <div id="map"></div>
                         
-                        {/* Overlay Controls */}
-                        <button 
-                            onClick={locateUser}
-                            className="absolute bottom-6 right-4 z-[1000] bg-white p-3 rounded-full shadow-xl text-blue-600 hover:bg-blue-50 transition transform hover:scale-110"
-                            title="התמקד על המיקום שלי"
-                        >
-                            <Icon name="crosshair" />
-                        </button>
-
-                        {/* Empty State Overlay */}
                         {polygon.length === 0 && (
-                            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-blue-100 text-xs font-bold text-slate-600 flex items-center gap-2 animate-bounce">
-                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                לחץ על המפה כדי להתחיל בסימון
+                            <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-black/70 backdrop-blur text-white px-4 py-2 rounded-full text-sm border border-white/20 pointer-events-none z-[1000]">
+                                לחץ על המפה כדי להתחיל בסימון גבולות גזרה
                             </div>
                         )}
                     </div>
