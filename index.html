@@ -89,7 +89,9 @@
                 drone: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>,
                 sun: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
                 trash: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-                gps: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                gps: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+                cloud: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>,
+                check: <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
             };
             return icons[name] || null;
         };
@@ -106,13 +108,25 @@
             const [overlapFront, setOverlapFront] = useState(75);
             const [overlapSide, setOverlapSide] = useState(70);
             const [azimuth, setAzimuth] = useState(0);
-            const [flightDate, setFlightDate] = useState(new Date().toISOString().slice(0, 16));
+            
+            // Initialize date as local ISO string to match input type="datetime-local"
+            const [flightDate, setFlightDate] = useState(() => {
+                const now = new Date();
+                const offsetMs = now.getTimezoneOffset() * 60000;
+                return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+            });
 
             // DTM & Shadows
             const [useDTM, setUseDTM] = useState(false);
             const [isFetchingDTM, setIsFetchingDTM] = useState(false);
             const [dtmData, setDtmData] = useState(null); // Array of {lat, lng, ele}
+            const [dtmStats, setDtmStats] = useState(null);
             const [terrainShadows, setTerrainShadows] = useState([]); // Polygons for shadows
+
+            // Weather
+            const [weather, setWeather] = useState(null);
+            const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+            const [weatherMessage, setWeatherMessage] = useState("");
 
             // Refs
             const mapRef = useRef(null);
@@ -146,10 +160,56 @@
 
             useEffect(() => locateUser(), [locateUser]);
 
-            // --- 2. Fetch DTM (Elevation) ---
+            // --- 2. Fetch Weather (Forecast by Date) ---
+            const fetchWeather = useCallback(async () => {
+                if (!mapCenter) return;
+                setIsLoadingWeather(true);
+                setWeather(null);
+                setWeatherMessage("");
+
+                try {
+                    const [lat, lng] = mapCenter;
+                    // Fetch hourly forecast
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,rain,showers,cloud_cover,wind_speed_10m,wind_gusts_10m&timezone=auto`;
+                    
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    
+                    // Find index matching flightDate
+                    // flightDate is "YYYY-MM-DDTHH:MM"
+                    // API hourly time is "YYYY-MM-DDTHH:00"
+                    const targetTimeStr = flightDate.slice(0, 13) + ":00";
+                    
+                    const index = data.hourly.time.findIndex(t => t === targetTimeStr);
+                    
+                    if (index !== -1) {
+                        setWeather({
+                            wind: data.hourly.wind_speed_10m[index],
+                            gusts: data.hourly.wind_gusts_10m[index],
+                            clouds: data.hourly.cloud_cover[index],
+                            rain: (data.hourly.rain[index] + data.hourly.showers[index]), 
+                            temp: data.hourly.temperature_2m[index],
+                            time: targetTimeStr.replace('T', ' ')
+                        });
+                    } else {
+                        setWeatherMessage("התאריך הנבחר מחוץ לטווח התחזית (7 ימים)");
+                    }
+                } catch (e) {
+                    console.error("Weather Error", e);
+                    setWeatherMessage("שגיאה בטעינת מזג אוויר");
+                } finally {
+                    setIsLoadingWeather(false);
+                }
+            }, [mapCenter, flightDate]);
+
+            // Auto fetch weather on location or date change
+            useEffect(() => { fetchWeather(); }, [fetchWeather]);
+
+            // --- 3. Fetch DTM (Elevation) ---
             const fetchDTM = async () => {
                 if (polygon.length < 3) return alert("יש לסמן אזור (פוליגון) קודם");
                 setIsFetchingDTM(true);
+                setDtmStats(null);
                 setDtmData(null);
                 setTerrainShadows([]);
 
@@ -158,18 +218,18 @@
                 const southWest = bounds.getSouthWest();
                 const northEast = bounds.getNorthEast();
                 
-                // Create a coarse grid (e.g., 10x10 points for demo, real app needs more)
-                const rows = 10;
-                const cols = 10;
+                // Create a coarse grid (e.g., 15x15 points for demo)
+                const rows = 15, cols = 15;
                 const latStep = (northEast.lat - southWest.lat) / rows;
                 const lngStep = (northEast.lng - southWest.lng) / cols;
                 
                 let locations = [];
                 for(let r=0; r<=rows; r++) {
                     for(let c=0; c<=cols; c++) {
-                        const lat = southWest.lat + r * latStep;
-                        const lng = southWest.lng + c * lngStep;
-                        locations.push({lat, lng});
+                        locations.push({
+                            lat: southWest.lat + r * latStep,
+                            lng: southWest.lng + c * lngStep
+                        });
                     }
                 }
 
@@ -177,7 +237,7 @@
                 const locString = locations.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
                 
                 try {
-                    // Using OpenTopoData (aster30m is global) instead of test-dataset
+                    // Using OpenTopoData (aster30m is global)
                     const url = `https://api.opentopodata.org/v1/aster30m?locations=${locString}`;
                     const res = await fetch(url);
                     
@@ -191,6 +251,14 @@
                             lng: r.location.lng,
                             ele: r.elevation !== null ? r.elevation : 0 // Handle nulls
                         }));
+                        
+                        // Calculate Stats
+                        const eles = elevationGrid.map(p => p.ele);
+                        const min = Math.min(...eles);
+                        const max = Math.max(...eles);
+                        const avg = eles.reduce((a,b) => a+b, 0) / eles.length;
+                        
+                        setDtmStats({ min, max, avg });
                         setDtmData(elevationGrid);
                         calculateTerrainShadows(elevationGrid);
                     }
@@ -202,30 +270,29 @@
                 }
             };
 
-            // --- 3. Calculate Terrain Shadows ---
+            // --- 4. Calculate Terrain Shadows ---
             const calculateTerrainShadows = (elevationPoints) => {
                 if (typeof SunCalc === 'undefined') {
                     console.warn("SunCalc ספריית לא נטענה, מדלג על חישוב צל.");
                     return;
                 }
 
-                // 1. Sun Position
-                const center = mapCenter || [32, 34];
+                // 1. Sun Position based on selected Flight Date
+                const center = mapCenter;
                 const sunPos = SunCalc.getPosition(new Date(flightDate), center[0], center[1]);
                 const sunAzimuth = (sunPos.azimuth * 180 / Math.PI) + 180;
-                const sunAltitude = sunPos.altitude * 180 / Math.PI;
+                const sunAltitude = sunPos.altitude * 180 / Math.PI; // degrees
 
                 if (sunAltitude <= 0) return; // Night
 
-                // 2. Simple Shadow Casting Logic
                 const shadows = [];
                 
                 elevationPoints.forEach(point => {
-                    // Calculate relative height from neighbor min
-                    const shadowLenMeters = (point.ele) * (1 / Math.tan(sunPos.altitude)); 
+                    // Calculate shadow length based on elevation relative to "ground" (simplified)
+                    // Just projecting the point to visualize relief direction
+                    const shadowLenMeters = (point.ele * 0.5) * (1 / Math.tan(sunPos.altitude)); 
                     
-                    // Limit shadow length for visual clarity in map
-                    const displayLen = Math.min(shadowLenMeters, 200); 
+                    const displayLen = Math.min(shadowLenMeters, 300); 
 
                     if (displayLen > 5) {
                         const shadowAzRad = ((sunAzimuth + 180) % 360) * (Math.PI / 180);
@@ -242,7 +309,12 @@
                 setTerrainShadows(shadows);
             };
 
-            // --- Map Effect ---
+            // Recalculate shadows when time changes (if DTM is loaded)
+            useEffect(() => {
+                if (dtmData) calculateTerrainShadows(dtmData);
+            }, [flightDate]);
+
+            // --- Map Init ---
             useEffect(() => {
                 if (!mapRef.current) {
                     const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: 'OSM'});
@@ -272,6 +344,7 @@
                 if (L_refs.poly) map.removeLayer(L_refs.poly);
                 if (L_refs.path) map.removeLayer(L_refs.path);
                 if (L_refs.shadows) map.removeLayer(L_refs.shadows);
+                if (L_refs.heat) map.removeLayer(L_refs.heat);
                 if (L_refs.markers) map.removeLayer(L_refs.markers);
 
                 // Draw Polygon
@@ -282,33 +355,42 @@
                 // Draw Path (Snake)
                 if (polygon.length > 2) {
                     const drone = DRONE_PRESETS[selectedDrone];
-                    const footprintW = (drone.sensorWidth * altitude) / drone.focalLength; // Approx
-                    const spacing = footprintW * (1 - overlapSide/100);
+                    const fp = (drone.sensorWidth * altitude) / drone.focalLength; // Approx
+                    const spacing = fp * (1 - overlapSide/100);
                     
-                    // Simple Snake Logic
                     const bounds = L.latLngBounds(polygon);
                     const path = [];
-                    let currLat = bounds.getNorth();
-                    let dir = 1;
+                    let lat = bounds.getNorth();
                     const step = spacing / 111000;
+                    let dir = 1;
 
-                    while(currLat > bounds.getSouth()) {
+                    while(lat > bounds.getSouth()) {
                         if(dir===1) {
-                            path.push([currLat, bounds.getWest()], [currLat, bounds.getEast()]);
+                            path.push([lat, bounds.getWest()], [lat, bounds.getEast()]);
                         } else {
-                            path.push([currLat, bounds.getEast()], [currLat, bounds.getWest()]);
+                            path.push([lat, bounds.getEast()], [lat, bounds.getWest()]);
                         }
-                        currLat -= step;
+                        lat -= step;
                         dir *= -1;
                     }
                     L_refs.path = L.polyline(path, {color: '#0ea5e9', weight: 2}).addTo(map);
                 }
 
-                // Draw DTM Shadows
-                if (useDTM && terrainShadows.length > 0) {
+                // Draw DTM Shadows & Heatmap
+                if (dtmData && terrainShadows.length > 0) {
+                    // Shadows
                     L_refs.shadows = L.layerGroup(
-                        terrainShadows.map(line => L.polyline(line, {color: 'black', weight: 5, opacity: 0.4, lineCap: 'round'}))
+                        terrainShadows.map(line => L.polyline(line, {color: 'black', weight: 4, opacity: 0.5}))
                     ).addTo(map);
+
+                    // Elevation Points (Heatmap style)
+                    const dots = dtmData.map(pt => {
+                        // Simple color scale
+                        const normalized = (pt.ele - dtmStats.min) / (dtmStats.max - dtmStats.min || 1);
+                        const color = normalized > 0.5 ? '#ef4444' : '#22c55e'; 
+                        return L.circleMarker([pt.lat, pt.lng], {radius: 2, color: color, fillOpacity: 0.6, stroke: false});
+                    });
+                    L_refs.heat = L.layerGroup(dots).addTo(map);
                 }
 
                 // Draw User Location
@@ -317,7 +399,7 @@
                     L_refs.markers = L.marker(mapCenter, {icon}).addTo(map);
                 }
 
-            }, [polygon, selectedDrone, altitude, overlapSide, terrainShadows, useDTM, mapCenter]);
+            }, [polygon, selectedDrone, altitude, overlapSide, terrainShadows, dtmData, mapCenter, useDTM]); // Added useDTM dependency implicitly via terrainShadows update
 
             // Stats
             const stats = useMemo(() => {
@@ -332,124 +414,143 @@
                     {/* Sidebar */}
                     <div className="w-full md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll">
                         
-                        <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30">
-                            <div className="flex items-center justify-between mb-2">
-                                <h1 className="font-black text-lg tracking-wider text-blue-400">DTM PLANNER</h1>
-                                <button onClick={locateUser} className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps" /></button>
-                            </div>
-                            <input type="text" value={missionName} onChange={e=>setMissionName(e.target.value)} className="w-full bg-transparent border-b border-slate-600 pb-1 text-center font-bold focus:outline-none focus:border-blue-500"/>
+                        <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center">
+                            <h1 className="font-black text-lg tracking-wider text-blue-400">DTM PLANNER</h1>
+                            <button onClick={locateUser} className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps" /></button>
                         </div>
 
                         <div className="p-4 space-y-6 flex-1">
                             
-                            {/* Drone Selection */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                                    <Icon name="drone" size={14}/> דגם רחפן
-                                </label>
-                                <select 
-                                    value={selectedDrone} 
-                                    onChange={e=>setSelectedDrone(e.target.value)}
-                                    className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    {Object.entries(DRONE_PRESETS).map(([k, v]) => (
-                                        <option key={k} value={k}>{v.name}</option>
-                                    ))}
-                                </select>
-                                <div className="text-[10px] text-slate-500 flex justify-between px-1">
-                                    <span>{DRONE_PRESETS[selectedDrone].type}</span>
-                                    <span>{DRONE_PRESETS[selectedDrone].sensorWidth}mm Sensor</span>
-                                </div>
+                            {/* Weather Dashboard (Updated) */}
+                            <div className="bg-slate-800/80 rounded-lg p-3 border border-slate-700">
+                                <h3 className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1"><Icon name="cloud"/> מזג אוויר (לפי זמן משימה)</h3>
+                                {isLoadingWeather ? (
+                                    <div className="text-center text-xs text-slate-500">טוען...</div>
+                                ) : weather ? (
+                                    <div>
+                                        <div className="grid grid-cols-4 gap-2 text-center text-xs mb-2">
+                                            <div className="bg-slate-700 p-1 rounded">
+                                                <div className="font-bold text-blue-300">{weather.wind}</div>
+                                                <div className="text-[9px] text-slate-400">קמ"ש רוח</div>
+                                            </div>
+                                            <div className="bg-slate-700 p-1 rounded">
+                                                <div className="font-bold text-orange-300">{weather.gusts}</div>
+                                                <div className="text-[9px] text-slate-400">משבים</div>
+                                            </div>
+                                            <div className="bg-slate-700 p-1 rounded">
+                                                <div className="font-bold text-white">{weather.clouds}%</div>
+                                                <div className="text-[9px] text-slate-400">עננות</div>
+                                            </div>
+                                            <div className="bg-slate-700 p-1 rounded">
+                                                <div className="font-bold text-blue-400">{weather.rain.toFixed(1)}mm</div>
+                                                <div className="text-[9px] text-slate-400">גשם</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-[9px] text-center text-slate-500">
+                                            תחזית ל: {weather.time}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-[10px] text-center text-red-400">{weatherMessage || "אין נתונים"}</div>
+                                )}
                             </div>
 
-                            {/* Flight Parameters */}
-                            <div className="space-y-4 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                            {/* Drone & Flight */}
+                            <div className="space-y-4">
                                 <div>
-                                    <div className="flex justify-between text-xs font-bold mb-1">
-                                        <span>גובה טיסה (AGL)</span>
-                                        <span className="text-blue-400">{altitude} מ'</span>
+                                    <label className="text-xs font-bold text-slate-400 block mb-1">רחפן</label>
+                                    <select className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm outline-none"
+                                        value={selectedDrone} onChange={e=>setSelectedDrone(e.target.value)}>
+                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* SLIDERS */}
+                                <div>
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span>גובה (AGL)</span>
+                                        <span className="text-blue-400">{altitude}m</span>
                                     </div>
                                     <input type="range" min="20" max="200" value={altitude} onChange={e=>setAltitude(Number(e.target.value))} className="w-full accent-blue-500 h-1 bg-slate-600 rounded cursor-pointer"/>
                                 </div>
-                                
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label className="text-[10px] text-slate-400">חפיפה קדמית</label>
-                                        <input type="number" value={overlapFront} onChange={e=>setOverlapFront(Number(e.target.value))} className="w-full bg-slate-700 border border-slate-600 rounded p-1 text-center text-sm"/>
+                                <div>
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span>חפיפה קדמית</span>
+                                        <span className="text-blue-400">{overlapFront}%</span>
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] text-slate-400">חפיפה צידית</label>
-                                        <input type="number" value={overlapSide} onChange={e=>setOverlapSide(Number(e.target.value))} className="w-full bg-slate-700 border border-slate-600 rounded p-1 text-center text-sm"/>
+                                    <input type="range" min="10" max="90" value={overlapFront} onChange={e=>setOverlapFront(Number(e.target.value))} className="w-full accent-blue-500 h-1 bg-slate-600 rounded cursor-pointer"/>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-xs mb-1">
+                                        <span>חפיפה צידית</span>
+                                        <span className="text-blue-400">{overlapSide}%</span>
                                     </div>
+                                    <input type="range" min="10" max="90" value={overlapSide} onChange={e=>setOverlapSide(Number(e.target.value))} className="w-full accent-blue-500 h-1 bg-slate-600 rounded cursor-pointer"/>
                                 </div>
                             </div>
 
-                            {/* DTM & Environment */}
-                            <div className="space-y-3 border-t border-slate-700 pt-4">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-2">
-                                        <Icon name="mountain" size={14}/> טופוגרפיה וצל
-                                    </label>
-                                    <label className="flex items-center cursor-pointer">
-                                        <span className="text-[10px] mr-2 text-slate-300">הצג DTM</span>
-                                        <div className="relative">
-                                            <input type="checkbox" className="sr-only" checked={useDTM} onChange={e => setUseDTM(e.target.checked)} />
-                                            <div className={`w-8 h-4 rounded-full shadow-inner transition ${useDTM ? 'bg-blue-600' : 'bg-slate-600'}`}></div>
-                                            <div className={`dot absolute w-2 h-2 bg-white rounded-full top-1 right-1 transition ${useDTM ? '-translate-x-4' : ''}`}></div>
-                                        </div>
-                                    </label>
-                                </div>
-
+                            {/* DTM Section */}
+                            <div className="pt-4 border-t border-slate-700">
+                                <label className="text-xs font-bold text-slate-400 mb-2 block flex items-center gap-1">
+                                    <Icon name="mountain"/> נתוני גובה וזמן
+                                </label>
+                                
                                 <input 
                                     type="datetime-local" 
                                     value={flightDate} 
                                     onChange={e=>setFlightDate(e.target.value)}
-                                    className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm text-slate-300 text-center"
+                                    className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm text-slate-300 text-center mb-3"
                                 />
 
                                 <button 
                                     onClick={fetchDTM}
                                     disabled={isFetchingDTM || polygon.length < 3}
-                                    className={`w-full py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-2 ${useDTM ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                                    className={`w-full py-2 rounded text-sm font-bold mb-3 transition ${isFetchingDTM ? 'bg-slate-700 text-slate-500' : 'bg-blue-600 hover:bg-blue-500'}`}
                                 >
-                                    {isFetchingDTM ? 'טוען נתוני גובה...' : 'חישוב טופוגרפיה וצל (OpenTopo)'}
+                                    {isFetchingDTM ? 'טוען מהלווין...' : 'טען נתוני גובה וחשב צל'}
                                 </button>
-                                
-                                {dtmData && (
-                                    <div className="text-[10px] text-green-400 text-center">
-                                        ✓ נטענו {dtmData.length} נקודות גובה. הצללות חושבו.
+
+                                {/* DTM STATS INDICATOR */}
+                                {dtmStats ? (
+                                    <div className="bg-green-900/30 border border-green-700/50 p-3 rounded text-center animate-pulse">
+                                        <div className="text-xs text-green-400 font-bold mb-1 flex items-center justify-center gap-1">
+                                            <Icon name="check"/> נתונים נטענו בהצלחה (Aster 30m)
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-1 text-[10px] text-green-200">
+                                            <div>
+                                                <span className="block font-bold text-white">{dtmStats.min.toFixed(0)}m</span>
+                                                Min Elev
+                                            </div>
+                                            <div>
+                                                <span className="block font-bold text-white">{dtmStats.avg.toFixed(0)}m</span>
+                                                Avg Elev
+                                            </div>
+                                            <div>
+                                                <span className="block font-bold text-white">{dtmStats.max.toFixed(0)}m</span>
+                                                Max Elev
+                                            </div>
+                                        </div>
+                                        <div className="text-[9px] mt-1 text-green-500/80">
+                                            * צל מחושב לפי שעת הטיסה שנבחרה
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-[10px] text-center text-slate-500">
+                                        שרטט פוליגון ולחץ לטעינת גבהים
                                     </div>
                                 )}
                             </div>
-
-                            {/* Stats */}
-                            <div className="grid grid-cols-2 gap-2 text-center mt-4">
-                                <div className="bg-slate-800 p-2 rounded border border-slate-700">
-                                    <div className="text-2xl font-black">{stats.gsd}</div>
-                                    <div className="text-[10px] text-slate-400">GSD (cm/px)</div>
-                                </div>
-                                <div className="bg-slate-800 p-2 rounded border border-slate-700">
-                                    <div className="text-2xl font-black text-blue-400">{useDTM ? 'DTM' : 'Flat'}</div>
-                                    <div className="text-[10px] text-slate-400">מצב קרקע</div>
-                                </div>
-                            </div>
                         </div>
 
-                        <div className="p-4 bg-slate-800 border-t border-slate-700 flex gap-2 sticky bottom-0">
+                        <div className="p-4 bg-slate-800 border-t border-slate-700 flex gap-2">
                             <button onClick={()=>{setPolygon([]); setDtmData(null); setTerrainShadows([])}} className="p-2 bg-red-600/20 text-red-400 rounded hover:bg-red-600/40"><Icon name="trash"/></button>
-                            <button className="flex-1 bg-blue-600 text-white rounded font-bold text-sm hover:bg-blue-500">שמור תוכנית</button>
+                            <button className="flex-1 bg-blue-600 text-white rounded font-bold text-sm hover:bg-blue-500">שמור משימה</button>
                         </div>
                     </div>
 
                     {/* Map */}
-                    <div className="flex-1 relative h-[50vh] md:h-full bg-black">
+                    <div className="flex-1 relative h-[45vh] md:h-full bg-black">
                         <div id="map"></div>
-                        
-                        {polygon.length === 0 && (
-                            <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-black/70 backdrop-blur text-white px-4 py-2 rounded-full text-sm border border-white/20 pointer-events-none z-[1000]">
-                                לחץ על המפה כדי להתחיל בסימון גבולות גזרה
-                            </div>
-                        )}
                     </div>
                 </div>
             );
