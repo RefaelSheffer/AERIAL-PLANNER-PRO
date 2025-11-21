@@ -156,8 +156,11 @@
             // Map Data
             const [polygon, setPolygon] = useState([]);
             const [pathLength, setPathLength] = useState(0);
+            const [dtmStats, setDtmStats] = useState(null);
+            const [terrainProbe, setTerrainProbe] = useState({ lat: null, lng: null, elevation: null, source: null, loading: false, error: null });
             const mapRef = useRef(null);
             const layersRef = useRef({});
+            const hoverDebounceRef = useRef(null);
 
             // --- Logic: Geolocation ---
             const locateUser = useCallback(() => {
@@ -237,6 +240,38 @@
                 setIsAiDroneLoading(false);
             };
 
+            // --- Logic: DTM (OpenTopoData) ---
+            const fetchElevationsBatch = async (points) => {
+                if (!points?.length) return null;
+                const unique = Array.from(new Map(points.map(p => [`${p[0].toFixed(5)},${p[1].toFixed(5)}`, p])).values());
+                const url = `https://api.opentopodata.org/v1/srtm90m?locations=${unique.map(p => `${p[0]},${p[1]}`).join('|')}`;
+                try {
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    return data?.results?.map(r => r?.elevation).filter(e => typeof e === 'number');
+                } catch (e) {
+                    console.error('DTM batch fetch failed', e);
+                    return null;
+                }
+            };
+
+            const probeElevation = async (lat, lng, source = 'hover') => {
+                setTerrainProbe({ lat, lng, elevation: terrainProbe?.elevation ?? null, source, loading: true, error: null });
+                try {
+                    const res = await fetch(`https://api.opentopodata.org/v1/srtm90m?locations=${lat},${lng}`);
+                    const data = await res.json();
+                    const elevation = data?.results?.[0]?.elevation ?? null;
+                    setTerrainProbe({ lat, lng, elevation, source, loading: false, error: elevation === null ? 'נתוני DTM לא זמינים' : null });
+                } catch (e) {
+                    setTerrainProbe({ lat, lng, elevation: null, source, loading: false, error: 'שגיאת DTM' });
+                }
+            };
+
+            const effectiveAltitude = useMemo(() => {
+                const terrainDelta = dtmStats ? (dtmStats.max - dtmStats.min) : 0;
+                return Math.max(5, altitude - terrainDelta);
+            }, [altitude, dtmStats]);
+
             // --- Logic: Map & Path ---
             useEffect(() => {
                 if (!mapRef.current && document.getElementById('map')) {
@@ -257,9 +292,34 @@
                     // Event Listeners
                     mapRef.current.on('click', e => {
                         setPolygon(prev => [...prev, [e.latlng.lat, e.latlng.lng]]);
+                        probeElevation(e.latlng.lat, e.latlng.lng, 'click');
+                    });
+
+                    mapRef.current.on('mousemove', e => {
+                        if (hoverDebounceRef.current) clearTimeout(hoverDebounceRef.current);
+                        hoverDebounceRef.current = setTimeout(() => {
+                            probeElevation(e.latlng.lat, e.latlng.lng, 'hover');
+                        }, 250);
                     });
                 }
             }, []);
+
+            // DTM stats for polygon
+            useEffect(() => {
+                const updateDtmStats = async () => {
+                    if (!polygon.length) { setDtmStats(null); return; }
+                    const bounds = L.latLngBounds(polygon);
+                    const samples = [...polygon, [bounds.getNorth(), bounds.getWest()], [bounds.getNorth(), bounds.getEast()], [bounds.getSouth(), bounds.getWest()], [bounds.getSouth(), bounds.getEast()], [bounds.getCenter().lat, bounds.getCenter().lng]];
+                    const elevations = await fetchElevationsBatch(samples);
+                    if (elevations && elevations.length) {
+                        const min = Math.min(...elevations);
+                        const max = Math.max(...elevations);
+                        const avg = elevations.reduce((a, b) => a + b, 0) / elevations.length;
+                        setDtmStats({ min, max, avg });
+                    }
+                };
+                updateDtmStats();
+            }, [polygon]);
 
             // Draw Polygon & Path
             useEffect(() => {
@@ -276,7 +336,7 @@
                     // Draw Path (Snake) if > 2 points
                     if (polygon.length > 2) {
                         const drone = DRONE_PRESETS[selectedDrone];
-                        const footprintW = (drone.sensorWidth * altitude) / drone.focalLength;
+                        const footprintW = (drone.sensorWidth * effectiveAltitude) / drone.focalLength;
                         const stripSpacing = footprintW * (1 - overlapSide / 100);
                         
                         // Simplified path gen logic for demo (bounding box based)
@@ -302,7 +362,7 @@
                         setPathLength(len);
                     }
                 }
-            }, [polygon, selectedDrone, altitude, overlapSide]);
+            }, [polygon, selectedDrone, overlapSide, effectiveAltitude]);
 
             // User Marker Update
             useEffect(() => {
@@ -320,10 +380,10 @@
             // --- Calculated Stats ---
             const stats = useMemo(() => {
                 const d = DRONE_PRESETS[selectedDrone];
-                const gsd = (d.sensorWidth * altitude * 100) / (d.focalLength * d.imageWidth);
+                const gsd = (d.sensorWidth * effectiveAltitude * 100) / (d.focalLength * d.imageWidth);
                 const timeMin = Math.floor((pathLength / speed) / 60);
                 return { gsd: gsd.toFixed(2), time: timeMin };
-            }, [selectedDrone, altitude, speed, pathLength]);
+            }, [selectedDrone, effectiveAltitude, speed, pathLength]);
 
             return (
                 <div className="flex flex-col md:flex-row h-full">
@@ -454,10 +514,10 @@
                             </Accordion>
 
                             {/* Section 3: Flight Params */}
-                            <Accordion 
-                                title="פרמטרים לטיסה" 
-                                icon="map" 
-                                isOpen={activeSection === 'flight'} 
+                            <Accordion
+                                title="פרמטרים לטיסה"
+                                icon="map"
+                                isOpen={activeSection === 'flight'}
                                 onClick={() => setActiveSection(activeSection === 'flight' ? '' : 'flight')}
                             >
                                 <div className="space-y-4">
@@ -487,6 +547,35 @@
                                             <input type="number" value={overlapSide} onChange={e => setOverlapSide(Number(e.target.value))} className="input-field text-center" />
                                         </div>
                                     </div>
+
+                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-slate-700 space-y-2">
+                                        <div className="flex items-center justify-between font-bold text-blue-800">
+                                            <span>נתוני DTM (SRTM)</span>
+                                            <span className="text-[10px]">OpenTopoData</span>
+                                        </div>
+                                        {dtmStats ? (
+                                            <div className="grid grid-cols-3 gap-2 text-center">
+                                                <div>
+                                                    <div className="text-lg font-black text-slate-900">{dtmStats.min.toFixed(1)}</div>
+                                                    <div className="text-[10px] text-slate-500">מינ׳ (מ')</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-lg font-black text-blue-700">{dtmStats.avg.toFixed(1)}</div>
+                                                    <div className="text-[10px] text-slate-500">ממוצע (מ')</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-lg font-black text-slate-900">{dtmStats.max.toFixed(1)}</div>
+                                                    <div className="text-[10px] text-slate-500">מקס׳ (מ')</div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-slate-500">סמן אזור על המפה לקבלת גבהים.</div>
+                                        )}
+                                        <div className="bg-white rounded-lg border border-blue-100 p-2 text-[11px] flex items-center justify-between">
+                                            <span>גובה עבודה מחושב (AGL):</span>
+                                            <span className="font-black text-blue-700">{effectiveAltitude.toFixed(1)} מ'</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </Accordion>
 
@@ -504,6 +593,35 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mt-2 text-xs text-slate-700 space-y-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="font-bold text-slate-800">קריאת XYZ מהמפה</span>
+                                    <span className="text-[10px] text-slate-500">צבע כחול = Hover</span>
+                                </div>
+                                {terrainProbe.lat ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="bg-slate-50 p-2 rounded border">
+                                            <div className="text-[10px] text-slate-500">Lat</div>
+                                            <div className="font-mono text-sm">{terrainProbe.lat.toFixed(6)}</div>
+                                            <div className="text-[10px] text-slate-500 mt-1">Lng</div>
+                                            <div className="font-mono text-sm">{terrainProbe.lng.toFixed(6)}</div>
+                                        </div>
+                                        <div className={`p-2 rounded border ${terrainProbe.source === 'hover' ? 'bg-blue-50 border-blue-200' : 'bg-slate-50'}`}>
+                                            <div className="text-[10px] text-slate-500">גובה קרקע (מ')</div>
+                                            <div className="font-black text-lg text-slate-900">
+                                                {terrainProbe.loading ? '...'
+                                                    : terrainProbe.elevation !== null ? terrainProbe.elevation.toFixed(1)
+                                                    : 'N/A'}
+                                            </div>
+                                            <div className="text-[10px] text-slate-500 mt-1">מצב: {terrainProbe.source === 'click' ? 'קליק' : 'Hover'}</div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-slate-500">העבר את העכבר על המפה או לחץ לקבלת ערכי XYZ.</div>
+                                )}
+                                {terrainProbe.error && <div className="text-red-500 text-[11px]">{terrainProbe.error}</div>}
+                            </div>
                         </div>
 
                         {/* Bottom Actions */}
@@ -520,11 +638,20 @@
                     {/* Map Area */}
                     <div className="flex-1 relative h-[50vh] md:h-full">
                         <div id="map" className="bg-slate-200"></div>
+
+                        {terrainProbe.lat && (
+                            <div className={`absolute top-4 right-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border px-4 py-3 text-xs ${terrainProbe.source === 'hover' ? 'border-blue-200' : 'border-slate-200'}`}>
+                                <div className="text-[10px] uppercase tracking-wide text-slate-500">{terrainProbe.source === 'click' ? 'נקודה נבחרת' : 'מעבר עכבר'}</div>
+                                <div className="font-mono text-[11px] text-slate-700">Lat: {terrainProbe.lat.toFixed(6)}</div>
+                                <div className="font-mono text-[11px] text-slate-700">Lng: {terrainProbe.lng.toFixed(6)}</div>
+                                <div className="mt-1 font-black text-blue-700 text-sm">גובה DTM: {terrainProbe.elevation !== null ? `${terrainProbe.elevation.toFixed(1)} מ'` : 'N/A'}</div>
+                            </div>
+                        )}
                         
                         {/* Overlay Controls */}
-                        <button 
-                            onClick={locateUser}
-                            className="absolute bottom-6 right-4 z-[1000] bg-white p-3 rounded-full shadow-xl text-blue-600 hover:bg-blue-50 transition transform hover:scale-110"
+                            <button
+                                onClick={locateUser}
+                                className="absolute bottom-6 right-4 z-[1000] bg-white p-3 rounded-full shadow-xl text-blue-600 hover:bg-blue-50 transition transform hover:scale-110"
                             title="התמקד על המיקום שלי"
                         >
                             <Icon name="crosshair" />
