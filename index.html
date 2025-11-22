@@ -169,6 +169,7 @@
             const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
             const [showTimeline, setShowTimeline] = useState(true);
             const [sidebarOpen, setSidebarOpen] = useState(true);
+            const [dronePanelOpen, setDronePanelOpen] = useState(true);
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
@@ -520,28 +521,40 @@
                                 {/* Flight Params */}
                                 <div className="space-y-4">
                                 <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 space-y-2">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-blue-300">
                                             <Icon name="drone" size={18}/> בחר רחפן מבצעי
                                         </div>
-                                        <span className="text-[11px] text-slate-400">{Object.keys(DRONE_PRESETS).length} דגמים זמינים</span>
-                                    </div>
-                                    <p className="text-xs text-slate-400">בחר דגם כדי לראות חיישן, סוג משימה ולקבל חישובי טיסה מדויקים.</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                                            <span>{Object.keys(DRONE_PRESETS).length} דגמים זמינים</span>
                                             <button
-                                                key={k}
-                                                onClick={() => setSelectedDrone(k)}
-                                                className={`w-full text-right border rounded-lg px-3 py-2 transition shadow-sm hover:border-blue-400 hover:shadow-lg focus:outline-none ${selectedDrone === k ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-slate-700 bg-slate-900 text-slate-100'}`}
+                                                className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
+                                                onClick={() => setDronePanelOpen(o => !o)}
                                             >
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-semibold text-sm">{v.name}</span>
-                                                    <span className={`text-[11px] px-2 py-1 rounded-full ${selectedDrone === k ? 'bg-blue-600/40 text-white' : 'bg-slate-700 text-slate-200'}`}>{v.type}</span>
-                                                </div>
-                                                <div className="text-[11px] text-slate-300 mt-1">חיישן {v.sensorWidth}x{v.sensorHeight} מ"מ · מוקד {v.focalLength} מ"מ</div>
+                                                {dronePanelOpen ? 'הסתר' : 'הצג'}
                                             </button>
-                                        ))}
+                                        </div>
                                     </div>
+                                    {dronePanelOpen && (
+                                        <>
+                                            <p className="text-xs text-slate-400">בחר דגם כדי לראות חיישן, סוג משימה ולקבל חישובי טיסה מדויקים.</p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                                    <button
+                                                        key={k}
+                                                        onClick={() => setSelectedDrone(k)}
+                                                        className={`w-full text-right border rounded-lg px-3 py-2 transition shadow-sm hover:border-blue-400 hover:shadow-lg focus:outline-none ${selectedDrone === k ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-slate-700 bg-slate-900 text-slate-100'}`}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-semibold text-sm">{v.name}</span>
+                                                            <span className={`text-[11px] px-2 py-1 rounded-full ${selectedDrone === k ? 'bg-blue-600/40 text-white' : 'bg-slate-700 text-slate-200'}`}>{v.type}</span>
+                                                        </div>
+                                                        <div className="text-[11px] text-slate-300 mt-1">חיישן {v.sensorWidth}x{v.sensorHeight} מ"מ · מוקד {v.focalLength} מ"מ</div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Sliders */}
