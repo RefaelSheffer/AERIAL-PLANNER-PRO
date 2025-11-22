@@ -1055,32 +1055,8 @@
                                 </div>
                             )}
 
-                            <div className="flex flex-col items-end gap-2 pointer-events-auto">
-                                <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => setSidebarOpen(o => !o)} />
-                                <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => setRealtimePanelOpen(o => !o)} />
-                                <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => setShowTimeline(v => !v)} />
-                            </div>
-                        </div>
-                        {/* Heatmap Legend */}
-                        {dtmData && (
-                            <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
-                                <div className="font-bold mb-1">גבהים</div>
-                                <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 bg-red-500 rounded-full"></div> גבוה
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div> נמוך
-                                </div>
-                                <div className="flex items-center gap-1 mt-1 border-t pt-1">
-                                    <div className="w-4 h-1 bg-black/60"></div> צל
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Wind & Clouds Timeline */}
-                        <div className="absolute bottom-3 left-3 right-3 z-[1000] flex flex-col gap-2 pointer-events-none">
                             {showTimeline && visibleTimeline.length > 0 && (
-                                <div className={`bg-white/95 backdrop-blur rounded-2xl border border-slate-200 shadow-2xl pointer-events-auto ${isMobile ? 'max-h-[78vh]' : 'max-h-72'} overflow-hidden`}>
+                                <div className={`pointer-events-auto bg-white/95 backdrop-blur rounded-2xl border border-slate-200 shadow-2xl ${isMobile ? 'w-[92vw] max-h-[78vh]' : 'w-[560px] max-h-[70vh]'} overflow-hidden`}>
                                     <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[12px] text-slate-700 border-b border-slate-100">
                                         <div className="flex items-center gap-2 font-bold text-slate-900">
                                             <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center"><Icon name="calendar" size={15}/></span>
@@ -1196,7 +1172,29 @@
                                     </div>
                                 </div>
                             )}
+
+                            <div className="flex flex-col items-end gap-2 pointer-events-auto">
+                                <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => setSidebarOpen(o => !o)} />
+                                <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => setRealtimePanelOpen(o => !o)} />
+                                <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => setShowTimeline(v => !v)} />
+                            </div>
                         </div>
+                        {/* Heatmap Legend */}
+                        {dtmData && (
+                            <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
+                                <div className="font-bold mb-1">גבהים</div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-3 h-3 bg-red-500 rounded-full"></div> גבוה
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div> נמוך
+                                </div>
+                                <div className="flex items-center gap-1 mt-1 border-t pt-1">
+                                    <div className="w-4 h-1 bg-black/60"></div> צל
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </>
