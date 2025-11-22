@@ -1017,13 +1017,13 @@
                                                                             {!isMobile && <span className="text-[9px] text-slate-500">{day.label}</span>}
                                                                         </div>
                                                                         <div
-                                                                            className={`${isMobile ? 'h-10 w-full text-sm' : 'mx-1 h-8 w-[calc(100%-8px)] text-[10px]'} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
+                                                                            className={`${isMobile ? 'h-8 w-full text-sm' : 'mx-1 h-8 w-[calc(100%-8px)] text-[10px]'} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
                                                                             style={{ background: windSpeedToColor(slot.wind) }}
                                                                         >
                                                                             {slot.wind?.toFixed(1) ?? '-'} מ"ש
                                                                             {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[8px] text-slate-100 bg-slate-900/50 px-1 rounded-full">6h</span>}
                                                                         </div>
-                                                                        <div className={`${isMobile ? 'w-full space-y-1' : 'w-full px-2 pb-1 space-y-1'}`}>
+                                                                        <div className={`${isMobile ? 'w-full space-y-0.5' : 'w-full px-2 pb-1 space-y-1'}`}>
                                                                             <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
                                                                                 <div className="h-full bg-blue-500" style={{ width:`${slot.clouds ?? 0}%` }}></div>
                                                                             </div>
@@ -1036,9 +1036,6 @@
                                                                                 </span>
                                                                                 <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center">
                                                                                     משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? '-'} מ"ש
-                                                                                </span>
-                                                                                <span className="px-2 py-0.5 rounded-full bg-slate-50 text-slate-700 border border-slate-200 text-center">
-                                                                                    שמש {slot.sunAlt !== null ? slot.sunAlt.toFixed(0) : '-'}°
                                                                                 </span>
                                                                             </div>
                                                                         </div>
