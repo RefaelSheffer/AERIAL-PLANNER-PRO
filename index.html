@@ -145,6 +145,7 @@
 
         const App = () => {
             const [mapCenter, setMapCenter] = useState([32.0853, 34.7818]);
+            const [weatherLocation, setWeatherLocation] = useState([32.0853, 34.7818]);
             const [polygon, setPolygon] = useState([]);
             
             // Flight Params
@@ -177,8 +178,10 @@
             useEffect(() => {
                 navigator.geolocation.getCurrentPosition(
                     pos => {
-                        setMapCenter([pos.coords.latitude, pos.coords.longitude]);
-                        if(mapRef.current) mapRef.current.setView([pos.coords.latitude, pos.coords.longitude], 17);
+                        const coords = [pos.coords.latitude, pos.coords.longitude];
+                        setMapCenter(coords);
+                        setWeatherLocation(coords);
+                        if(mapRef.current) mapRef.current.setView(coords, 17);
                     },
                     err => console.warn("GPS Error:", err.code)
                 );
@@ -186,9 +189,9 @@
 
             // --- Weather ---
             const fetchWeather = async () => {
-                if(!mapCenter) return;
+                if(!weatherLocation) return;
                 try {
-                    const [lat, lng] = mapCenter;
+                    const [lat, lng] = weatherLocation;
                     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,precipitation_probability&timezone=auto&forecast_days=7`;
                     const res = await fetch(url);
                     const data = await res.json();
@@ -199,7 +202,17 @@
                 } catch(e) { console.error(e); }
             };
 
-            useEffect(() => { fetchWeather() }, [mapCenter]);
+            useEffect(() => { fetchWeather() }, [weatherLocation]);
+
+            useEffect(() => {
+                if (polygon.length > 2) {
+                    const bounds = L.latLngBounds(polygon.map(p => L.latLng(p.lat, p.lng)));
+                    const center = bounds.getCenter();
+                    setWeatherLocation([center.lat, center.lng]);
+                } else {
+                    setWeatherLocation(mapCenter);
+                }
+            }, [polygon, mapCenter]);
 
             const windTimeline = useMemo(() => {
                 if(!hourlyForecast?.time) return [];
@@ -426,6 +439,10 @@
 
                     mapRef.current = L.map('map', { center: mapCenter, zoom: 15, layers: [esriImagery], zoomControl: false });
                     mapRef.current.on('click', e => setPolygon(prev => [...prev, {lat: e.latlng.lat, lng: e.latlng.lng}]));
+                    mapRef.current.on('moveend', () => {
+                        const center = mapRef.current.getCenter();
+                        setMapCenter([center.lat, center.lng]);
+                    });
                 }
             }, []);
 
