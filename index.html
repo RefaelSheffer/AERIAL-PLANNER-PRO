@@ -24,6 +24,9 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
+    <!-- Leaflet Heatmap Plugin for smoother DTM visualization -->
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
     <!-- SunCalc -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
 
@@ -551,18 +554,28 @@
                     Lr.shadows = L.layerGroup(terrainShadows.map(l => L.polyline(l, {color: 'black', weight: 4, opacity: 0.6}))).addTo(map);
                 }
                 
-                if (dtmData) {
-                    // Draw Heatmap Points
-                    const dots = dtmData.map(pt => {
+                if (dtmData && dtmStats && L.heatLayer) {
+                    // Draw smooth DTM heat layer
+                    const heatPoints = dtmData.map(pt => {
                         const normalized = (pt.ele - dtmStats.min) / (dtmStats.max - dtmStats.min || 1);
-                        // Color scale: Green (Low) -> Red (High)
-                        const color = `hsl(${120 - normalized * 120}, 100%, 50%)`; 
-                        return L.circleMarker([pt.lat, pt.lng], {radius: 3, color: color, fillOpacity: 0.8, stroke: false});
+                        const intensity = Math.max(0, Math.min(1, normalized));
+                        return [pt.lat, pt.lng, intensity];
                     });
-                    Lr.heat = L.layerGroup(dots).addTo(map);
+
+                    Lr.heat = L.heatLayer(heatPoints, {
+                        radius: 28,
+                        blur: 22,
+                        max: 1,
+                        gradient: {
+                            0.0: '#2563eb', // נמוך
+                            0.4: '#22c55e',
+                            0.7: '#f59e0b',
+                            1.0: '#ef4444'  // גבוה
+                        }
+                    }).addTo(map);
                 }
 
-            }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, speed]);
+            }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, dtmStats, speed]);
 
             // Stats Calc
             const stats = useMemo(() => {
