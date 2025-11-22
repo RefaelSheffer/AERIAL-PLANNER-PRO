@@ -424,8 +424,24 @@
             // --- Map Rendering ---
             useEffect(() => {
                 if (!mapRef.current) {
-                    const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution: 'Esri'});
-                    mapRef.current = L.map('map', { center: mapCenter, zoom: 15, layers: [sat], zoomControl: false });
+                    const esriImagery = L.tileLayer(
+                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        { attribution: 'Esri' }
+                    );
+
+                    const osmFallback = L.tileLayer(
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        { attribution: '&copy; OpenStreetMap contributors' }
+                    );
+
+                    // If the Esri imagery fails (rate limit / CORS), fall back to OpenStreetMap so the map still renders.
+                    esriImagery.on('tileerror', () => {
+                        if (!mapRef.current.hasLayer(osmFallback)) {
+                            mapRef.current.addLayer(osmFallback);
+                        }
+                    });
+
+                    mapRef.current = L.map('map', { center: mapCenter, zoom: 15, layers: [esriImagery], zoomControl: false });
                     mapRef.current.on('click', e => setPolygon(prev => [...prev, {lat: e.latlng.lat, lng: e.latlng.lng}]));
                 }
             }, []);
