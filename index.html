@@ -52,7 +52,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
 
         // --- Drone Database ---
         const DRONE_PRESETS = {
@@ -160,7 +160,6 @@
             const [totalDistance, setTotalDistance] = useState(0);
 
             // Weather & DTM
-            const [weather, setWeather] = useState(null);
             const [hourlyForecast, setHourlyForecast] = useState(null);
             const [dtmData, setDtmData] = useState(null);
             const [isFetchingDTM, setIsFetchingDTM] = useState(false);
@@ -184,40 +183,21 @@
             }, []);
 
             // --- Weather ---
-            const updateWeatherFromForecast = useCallback((forecastOverride = null) => {
-                const src = forecastOverride || hourlyForecast;
-                if(!src?.time) { setWeather(null); return; }
-                const targetTimeStr = flightDate.slice(0, 13) + ":00";
-                const idx = src.time.findIndex(t => t === targetTimeStr);
-                if(idx !== -1) {
-                    setWeather({
-                        wind: src.wind_speed_10m[idx],
-                        gusts: src.wind_gusts_10m[idx],
-                        clouds: src.cloud_cover[idx],
-                        rain: src.rain[idx] + src.showers[idx]
-                    });
-                } else {
-                    setWeather(null);
-                }
-            }, [hourlyForecast, flightDate]);
-
             const fetchWeather = async () => {
                 if(!mapCenter) return;
                 try {
                     const [lat, lng] = mapCenter;
-                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,rain,showers,cloud_cover,wind_speed_10m,wind_gusts_10m&timezone=auto&forecast_days=7`;
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,precipitation_probability&timezone=auto&forecast_days=7`;
                     const res = await fetch(url);
                     const data = await res.json();
 
                     if (data?.hourly) {
                         setHourlyForecast(data.hourly);
-                        updateWeatherFromForecast(data.hourly);
                     }
                 } catch(e) { console.error(e); }
             };
 
             useEffect(() => { fetchWeather() }, [mapCenter]);
-            useEffect(() => { updateWeatherFromForecast(); }, [flightDate, updateWeatherFromForecast]);
 
             const windTimeline = useMemo(() => {
                 if(!hourlyForecast?.time) return [];
@@ -235,6 +215,7 @@
                         time: t.slice(11, 16),
                         wind: hourlyForecast.wind_speed_10m?.[i],
                         clouds: hourlyForecast.cloud_cover?.[i],
+                        rainProb: hourlyForecast.precipitation_probability?.[i],
                         isMajor: hour % 6 === 0,
                     });
                 });
@@ -612,22 +593,8 @@
                                     onClick={() => setShowTimeline(v => !v)}
                                     className="bg-white/90 text-slate-800 text-xs font-semibold px-3 py-2 rounded-full shadow border border-slate-200 hover:bg-white"
                                 >
-                                    {showTimeline ? 'הסתר לוח רוח/עננות' : 'הצג לוח רוח/עננות'}
+                                    {showTimeline ? 'הסתר לוח רוח/עננות/גשם' : 'הצג לוח רוח/עננות/גשם'}
                                 </button>
-                            </div>
-
-                            <div className="pointer-events-auto bg-white/95 backdrop-blur rounded-2xl border border-slate-200 shadow-2xl px-4 py-3">
-                                <div className="flex items-center gap-2 mb-2 text-xs font-bold text-slate-700">
-                                    <Icon name="wind"/> מזג אוויר
-                                </div>
-                                {weather ? (
-                                    <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                                        <div className="bg-slate-100 p-2 rounded"><div className="font-bold text-blue-600">{weather.wind}</div><div className="text-[9px] text-slate-600">קמ"ש</div></div>
-                                        <div className="bg-slate-100 p-2 rounded"><div className="font-bold text-orange-500">{weather.gusts}</div><div className="text-[9px] text-slate-600">משבים</div></div>
-                                        <div className="bg-slate-100 p-2 rounded"><div className="font-bold text-slate-900">{weather.clouds}%</div><div className="text-[9px] text-slate-600">עננות</div></div>
-                                        <div className="bg-slate-100 p-2 rounded"><div className="font-bold text-blue-500">{weather.rain.toFixed(1)}mm</div><div className="text-[9px] text-slate-600">גשם</div></div>
-                                    </div>
-                                ) : <div className="text-[10px] text-slate-500 text-center">טוען...</div>}
                             </div>
 
                             {showTimeline && windTimeline.length > 0 && (
@@ -647,7 +614,7 @@
                                                             return (
                                                                 <button
                                                                     key={slot.key}
-                                                                    onClick={() => setFlightDate(`${day.day}T${slot.time}`)}
+                                                                onClick={() => setFlightDate(`${day.day}T${slot.time}`)}
                                                                     className={`w-16 h-20 flex flex-col items-center justify-between rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}
                                                                     style={{ background: 'white' }}
                                                                 >
@@ -663,7 +630,10 @@
                                                                         <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                                                                             <div className="h-full bg-blue-500" style={{ width: `${slot.clouds ?? 0}%` }}></div>
                                                                         </div>
-                                                                        <div className="text-[8px] text-center text-slate-500 mt-0.5">עננות {slot.clouds ?? 0}%</div>
+                                                                        <div className="text-[8px] text-center text-slate-500 mt-0.5 flex items-center justify-between px-1">
+                                                                            <span>עננות {slot.clouds ?? 0}%</span>
+                                                                            <span className="text-blue-700 font-semibold">גשם {slot.rainProb ?? 0}%</span>
+                                                                        </div>
                                                                     </div>
                                                                 </button>
                                                             );
