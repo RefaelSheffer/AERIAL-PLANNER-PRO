@@ -51,7 +51,20 @@
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 10px; }
 
-        @media (max-width: 768px) { .mobile-panel { max-height: 55vh; } }
+        @media (max-width: 768px) {
+            :root { --mobile-sidebar-width: 78%; }
+
+            .mobile-panel {
+                width: var(--mobile-sidebar-width);
+                max-height: 100vh;
+                height: 100vh;
+            }
+
+            /* Hide any stray map markers (red dot) on mobile */
+            .leaflet-marker-icon, .leaflet-marker-shadow {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -724,7 +737,7 @@
                     <div className="flex flex-col md:flex-row h-full relative">
                     {/* Controls Sidebar */}
                     {sidebarOpen && (
-                        <div className="w-[90%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static">
+                        <div className="w-[78%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static">
 
                             <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
                                 <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
@@ -882,7 +895,7 @@
                     )}
 
                     {/* Map */}
-                    <div className={`flex-1 relative ${sidebarOpen ? 'h-[45vh] md:h-full' : 'h-full'} bg-black`}>
+                    <div className={`flex-1 relative h-full bg-black`}>
                         <div id="map"></div>
                         {!sidebarOpen && (
                             <button
@@ -897,7 +910,7 @@
                         {sidebarOpen && (
                             <button
                                 onClick={() => setSidebarOpen(false)}
-                                className={`absolute z-[1000] bg-blue-600 text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-700 ${isMobile ? 'top-1/2 -translate-y-1/2 right-[calc(90%+10px)] md:right-4 md:top-4 md:translate-y-0' : 'top-4 right-4'}`}
+                                className={`absolute z-[1000] bg-blue-600 text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-700 ${isMobile ? 'top-1/2 -translate-y-1/2 right-[calc(78%+10px)] md:right-4 md:top-4 md:translate-y-0' : 'top-4 right-4'}`}
                                 aria-label="סגור לוח התכנון"
                             >
                                 <Icon name="close" size={18} />
