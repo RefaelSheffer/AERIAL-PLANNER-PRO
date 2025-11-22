@@ -327,28 +327,39 @@
                 
                 try {
                     // Try Real API
-                    const locStr = locations.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
-                    const url = `https://api.opentopodata.org/v1/aster30m?locations=${locStr}`;
-                    
-                    // Create a promise that rejects if it takes too long (timeout)
-                    const fetchPromise = fetch(url);
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
-                    
-                    const res = await Promise.race([fetchPromise, timeoutPromise]);
-                    
-                    if (!res.ok) throw new Error('API Error');
-                    const data = await res.json();
-                    
-                    if(data.results) {
-                        const grid = data.results.map(r => ({lat: r.location.lat, lng: r.location.lng, ele: r.elevation || 0}));
-                        processDTM(grid, false);
+                    const fetchWithTimeout = (url) => {
+                        const fetchPromise = fetch(url);
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+                        return Promise.race([fetchPromise, timeoutPromise]);
+                    };
+
+                    const batchSize = 100; // OpenTopoData limit per request
+                    const batches = [];
+                    for (let i = 0; i < locations.length; i += batchSize) {
+                        batches.push(locations.slice(i, i + batchSize));
                     }
+
+                    const allResults = [];
+                    for (const batch of batches) {
+                        const locStr = batch.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
+                        const url = `https://api.opentopodata.org/v1/aster30m?locations=${locStr}`;
+                        const res = await fetchWithTimeout(url);
+                        if (!res.ok) throw new Error(`API Error ${res.status}`);
+                        const data = await res.json();
+                        if (!data.results) throw new Error('Invalid response');
+                        allResults.push(...data.results);
+                    }
+
+                    if (allResults.length === 0) throw new Error('Empty DTM response');
+
+                    const grid = allResults.map(r => ({ lat: r.location.lat, lng: r.location.lng, ele: r.elevation || 0 }));
+                    processDTM(grid, false);
                 } catch(e) {
                     console.warn("DTM API Failed, switching to simulation.", e);
                     // Fallback: Generate Simulated Terrain based on Perlin-like noise
                     const simGrid = locations.map((loc, i) => {
                         // Simple fake terrain: Base height + Math.sin waves
-                        const baseEle = 100; 
+                        const baseEle = 100;
                         const noise = Math.sin(loc.lat * 1000) * Math.cos(loc.lng * 1000) * 20;
                         return { lat: loc.lat, lng: loc.lng, ele: baseEle + noise };
                     });
