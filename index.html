@@ -61,11 +61,6 @@
                 max-height: 100dvh;
                 padding-bottom: env(safe-area-inset-bottom, 16px);
             }
-
-            /* Hide any stray map markers (red dot) on mobile */
-            .leaflet-marker-icon, .leaflet-marker-shadow {
-                display: none !important;
-            }
         }
     </style>
 </head>
@@ -181,7 +176,9 @@
             const [mapCenter, setMapCenter] = useState([32.0853, 34.7818]);
             const [weatherLocation, setWeatherLocation] = useState([32.0853, 34.7818]);
             const [polygon, setPolygon] = useState([]);
-            
+            const [userLocation, setUserLocation] = useState(null);
+            const [userAccuracy, setUserAccuracy] = useState(null);
+
             // Flight Params
             const [selectedDrone, setSelectedDrone] = useState('mavic_3_e');
             const [altitude, setAltitude] = useState(60);
@@ -227,6 +224,7 @@
             const layersRef = useRef({});
             const radarIntervalRef = useRef(null);
             const rainRadarTimestampRef = useRef(null);
+            const userLocationInitialized = useRef(false);
 
             const crashApp = (source) => {
                 throw new Error(`Intentional crash from ${source}`);
@@ -240,15 +238,28 @@
 
             // --- Geolocation ---
             useEffect(() => {
-                navigator.geolocation.getCurrentPosition(
-                    pos => {
-                        const coords = [pos.coords.latitude, pos.coords.longitude];
+                if (!navigator.geolocation) return;
+
+                const handlePosition = (pos) => {
+                    const coords = [pos.coords.latitude, pos.coords.longitude];
+                    setUserLocation(coords);
+                    setUserAccuracy(pos.coords.accuracy);
+
+                    if (!userLocationInitialized.current) {
                         setMapCenter(coords);
                         setWeatherLocation(coords);
-                        if(mapRef.current) mapRef.current.setView(coords, 17);
-                    },
-                    err => console.warn("GPS Error:", err.code)
+                        if (mapRef.current) mapRef.current.setView(coords, 17);
+                        userLocationInitialized.current = true;
+                    }
+                };
+
+                const watchId = navigator.geolocation.watchPosition(
+                    handlePosition,
+                    err => console.warn("GPS Error:", err.code),
+                    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
                 );
+
+                return () => navigator.geolocation.clearWatch(watchId);
             }, []);
 
             useEffect(() => {
@@ -706,6 +717,59 @@
                 }
 
             }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, dtmStats, speed]);
+
+            useEffect(() => {
+                if (!mapRef.current) return;
+
+                const map = mapRef.current;
+                const Lr = layersRef.current;
+
+                if (!userLocation) {
+                    if (Lr.userMarker) {
+                        map.removeLayer(Lr.userMarker);
+                        Lr.userMarker = null;
+                    }
+                    if (Lr.userAccuracy) {
+                        map.removeLayer(Lr.userAccuracy);
+                        Lr.userAccuracy = null;
+                    }
+                    return;
+                }
+
+                const latlng = L.latLng(userLocation[0], userLocation[1]);
+
+                if (!Lr.userMarker) {
+                    Lr.userMarker = L.circleMarker(latlng, {
+                        radius: 8,
+                        color: '#2563eb',
+                        weight: 2,
+                        fillColor: '#60a5fa',
+                        fillOpacity: 0.9
+                    }).addTo(map);
+                } else {
+                    Lr.userMarker.setLatLng(latlng);
+                }
+
+                if (userAccuracy !== null && userAccuracy !== undefined) {
+                    const radius = Math.max(userAccuracy, 10);
+                    if (!Lr.userAccuracy) {
+                        Lr.userAccuracy = L.circle(latlng, {
+                            radius,
+                            color: '#60a5fa',
+                            weight: 1,
+                            fillColor: '#bfdbfe',
+                            fillOpacity: 0.2,
+                            interactive: false
+                        }).addTo(map);
+                    } else {
+                        Lr.userAccuracy.setLatLng(latlng);
+                        Lr.userAccuracy.setRadius(radius);
+                    }
+                } else if (Lr.userAccuracy) {
+                    map.removeLayer(Lr.userAccuracy);
+                    Lr.userAccuracy = null;
+                }
+            }, [userLocation, userAccuracy]);
 
             // Stats Calc
             const stats = useMemo(() => {
