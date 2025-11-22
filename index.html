@@ -75,6 +75,7 @@
                 camera: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
                 clock: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
                 warning: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                drone: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 4H5a2 2 0 00-2 2v3m16-5h-3m3 0a2 2 0 012 2v3m-5 8h3a2 2 0 002-2v-3M4 16v3a2 2 0 002 2h3M9 9l1-1h4l1 1m-6 0l-1 2.5M15 9l1 2.5M10 12h4m-2 0v2"/></svg>
             };
             return icons[name] || null;
         };
@@ -167,6 +168,7 @@
             const [terrainShadows, setTerrainShadows] = useState([]);
             const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
             const [showTimeline, setShowTimeline] = useState(true);
+            const [sidebarOpen, setSidebarOpen] = useState(true);
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
@@ -428,6 +430,12 @@
             }, []);
 
             useEffect(() => {
+                if (mapRef.current) {
+                    setTimeout(() => mapRef.current.invalidateSize(), 150);
+                }
+            }, [sidebarOpen]);
+
+            useEffect(() => {
                 if (!mapRef.current) return;
                 const map = mapRef.current;
                 const Lr = layersRef.current;
@@ -480,18 +488,27 @@
             const selectedSlotKey = useMemo(() => `${flightDate.slice(0, 13)}:00`, [flightDate]);
 
             return (
-                <div className="flex flex-col md:flex-row h-full">
+                <div className="flex flex-col md:flex-row h-full relative">
                     {/* Controls Sidebar */}
-                    <div className="w-full md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll">
-                        
-                        <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center">
-                            <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
-                            <button className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps"/></button>
-                        </div>
+                    {sidebarOpen && (
+                        <div className="w-full md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll">
 
-                        <div className="p-4 space-y-6 flex-1">
-                            {/* Flight Params */}
-                            <div className="space-y-4">
+                            <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
+                                <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
+                                <div className="flex items-center gap-2">
+                                    <button className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps"/></button>
+                                    <button
+                                        onClick={() => setSidebarOpen(false)}
+                                        className="bg-slate-700 px-3 py-2 rounded text-xs font-semibold hover:bg-slate-600"
+                                    >
+                                        הסתר לוח
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-4 space-y-6 flex-1">
+                                {/* Flight Params */}
+                                <div className="space-y-4">
                                 <select className="input-field" value={selectedDrone} onChange={e=>setSelectedDrone(e.target.value)}>
                                     {Object.entries(DRONE_PRESETS).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
                                 </select>
@@ -542,32 +559,43 @@
                                     </div>
                                 )}
                             </div>
+                            </div>
+
+                            {/* BOTTOM STATS BAR */}
+                            <div className="p-3 bg-slate-800 border-t border-slate-700 grid grid-cols-4 gap-2 text-center">
+                                <div className="bg-slate-700/50 p-1 rounded">
+                                    <div className="text-[9px] text-slate-400">מרחק</div>
+                                    <div className="font-bold text-sm text-white">{stats.dist}m</div>
+                                </div>
+                                <div className="bg-slate-700/50 p-1 rounded">
+                                    <div className="text-[9px] text-slate-400">זמן (דק')</div>
+                                    <div className="font-bold text-sm text-blue-400"><Icon name="clock" size={10} className="inline mr-1"/>{stats.time}</div>
+                                </div>
+                                <div className="bg-slate-700/50 p-1 rounded">
+                                    <div className="text-[9px] text-slate-400">תמונות</div>
+                                    <div className="font-bold text-sm text-purple-400"><Icon name="camera" size={10} className="inline mr-1"/>{stats.images}</div>
+                                </div>
+                                <div className="bg-slate-700/50 p-1 rounded">
+                                    <div className="text-[9px] text-slate-400">GSD</div>
+                                    <div className="font-bold text-sm text-white">{stats.gsd}</div>
+                                </div>
+                            </div>
                         </div>
-                        
-                        {/* BOTTOM STATS BAR */}
-                        <div className="p-3 bg-slate-800 border-t border-slate-700 grid grid-cols-4 gap-2 text-center">
-                            <div className="bg-slate-700/50 p-1 rounded">
-                                <div className="text-[9px] text-slate-400">מרחק</div>
-                                <div className="font-bold text-sm text-white">{stats.dist}m</div>
-                            </div>
-                            <div className="bg-slate-700/50 p-1 rounded">
-                                <div className="text-[9px] text-slate-400">זמן (דק')</div>
-                                <div className="font-bold text-sm text-blue-400"><Icon name="clock" size={10} className="inline mr-1"/>{stats.time}</div>
-                            </div>
-                            <div className="bg-slate-700/50 p-1 rounded">
-                                <div className="text-[9px] text-slate-400">תמונות</div>
-                                <div className="font-bold text-sm text-purple-400"><Icon name="camera" size={10} className="inline mr-1"/>{stats.images}</div>
-                            </div>
-                            <div className="bg-slate-700/50 p-1 rounded">
-                                <div className="text-[9px] text-slate-400">GSD</div>
-                                <div className="font-bold text-sm text-white">{stats.gsd}</div>
-                            </div>
-                        </div>
-                    </div>
+                    )}
 
                     {/* Map */}
-                    <div className="flex-1 relative h-[45vh] md:h-full bg-black">
+                    <div className={`flex-1 relative ${sidebarOpen ? 'h-[45vh] md:h-full' : 'h-full'} bg-black`}>
                         <div id="map"></div>
+                        {!sidebarOpen && (
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="absolute bottom-4 right-4 z-[1000] bg-slate-900 text-white p-3 rounded-full shadow-lg border border-white/10 hover:bg-slate-800"
+                                aria-label="פתח לוח התכנון"
+                            >
+                                <Icon name="drone" size={22} />
+                                <span className="sr-only">פתח לוח התכנון</span>
+                            </button>
+                        )}
                         <button onClick={()=>{setPolygon([]); setDtmData(null); setTotalDistance(0)}} className="absolute top-4 right-4 z-[1000] bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"><Icon name="trash"/></button>
                         {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
                         {/* Heatmap Legend */}
