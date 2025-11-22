@@ -488,11 +488,11 @@
 
             const timelineWrapperClasses = isMobile
                 ? 'absolute inset-y-4 right-2 flex items-center justify-end pointer-events-none z-[1150]'
-                : 'absolute inset-x-0 bottom-3 flex justify-center pointer-events-none z-[1150]';
+                : 'absolute inset-x-4 bottom-4 flex justify-center pointer-events-none z-[1150]';
 
             const timelineCardSizing = isMobile
                 ? 'w-[45vw] max-w-[420px] max-h-[92vh]'
-                : 'w-[560px] max-w-[80vw] max-h-[42vh]';
+                : 'w-[min(1100px,90vw)] max-h-[55vh]';
 
             useEffect(() => {
                 if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
@@ -1303,16 +1303,16 @@
                                         </div>
                                     )}
                                     <div className={isMobile ? 'overflow-y-auto custom-scroll' : 'overflow-x-auto custom-scroll'}>
-                                        <div className={`flex ${isMobile ? 'flex-col gap-2 p-3' : 'gap-3 p-3 min-w-full'}`}>
+                                        <div className={`${isMobile ? 'flex flex-col gap-2 p-3' : 'grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3 p-4 min-w-full'}`}>
                                             {visibleTimeline.map(day => (
-                                                <div key={day.day} className={`${isMobile ? 'w-full' : 'flex-shrink-0 w-52'} bg-white border border-slate-200 rounded-xl shadow-sm p-2.5`}>
+                                                <div key={day.day} className={`${isMobile ? 'w-full' : 'w-full'} bg-white border border-slate-200 rounded-xl shadow-sm p-3`}>
                                                     {!isMobile && (
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <div className="text-xs font-bold text-slate-800">{day.label}</div>
-                                                            <div className="text-[9px] text-slate-500">{day.slots.length} נקודות</div>
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <div className="text-sm font-extrabold text-slate-900">{day.label}</div>
+                                                            <div className="text-[10px] text-slate-500">{day.slots.length} חלונות זמן</div>
                                                         </div>
                                                     )}
-                                                    <div className={`flex ${isMobile ? 'flex-col gap-1.5' : 'flex-wrap gap-1 justify-start'}`}>
+                                                    <div className={`flex ${isMobile ? 'flex-col gap-1.5' : 'grid grid-cols-3 gap-2 auto-rows-fr'}`}>
                                                         {day.slots
                                                             .map(slot => ({ ...slot, isFlyable: isSlotFlyable(slot) }))
                                                             .filter(slot => (showFlyableOnly ? slot.isFlyable : true))
@@ -1323,7 +1323,7 @@
                                                                     <button
                                                                         key={slot.key}
                                                                         onClick={() => setFlightDate(`${day.day}T${slot.time}`)}
-                                                                        className={`${isMobile ? 'w-full p-2 flex flex-col gap-1.5' : 'w-16 h-[4.5rem] flex flex-col items-center justify-between text-[11px]'} rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}
+                                                                        className={`${isMobile ? 'w-full p-2.5 flex flex-col gap-1.5' : 'w-full h-full p-2 flex flex-col gap-2 text-[12px]'} rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}
                                                                         style={{ background: 'white' }}
                                                                     >
                                                                         {slot.isFlyable && (
@@ -1331,16 +1331,16 @@
                                                                                 שעה יציבה
                                                                             </div>
                                                                         )}
-                                                                        <div className={`flex ${isMobile ? 'items-center justify-between w-full text-[12px]' : 'flex-col items-center justify-center gap-0.5'} text-slate-600`}>
-                                                                            <span className={isMobile ? 'font-semibold' : 'text-[10px] pt-1'}>{slot.time}</span>
-                                                                            {!isMobile && <span className="text-[9px] text-slate-500">{day.label}</span>}
+                                                                        <div className={`flex ${isMobile ? 'items-center justify-between w-full text-[12px]' : 'items-center justify-between text-xs'} text-slate-600`}>
+                                                                            <span className={isMobile ? 'font-semibold' : 'font-semibold'}>{slot.time}</span>
+                                                                            {!isMobile && <span className="text-[11px] text-slate-500 flex items-center gap-1"><Icon name="clock" size={12}/> {day.label}</span>}
                                                                         </div>
                                                                         <div
-                                                                            className={`${isMobile ? 'h-7 w-full text-[13px]' : 'mx-1 h-7 w-[calc(100%-8px)] text-[10px]'} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
+                                                                            className={`${isMobile ? 'h-9 w-full text-[13px]' : 'h-9 w-full text-[12px]'} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
                                                                             style={{ background: windSpeedToColor(slot.wind) }}
                                                                         >
                                                                             {slot.wind?.toFixed(1) ?? '-'} מ"ש
-                                                                            {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[8px] text-slate-100 bg-slate-900/50 px-1 rounded-full">6h</span>}
+                                                                            {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">מרווח 6ש'</span>}
                                                                         </div>
                                                                         <div className={`${isMobile ? 'w-full space-y-0.5' : 'w-full px-1.5 pb-1 space-y-1'}`}>
                                                                             <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
