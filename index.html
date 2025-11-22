@@ -143,6 +143,8 @@
         };
 
         const App = () => {
+            const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
             const [mapCenter, setMapCenter] = useState([32.0853, 34.7818]);
             const [weatherLocation, setWeatherLocation] = useState([32.0853, 34.7818]);
             const [polygon, setPolygon] = useState([]);
@@ -169,8 +171,9 @@
             const [terrainShadows, setTerrainShadows] = useState([]);
             const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
             const [showTimeline, setShowTimeline] = useState(true);
-            const [sidebarOpen, setSidebarOpen] = useState(true);
-            const [dronePanelOpen, setDronePanelOpen] = useState(true);
+            const [sidebarOpen, setSidebarOpen] = useState(!initialIsMobile);
+            const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
+            const [isMobile, setIsMobile] = useState(initialIsMobile);
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
@@ -186,6 +189,21 @@
                     },
                     err => console.warn("GPS Error:", err.code)
                 );
+            }, []);
+
+            useEffect(() => {
+                const handleResize = () => {
+                    const mobile = window.innerWidth < 768;
+                    setIsMobile(mobile);
+                    if (mobile) {
+                        setSidebarOpen(false);
+                        setDronePanelOpen(false);
+                    }
+                };
+
+                handleResize();
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
             }, []);
 
             // --- Weather ---
@@ -515,7 +533,7 @@
                 <div className="flex flex-col md:flex-row h-full relative">
                     {/* Controls Sidebar */}
                     {sidebarOpen && (
-                        <div className="w-full md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll">
+                        <div className="w-[90%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static">
 
                             <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
                                 <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
@@ -542,7 +560,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                    {dronePanelOpen && (
+                                    {dronePanelOpen ? (
                                         <>
                                             <p className="text-xs text-slate-400">בחר דגם כדי לראות חיישן, סוג משימה ולקבל חישובי טיסה מדויקים.</p>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -561,6 +579,19 @@
                                                 ))}
                                             </div>
                                         </>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <p className="text-xs text-slate-400">פתיחה מלאה מציגה את כל הדגמים; ניתן לבחור מהרשימה המהירה.</p>
+                                            <select
+                                                value={selectedDrone}
+                                                onChange={e => setSelectedDrone(e.target.value)}
+                                                className="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                                    <option key={k} value={k}>{v.name} • {v.type}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     )}
                                 </div>
 
@@ -652,7 +683,7 @@
                         {!sidebarOpen && (
                             <button
                                 onClick={() => setSidebarOpen(true)}
-                                className="absolute bottom-4 right-4 z-[1000] bg-slate-900 text-white p-3 rounded-full shadow-lg border border-white/10 hover:bg-slate-800"
+                                className={`absolute z-[1000] bg-slate-900 text-white p-3 rounded-full shadow-lg border border-white/10 hover:bg-slate-800 ${isMobile ? 'top-1/2 -translate-y-1/2 right-2 md:translate-y-0 md:bottom-4 md:top-auto' : 'bottom-4 right-4'}`}
                                 aria-label="פתח לוח התכנון"
                             >
                                 <Icon name="drone" size={22} />
@@ -662,7 +693,7 @@
                         {sidebarOpen && (
                             <button
                                 onClick={() => setSidebarOpen(false)}
-                                className="absolute top-4 right-4 z-[1000] bg-blue-600 text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-700"
+                                className={`absolute z-[1000] bg-blue-600 text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-700 ${isMobile ? 'top-1/2 -translate-y-1/2 right-[calc(90%+10px)] md:right-4 md:top-4 md:translate-y-0' : 'top-4 right-4'}`}
                                 aria-label="סגור לוח התכנון"
                             >
                                 <Icon name="close" size={18} />
