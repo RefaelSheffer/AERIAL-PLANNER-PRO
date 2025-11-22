@@ -14,9 +14,12 @@
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
+
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Drone Data -->
+    <script src="./drone-data.js"></script>
     
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -55,12 +58,7 @@
         const { useState, useEffect, useRef, useMemo } = React;
 
         // --- Drone Database ---
-        const DRONE_PRESETS = {
-            'matrice_30_t': { name: 'DJI Matrice 30T', sensorWidth: 6.4, sensorHeight: 4.8, focalLength: 9.1, imageWidth: 4000, type: 'Thermal' },
-            'mavic_3_e': { name: 'DJI Mavic 3 Enterprise', sensorWidth: 17.3, sensorHeight: 13.0, focalLength: 12.29, imageWidth: 5280, type: 'Mapping' },
-            'evo_ii_dual_640t': { name: 'Autel Evo II Dual 640T', sensorWidth: 9.8, sensorHeight: 7.3, focalLength: 6, imageWidth: 4000, type: 'Thermal' },
-            'mavic_3_pro': { name: 'DJI Mavic 3 Pro', sensorWidth: 17.3, sensorHeight: 13.0, focalLength: 12.29, imageWidth: 5280, type: 'Cinema' },
-        };
+        const DRONE_PRESETS = window.DRONE_PRESETS || {};
 
         // --- Icons ---
         const Icon = ({ name, size = 16 }) => {
@@ -526,9 +524,30 @@
                             <div className="p-4 space-y-6 flex-1">
                                 {/* Flight Params */}
                                 <div className="space-y-4">
-                                <select className="input-field" value={selectedDrone} onChange={e=>setSelectedDrone(e.target.value)}>
-                                    {Object.entries(DRONE_PRESETS).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
-                                </select>
+                                <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-blue-300">
+                                            <Icon name="drone" size={18}/> בחר רחפן מבצעי
+                                        </div>
+                                        <span className="text-[11px] text-slate-400">{Object.keys(DRONE_PRESETS).length} דגמים זמינים</span>
+                                    </div>
+                                    <p className="text-xs text-slate-400">בחר דגם כדי לראות חיישן, סוג משימה ולקבל חישובי טיסה מדויקים.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                            <button
+                                                key={k}
+                                                onClick={() => setSelectedDrone(k)}
+                                                className={`w-full text-right border rounded-lg px-3 py-2 transition shadow-sm hover:border-blue-400 hover:shadow-lg focus:outline-none ${selectedDrone === k ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-slate-700 bg-slate-900 text-slate-100'}`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-semibold text-sm">{v.name}</span>
+                                                    <span className={`text-[11px] px-2 py-1 rounded-full ${selectedDrone === k ? 'bg-blue-600/40 text-white' : 'bg-slate-700 text-slate-200'}`}>{v.type}</span>
+                                                </div>
+                                                <div className="text-[11px] text-slate-300 mt-1">חיישן {v.sensorWidth}x{v.sensorHeight} מ"מ · מוקד {v.focalLength} מ"מ</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 {/* Sliders */}
                                 <div>
