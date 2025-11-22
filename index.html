@@ -178,8 +178,8 @@
             const [showSettings, setShowSettings] = useState(false);
             const [settingsReadOnly, setSettingsReadOnly] = useState(true);
             const [suitabilitySettings, setSuitabilitySettings] = useState({
-                maxWind: 10,
-                maxGust: 15,
+                maxWind: 12,
+                maxGust: 18,
                 maxCloudCover: 70,
                 maxRainProb: 20,
                 minSunAltitude: 5,
@@ -632,12 +632,12 @@
                                             step="0.5"
                                             value={suitabilitySettings.maxWind}
                                             onChange={e => updateSuitabilitySetting('maxWind', Number(e.target.value) || 0)}
-                                            onFocus={enableSettingsEditing}
+                                        onFocus={enableSettingsEditing}
                                             onClick={enableSettingsEditing}
                                             className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
                                             readOnly={settingsReadOnly}
                                         />
-                                        <p className="text-xs text-slate-500">ברירת מחדל: 10 מ"ש.</p>
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 12 מ"ש.</p>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-sm font-semibold text-slate-700">מקסימום משבי רוח (מ"ש)</label>
@@ -653,7 +653,7 @@
                                             className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
                                             readOnly={settingsReadOnly}
                                         />
-                                        <p className="text-xs text-slate-500">ברירת מחדל: 15 מ"ש.</p>
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 18 מ"ש.</p>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-sm font-semibold text-slate-700">מקסימום כיסוי עננים (%)</label>
