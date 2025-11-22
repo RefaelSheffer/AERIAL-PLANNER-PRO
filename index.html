@@ -960,19 +960,23 @@
                                                                             {slot.wind?.toFixed(1) ?? '-'} מ"ש
                                                                             {slot.isMajor && <span className="absolute top-1 right-1 text-[8px] text-slate-100 bg-slate-900/50 px-1 rounded-full">6h</span>}
                                                                         </div>
-                                                                        <div className="w-full px-2 pb-1">
+                                                                        <div className="w-full px-2 pb-1 space-y-1">
                                                                             <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
                                                                                 <div className="h-full bg-blue-500" style={{ width:`${slot.clouds ?? 0}%` }}></div>
                                                                             </div>
-                                                                            <div className="text-[8px] text-center text-slate-500 mt-0.5 flex flex-col gap-0.5 px-1">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <span>עננות {slot.clouds ?? 0}%</span>
-                                                                                    <span className={`${slot.isFlyable ? 'text-green-700 font-bold' : 'text-blue-700 font-semibold'}`}>גשם {slot.rainProb ?? 0}%</span>
-                                                                                </div>
-                                                                                <div className="flex items-center justify-between text-slate-600">
-                                                                                    <span>משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? '-'} מ"ש</span>
-                                                                                    <span>גובה שמש {slot.sunAlt !== null ? slot.sunAlt.toFixed(0) : '-'}°</span>
-                                                                                </div>
+                                                                            <div className="text-[9px] text-slate-600 flex flex-wrap gap-1 justify-center">
+                                                                                <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
+                                                                                    עננות {slot.clouds ?? 0}%
+                                                                                </span>
+                                                                                <span className={`px-2 py-0.5 rounded-full border ${slot.isFlyable ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                                                    גשם {slot.rainProb ?? 0}%
+                                                                                </span>
+                                                                                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                                                    משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? '-'} מ"ש
+                                                                                </span>
+                                                                                <span className="px-2 py-0.5 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
+                                                                                    שמש {slot.sunAlt !== null ? slot.sunAlt.toFixed(0) : '-'}°
+                                                                                </span>
                                                                             </div>
                                                                         </div>
                                                                     </button>
