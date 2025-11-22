@@ -226,10 +226,6 @@
             const rainRadarTimestampRef = useRef(null);
             const userLocationInitialized = useRef(false);
 
-            const crashApp = (source) => {
-                throw new Error(`Intentional crash from ${source}`);
-            };
-
             const updateSuitabilitySetting = (key, value) => {
                 setSuitabilitySettings(prev => ({ ...prev, [key]: value }));
             };
@@ -929,13 +925,6 @@
                                         onClick={() => setShowSettings(true)}
                                     >
                                         הגדרות
-                                    </button>
-                                    <button
-                                        className="bg-red-600 text-white px-2 py-2 rounded-lg text-xs font-semibold hover:bg-red-500"
-                                        onClick={() => crashApp('settings crash button')}
-                                        aria-label="התרסקות הגדרות"
-                                    >
-                                        💥
                                     </button>
                                     <button
                                         onClick={() => setSidebarOpen(false)}
