@@ -201,9 +201,15 @@
             const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
             const [isMobile, setIsMobile] = useState(initialIsMobile);
             const [mobileDayIndex, setMobileDayIndex] = useState(0);
+            const [realtimePanelOpen, setRealtimePanelOpen] = useState(false);
+            const [rainRadarEnabled, setRainRadarEnabled] = useState(false);
+            const [rainRadarStatus, setRainRadarStatus] = useState('idle');
+            const [rainRadarTimestamp, setRainRadarTimestamp] = useState(null);
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
+            const radarIntervalRef = useRef(null);
+            const rainRadarTimestampRef = useRef(null);
 
             const crashApp = (source) => {
                 throw new Error(`Intentional crash from ${source}`);
@@ -269,6 +275,79 @@
                     setWeatherLocation(mapCenter);
                 }
             }, [polygon, mapCenter]);
+
+            // --- Rain Radar (RainViewer) ---
+            const refreshRainRadar = async () => {
+                if (!mapRef.current) return;
+                setRainRadarStatus('loading');
+                try {
+                    const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+                    const data = await res.json();
+                    const frames = data?.radar?.past;
+                    if (!frames || frames.length === 0) throw new Error('No radar frames');
+                    const latest = frames[frames.length - 1];
+                    const ts = latest.time;
+
+                    if (ts !== rainRadarTimestampRef.current) {
+                        const Lr = layersRef.current;
+                        if (Lr.rainRadar) {
+                            mapRef.current.removeLayer(Lr.rainRadar);
+                        }
+
+                        const radarLayer = L.tileLayer(
+                            `https://tilecache.rainviewer.com/v2/radar/${ts}/256/{z}/{x}/{y}/2/1_1.png`,
+                            {
+                                attribution: 'RainViewer',
+                                opacity: 0.6,
+                                crossOrigin: true,
+                                maxZoom: 18,
+                            }
+                        );
+
+                        radarLayer.addTo(mapRef.current);
+                        Lr.rainRadar = radarLayer;
+                        rainRadarTimestampRef.current = ts;
+                        setRainRadarTimestamp(ts);
+                    }
+
+                    setRainRadarStatus('ready');
+                } catch (e) {
+                    console.error('RainViewer error', e);
+                    setRainRadarStatus('error');
+                }
+            };
+
+            useEffect(() => {
+                if (!rainRadarEnabled) {
+                    if (radarIntervalRef.current) {
+                        clearInterval(radarIntervalRef.current);
+                        radarIntervalRef.current = null;
+                    }
+
+                    const Lr = layersRef.current;
+                    if (Lr.rainRadar && mapRef.current) {
+                        mapRef.current.removeLayer(Lr.rainRadar);
+                        Lr.rainRadar = null;
+                    }
+                    setRainRadarStatus('idle');
+                    return;
+                }
+
+                refreshRainRadar();
+                radarIntervalRef.current = setInterval(refreshRainRadar, 5 * 60 * 1000);
+
+                return () => {
+                    if (radarIntervalRef.current) {
+                        clearInterval(radarIntervalRef.current);
+                        radarIntervalRef.current = null;
+                    }
+                    const Lr = layersRef.current;
+                    if (Lr.rainRadar && mapRef.current) {
+                        mapRef.current.removeLayer(Lr.rainRadar);
+                        Lr.rainRadar = null;
+                    }
+                };
+            }, [rainRadarEnabled]);
 
             const getSunAltitudeDeg = (dateStr) => {
                 if (!SunCalc || !weatherLocation) return null;
@@ -930,6 +1009,49 @@
                             </button>
                         )}
                         {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
+                        {/* Real-time floating panel */}
+                        <div className="absolute top-4 left-4 z-[1000] flex flex-col items-start gap-2">
+                            <button
+                                onClick={() => setRealtimePanelOpen(o => !o)}
+                                className="bg-amber-500 text-white px-3 py-2 rounded-lg shadow-lg border border-amber-300/70 hover:bg-amber-600 text-sm font-semibold flex items-center gap-2"
+                            >
+                                <Icon name="cloud" />
+                                תצוגת זמן אמת
+                            </button>
+                            {realtimePanelOpen && (
+                                <div className="w-64 bg-white/95 backdrop-blur rounded-xl border border-amber-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="text-sm font-bold text-amber-800">שכבות בזמן אמת</div>
+                                        <button
+                                            onClick={() => setRealtimePanelOpen(false)}
+                                            className="text-[11px] text-amber-700 hover:text-amber-900"
+                                        >
+                                            סגירה
+                                        </button>
+                                    </div>
+                                    <label className="flex items-center justify-between gap-3 text-sm bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                        <div>
+                                            <div className="font-semibold">מקם גשם (RainViewer)</div>
+                                            <div className="text-[11px] text-amber-800/80">כיסוי גלובלי לפי מיקום התצוגה</div>
+                                            {rainRadarTimestamp && (
+                                                <div className="text-[10px] text-amber-700 mt-1">עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleString('he-IL')}</div>
+                                            )}
+                                            {rainRadarStatus === 'loading' && <div className="text-[10px] text-amber-700 mt-1">טוען שכבת גשם...</div>}
+                                            {rainRadarStatus === 'error' && <div className="text-[10px] text-red-600 mt-1">שגיאה בטעינת המקם</div>}
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={rainRadarEnabled}
+                                            onChange={e => setRainRadarEnabled(e.target.checked)}
+                                            className="h-5 w-5 accent-amber-600"
+                                        />
+                                    </label>
+                                    <div className="text-[11px] text-amber-800 bg-amber-50 border border-dashed border-amber-200 rounded-lg p-2">
+                                        ניתן להוסיף כאן בעתיד תצוגות נוספות (מטוסים, תעבורה וכד').
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         {/* Heatmap Legend */}
                         {dtmData && (
                             <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
