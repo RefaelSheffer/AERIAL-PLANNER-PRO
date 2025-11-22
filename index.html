@@ -270,12 +270,6 @@
                 }
             }, [polygon, mapCenter]);
 
-            useEffect(() => {
-                if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
-                    setMobileDayIndex(0);
-                }
-            }, [windTimeline.length, mobileDayIndex]);
-
             const getSunAltitudeDeg = (dateStr) => {
                 if (!SunCalc || !weatherLocation) return null;
                 const [lat, lng] = weatherLocation;
@@ -332,6 +326,12 @@
                 if (windTimeline.length === 0) return [];
                 return [windTimeline[Math.min(mobileDayIndex, windTimeline.length - 1)]];
             }, [isMobile, mobileDayIndex, windTimeline]);
+
+            useEffect(() => {
+                if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
+                    setMobileDayIndex(0);
+                }
+            }, [windTimeline.length, mobileDayIndex]);
 
             // --- DTM (With Fallback) ---
             const fetchDTM = async () => {
