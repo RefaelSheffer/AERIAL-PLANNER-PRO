@@ -56,8 +56,10 @@
 
             .mobile-panel {
                 width: var(--mobile-sidebar-width);
-                max-height: 100vh;
-                height: 100vh;
+                /* Use dynamic viewport height to avoid address bar overlap on mobile and keep the panel scrollable */
+                height: 100dvh;
+                max-height: 100dvh;
+                padding-bottom: env(safe-area-inset-bottom, 16px);
             }
 
             /* Hide any stray map markers (red dot) on mobile */
@@ -851,7 +853,7 @@
                                 </div>
                             </div>
 
-                            <div className="p-4 space-y-6 flex-1">
+                            <div className="p-4 space-y-6 flex-1 pb-24 md:pb-6">
                                 {/* Flight Params */}
                                 <div className="space-y-4">
                                 <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 space-y-2">
