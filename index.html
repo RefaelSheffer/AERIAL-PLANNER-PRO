@@ -92,7 +92,10 @@
                 camera: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
                 clock: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
                 warning: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>,
-                drone: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 4H5a2 2 0 00-2 2v3m16-5h-3m3 0a2 2 0 012 2v3m-5 8h3a2 2 0 002-2v-3M4 16v3a2 2 0 002 2h3M9 9l1-1h4l1 1m-6 0l-1 2.5M15 9l1 2.5M10 12h4m-2 0v2"/></svg>
+                drone: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 4H5a2 2 0 00-2 2v3m16-5h-3m3 0a2 2 0 012 2v3m-5 8h3a2 2 0 002-2v-3M4 16v3a2 2 0 002 2h3M9 9l1-1h4l1 1m-6 0l-1 2.5M15 9l1 2.5M10 12h4m-2 0v2"/></svg>,
+                mission: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 17l4-4 4 4 6-6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h4v4H3zM9 9h4v4H9zM16 4h5v5h-5z"/></svg>,
+                radar: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 21a9 9 0 100-18 9 9 0 000 18z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 12l6-6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v4"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 12h7"/></svg>,
+                calendar: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h8M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             };
             return icons[name] || null;
         };
@@ -159,6 +162,18 @@
         const unrotatePoint = (point, angleDeg, center) => {
             return rotatePoint(point, -angleDeg, center);
         };
+
+        const DockButton = ({ icon, label, active, onClick }) => (
+            <button
+                onClick={onClick}
+                className={`flex items-center gap-2 bg-white/95 text-slate-800 px-3 py-2 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl ${active ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'}`}
+            >
+                <span className={`w-9 h-9 rounded-full flex items-center justify-center ${active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                    <Icon name={icon} size={18} />
+                </span>
+                <span className="text-xs font-bold">{label}</span>
+            </button>
+        );
 
         const App = () => {
             const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
@@ -850,6 +865,13 @@
                                     >
                                         💥
                                     </button>
+                                    <button
+                                        onClick={() => setSidebarOpen(false)}
+                                        className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"
+                                        aria-label="סגור את לוח התכנון"
+                                    >
+                                        <Icon name="close" size={14} />
+                                    </button>
                                 </div>
                             </div>
 
@@ -991,44 +1013,23 @@
                     {/* Map */}
                     <div className={`flex-1 relative h-full bg-black`}>
                         <div id="map"></div>
-                        {!sidebarOpen && (
-                            <button
-                                onClick={() => setSidebarOpen(true)}
-                                className={`absolute z-[1000] bg-slate-900 text-white p-3 rounded-full shadow-lg border border-white/10 hover:bg-slate-800 ${isMobile ? 'top-1/2 -translate-y-1/2 right-2 md:translate-y-0 md:bottom-4 md:top-auto' : 'bottom-4 right-4'}`}
-                                aria-label="פתח לוח התכנון"
-                            >
-                                <Icon name="drone" size={22} />
-                                <span className="sr-only">פתח לוח התכנון</span>
-                            </button>
-                        )}
-                        {sidebarOpen && (
-                            <button
-                                onClick={() => setSidebarOpen(false)}
-                                className={`absolute z-[1000] bg-blue-600 text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-700 ${isMobile ? 'top-1/2 -translate-y-1/2 right-[calc(78%+10px)] md:right-4 md:top-4 md:translate-y-0' : 'top-4 right-4'}`}
-                                aria-label="סגור לוח התכנון"
-                            >
-                                <Icon name="close" size={18} />
-                            </button>
-                        )}
                         {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
-                        {/* Real-time floating panel */}
-                        <div className="absolute top-4 left-4 z-[1000] flex flex-col items-start gap-2">
-                            <button
-                                onClick={() => setRealtimePanelOpen(o => !o)}
-                                className="bg-amber-500 text-white px-3 py-2 rounded-lg shadow-lg border border-amber-300/70 hover:bg-amber-600 text-sm font-semibold flex items-center gap-2"
-                            >
-                                <Icon name="cloud" />
-                                תצוגת זמן אמת
-                            </button>
+
+                        {/* Docked controls on the right */}
+                        <div className="absolute top-4 right-4 z-[1100] flex flex-col items-end gap-3 pointer-events-none">
                             {realtimePanelOpen && (
-                                <div className="w-64 bg-white/95 backdrop-blur rounded-xl border border-amber-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="text-sm font-bold text-amber-800">שכבות בזמן אמת</div>
+                                <div className="w-72 bg-white/95 backdrop-blur rounded-2xl border border-amber-200 shadow-2xl text-right text-slate-800 p-4 space-y-3 pointer-events-auto">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 text-sm font-black text-amber-800">
+                                            <span className="bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center"><Icon name="radar" size={16}/></span>
+                                            תצוגת זמן אמת
+                                        </div>
                                         <button
                                             onClick={() => setRealtimePanelOpen(false)}
-                                            className="text-[11px] text-amber-700 hover:text-amber-900"
+                                            className="text-amber-700 hover:text-amber-900"
+                                            aria-label="סגור תצוגת זמן אמת"
                                         >
-                                            סגירה
+                                            <Icon name="close" size={16}/>
                                         </button>
                                     </div>
                                     <label className="flex items-center justify-between gap-3 text-sm bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
@@ -1053,6 +1054,12 @@
                                     </div>
                                 </div>
                             )}
+
+                            <div className="flex flex-col items-end gap-2 pointer-events-auto">
+                                <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => setSidebarOpen(o => !o)} />
+                                <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => setRealtimePanelOpen(o => !o)} />
+                                <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => setShowTimeline(v => !v)} />
+                            </div>
                         </div>
                         {/* Heatmap Legend */}
                         {dtmData && (
@@ -1072,17 +1079,21 @@
 
                         {/* Wind & Clouds Timeline */}
                         <div className="absolute bottom-3 left-3 right-3 z-[1000] flex flex-col gap-2 pointer-events-none">
-                            <div className="flex justify-end pointer-events-auto">
-                                <button
-                                    onClick={() => setShowTimeline(v => !v)}
-                                    className="bg-white/90 text-slate-800 text-xs font-semibold px-3 py-2 rounded-full shadow border border-slate-200 hover:bg-white"
-                                >
-                                    {showTimeline ? 'הסתר לוח רוח/עננות/גשם' : 'הצג לוח רוח/עננות/גשם'}
-                                </button>
-                            </div>
-
                             {showTimeline && visibleTimeline.length > 0 && (
                                 <div className={`bg-white/95 backdrop-blur rounded-2xl border border-slate-200 shadow-2xl pointer-events-auto ${isMobile ? 'max-h-[78vh]' : 'max-h-72'} overflow-hidden`}>
+                                    <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[12px] text-slate-700 border-b border-slate-100">
+                                        <div className="flex items-center gap-2 font-bold text-slate-900">
+                                            <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center"><Icon name="calendar" size={15}/></span>
+                                            לוח רוח / עננות / גשם
+                                        </div>
+                                        <button
+                                            onClick={() => setShowTimeline(false)}
+                                            className="text-slate-500 hover:text-slate-700"
+                                            aria-label="סגור לוח מזג אוויר"
+                                        >
+                                            <Icon name="close" size={16}/>
+                                        </button>
+                                    </div>
                                     <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[11px] text-slate-600">
                                         <label className="flex items-center gap-2 bg-slate-100 text-slate-800 text-[11px] font-semibold px-3 py-1 rounded-full shadow border border-slate-200">
                                             <input
