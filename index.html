@@ -69,6 +69,7 @@
                 cloud: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>,
                 gps: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
                 trash: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+                close: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 6l12 12M6 18L18 6"/></svg>,
                 rotate: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>,
                 camera: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
                 clock: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
@@ -512,12 +513,6 @@
                                 <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
                                 <div className="flex items-center gap-2">
                                     <button className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps"/></button>
-                                    <button
-                                        onClick={() => setSidebarOpen(false)}
-                                        className="bg-slate-700 px-3 py-2 rounded text-xs font-semibold hover:bg-slate-600"
-                                    >
-                                        הסתר לוח
-                                    </button>
                                 </div>
                             </div>
 
@@ -598,23 +593,33 @@
                             </div>
 
                             {/* BOTTOM STATS BAR */}
-                            <div className="p-3 bg-slate-800 border-t border-slate-700 grid grid-cols-4 gap-2 text-center">
-                                <div className="bg-slate-700/50 p-1 rounded">
-                                    <div className="text-[9px] text-slate-400">מרחק</div>
-                                    <div className="font-bold text-sm text-white">{stats.dist}m</div>
+                            <div className="p-3 bg-slate-800 border-t border-slate-700 flex items-center gap-3">
+                                <div className="grid grid-cols-4 gap-2 text-center flex-1">
+                                    <div className="bg-slate-700/50 p-1 rounded">
+                                        <div className="text-[9px] text-slate-400">מרחק</div>
+                                        <div className="font-bold text-sm text-white">{stats.dist}m</div>
+                                    </div>
+                                    <div className="bg-slate-700/50 p-1 rounded">
+                                        <div className="text-[9px] text-slate-400">זמן (דק')</div>
+                                        <div className="font-bold text-sm text-blue-400"><Icon name="clock" size={10} className="inline mr-1"/>{stats.time}</div>
+                                    </div>
+                                    <div className="bg-slate-700/50 p-1 rounded">
+                                        <div className="text-[9px] text-slate-400">תמונות</div>
+                                        <div className="font-bold text-sm text-purple-400"><Icon name="camera" size={10} className="inline mr-1"/>{stats.images}</div>
+                                    </div>
+                                    <div className="bg-slate-700/50 p-1 rounded">
+                                        <div className="text-[9px] text-slate-400">GSD</div>
+                                        <div className="font-bold text-sm text-white">{stats.gsd}</div>
+                                    </div>
                                 </div>
-                                <div className="bg-slate-700/50 p-1 rounded">
-                                    <div className="text-[9px] text-slate-400">זמן (דק')</div>
-                                    <div className="font-bold text-sm text-blue-400"><Icon name="clock" size={10} className="inline mr-1"/>{stats.time}</div>
-                                </div>
-                                <div className="bg-slate-700/50 p-1 rounded">
-                                    <div className="text-[9px] text-slate-400">תמונות</div>
-                                    <div className="font-bold text-sm text-purple-400"><Icon name="camera" size={10} className="inline mr-1"/>{stats.images}</div>
-                                </div>
-                                <div className="bg-slate-700/50 p-1 rounded">
-                                    <div className="text-[9px] text-slate-400">GSD</div>
-                                    <div className="font-bold text-sm text-white">{stats.gsd}</div>
-                                </div>
+                                <button
+                                    onClick={()=>{setPolygon([]); setDtmData(null); setTotalDistance(0)}}
+                                    className="flex-shrink-0 bg-red-600 text-white px-3 py-2 rounded-lg shadow hover:bg-red-700 flex items-center gap-2 text-xs font-semibold"
+                                    aria-label="איפוס תכנון"
+                                >
+                                    <Icon name="trash" />
+                                    איפוס
+                                </button>
                             </div>
                         </div>
                     )}
@@ -632,7 +637,15 @@
                                 <span className="sr-only">פתח לוח התכנון</span>
                             </button>
                         )}
-                        <button onClick={()=>{setPolygon([]); setDtmData(null); setTotalDistance(0)}} className="absolute top-4 right-4 z-[1000] bg-red-600 text-white p-2 rounded shadow hover:bg-red-700"><Icon name="trash"/></button>
+                        {sidebarOpen && (
+                            <button
+                                onClick={() => setSidebarOpen(false)}
+                                className="absolute top-4 right-4 z-[1000] bg-blue-600 text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-700"
+                                aria-label="סגור לוח התכנון"
+                            >
+                                <Icon name="close" size={18} />
+                            </button>
+                        )}
                         {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
                         {/* Heatmap Legend */}
                         {dtmData && (
