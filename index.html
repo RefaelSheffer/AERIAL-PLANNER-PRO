@@ -159,6 +159,15 @@
             const [autoOrient, setAutoOrient] = useState(true);
             const [flightDate, setFlightDate] = useState(new Date().toISOString().slice(0, 16));
             const [showFlyableOnly, setShowFlyableOnly] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
+            const [suitabilitySettings, setSuitabilitySettings] = useState({
+                maxWind: 10,
+                maxGust: 15,
+                maxCloudCover: 70,
+                maxRainProb: 20,
+                minSunAltitude: 5,
+                maxSunAltitude: 85,
+            });
 
             // Stats
             const [totalDistance, setTotalDistance] = useState(0);
@@ -177,6 +186,14 @@
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
+
+            const crashApp = (source) => {
+                throw new Error(`Intentional crash from ${source}`);
+            };
+
+            const updateSuitabilitySetting = (key, value) => {
+                setSuitabilitySettings(prev => ({ ...prev, [key]: value }));
+            };
 
             // --- Geolocation ---
             useEffect(() => {
@@ -233,10 +250,24 @@
                 }
             }, [polygon, mapCenter]);
 
+            const getSunAltitudeDeg = (dateStr) => {
+                if (!SunCalc || !weatherLocation) return null;
+                const [lat, lng] = weatherLocation;
+                const pos = SunCalc.getPosition(new Date(dateStr), lat, lng);
+                if (!pos || Number.isNaN(pos.altitude)) return null;
+                return pos.altitude * (180 / Math.PI);
+            };
+
             const isSlotFlyable = (slot) => {
-                const safeWind = (slot.wind ?? Infinity) <= 10;
-                const safeRain = (slot.rainProb ?? 100) <= 10;
-                return safeWind && safeRain;
+                const { maxWind, maxGust, maxCloudCover, maxRainProb, minSunAltitude, maxSunAltitude } = suitabilitySettings;
+                const safeWind = (slot.wind ?? Infinity) <= maxWind;
+                const safeGust = (slot.gust ?? slot.wind ?? Infinity) <= maxGust;
+                const safeCloud = (slot.clouds ?? 100) <= maxCloudCover;
+                const safeRain = (slot.rainProb ?? 100) <= maxRainProb;
+                const sunOk = slot.sunAlt === null
+                    ? true
+                    : slot.sunAlt >= minSunAltitude && slot.sunAlt <= maxSunAltitude;
+                return safeWind && safeGust && safeCloud && safeRain && sunOk;
             };
 
             const windTimeline = useMemo(() => {
@@ -250,13 +281,17 @@
                     const dayKey = t.slice(0, 10);
                     if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
 
+                    const slotDate = `${t.slice(0, 13)}:00`;
+
                     days.get(dayKey).slots.push({
                         key: t,
                         time: t.slice(11, 16),
                         wind: hourlyForecast.wind_speed_10m?.[i],
+                        gust: hourlyForecast.wind_gusts_10m?.[i],
                         clouds: hourlyForecast.cloud_cover?.[i],
                         rainProb: hourlyForecast.precipitation_probability?.[i],
                         isMajor: hour % 6 === 0,
+                        sunAlt: getSunAltitudeDeg(slotDate),
                     });
                 });
 
@@ -264,7 +299,7 @@
                     ...day,
                     label: new Date(day.day).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })
                 }));
-            }, [hourlyForecast]);
+            }, [hourlyForecast, weatherLocation]);
 
             // --- DTM (With Fallback) ---
             const fetchDTM = async () => {
@@ -530,7 +565,91 @@
             const selectedSlotKey = useMemo(() => `${flightDate.slice(0, 13)}:00`, [flightDate]);
 
             return (
-                <div className="flex flex-col md:flex-row h-full relative">
+                <>
+                    {showSettings && (
+                        <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <div className="text-sm uppercase tracking-widest text-blue-600 font-bold">הגדרות מערכת</div>
+                                        <h2 className="text-2xl font-black text-slate-900">ספי יציבות לטיסה</h2>
+                                        <p className="text-sm text-slate-600">הגדר פרמטרים ברירת מחדל למה נחשב יום מתאים לטיסה. כל הערכים ניתנים לעריכה.</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            className="px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-500"
+                                            onClick={() => crashApp('settings modal crash')}
+                                        >
+                                            קריסת הגדרות
+                                        </button>
+                                        <button
+                                            className="px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800"
+                                            onClick={() => setShowSettings(false)}
+                                        >
+                                            סגור
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-semibold text-slate-700">מקסימום רוח (מ"ש)</label>
+                                        <input type="number" min="0" max="40" step="0.5" value={suitabilitySettings.maxWind}
+                                            onChange={e => updateSuitabilitySetting('maxWind', Number(e.target.value) || 0)}
+                                            className="input-field" />
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 10 מ"ש.</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-semibold text-slate-700">מקסימום משבי רוח (מ"ש)</label>
+                                        <input type="number" min="0" max="50" step="0.5" value={suitabilitySettings.maxGust}
+                                            onChange={e => updateSuitabilitySetting('maxGust', Number(e.target.value) || 0)}
+                                            className="input-field" />
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 15 מ"ש.</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-semibold text-slate-700">מקסימום כיסוי עננים (%)</label>
+                                        <input type="number" min="0" max="100" step="1" value={suitabilitySettings.maxCloudCover}
+                                            onChange={e => updateSuitabilitySetting('maxCloudCover', Number(e.target.value) || 0)}
+                                            className="input-field" />
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 70%.</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-semibold text-slate-700">מקסימום הסתברות גשם (%)</label>
+                                        <input type="number" min="0" max="100" step="1" value={suitabilitySettings.maxRainProb}
+                                            onChange={e => updateSuitabilitySetting('maxRainProb', Number(e.target.value) || 0)}
+                                            className="input-field" />
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 20%.</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-semibold text-slate-700">גובה שמש מינימלי (°)</label>
+                                        <input type="number" min="-5" max="90" step="1" value={suitabilitySettings.minSunAltitude}
+                                            onChange={e => updateSuitabilitySetting('minSunAltitude', Number(e.target.value) || 0)}
+                                            className="input-field" />
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 5°. ערך גבוה יותר ימנע טיסה בשעת דמדומים.</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-sm font-semibold text-slate-700">גובה שמש מקסימלי (°)</label>
+                                        <input type="number" min="0" max="90" step="1" value={suitabilitySettings.maxSunAltitude}
+                                            onChange={e => updateSuitabilitySetting('maxSunAltitude', Number(e.target.value) || 0)}
+                                            className="input-field" />
+                                        <p className="text-xs text-slate-500">ברירת מחדל: 85°. ניתן להגביל במקרים של סינוור חזק.</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-between items-center text-sm text-slate-600 bg-slate-100 border border-slate-200 rounded-lg p-3">
+                                    <span>ההגדרות נשמרות למצב הנוכחי בלבד. שינוי הערכים משפיע על סימון השעות היציבות בלוח הרוח/עננות/גשם.</span>
+                                    <button
+                                        className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-500"
+                                        onClick={() => setShowSettings(false)}
+                                    >
+                                        שמור וסגור
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col md:flex-row h-full relative">
                     {/* Controls Sidebar */}
                     {sidebarOpen && (
                         <div className="w-[90%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static">
@@ -539,6 +658,19 @@
                                 <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
                                 <div className="flex items-center gap-2">
                                     <button className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps"/></button>
+                                    <button
+                                        className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-blue-500"
+                                        onClick={() => setShowSettings(true)}
+                                    >
+                                        הגדרות
+                                    </button>
+                                    <button
+                                        className="bg-red-600 text-white px-2 py-2 rounded-lg text-xs font-semibold hover:bg-red-500"
+                                        onClick={() => crashApp('settings crash button')}
+                                        aria-label="התרסקות הגדרות"
+                                    >
+                                        💥
+                                    </button>
                                 </div>
                             </div>
 
@@ -773,9 +905,15 @@
                                                                             <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
                                                                                 <div className="h-full bg-blue-500" style={{ width:`${slot.clouds ?? 0}%` }}></div>
                                                                             </div>
-                                                                            <div className="text-[8px] text-center text-slate-500 mt-0.5 flex items-center justify-between px-1">
-                                                                                <span>עננות {slot.clouds ?? 0}%</span>
-                                                                                <span className={`${slot.isFlyable ? 'text-green-700 font-bold' : 'text-blue-700 font-semibold'}`}>גשם {slot.rainProb ?? 0}%</span>
+                                                                            <div className="text-[8px] text-center text-slate-500 mt-0.5 flex flex-col gap-0.5 px-1">
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <span>עננות {slot.clouds ?? 0}%</span>
+                                                                                    <span className={`${slot.isFlyable ? 'text-green-700 font-bold' : 'text-blue-700 font-semibold'}`}>גשם {slot.rainProb ?? 0}%</span>
+                                                                                </div>
+                                                                                <div className="flex items-center justify-between text-slate-600">
+                                                                                    <span>משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? '-'} מ"ש</span>
+                                                                                    <span>גובה שמש {slot.sunAlt !== null ? slot.sunAlt.toFixed(0) : '-'}°</span>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </button>
@@ -797,6 +935,7 @@
                         </div>
                     </div>
                 </div>
+            </>
             );
         };
 
