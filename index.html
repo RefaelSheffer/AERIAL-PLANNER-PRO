@@ -423,6 +423,14 @@
                 return [windTimeline[Math.min(mobileDayIndex, windTimeline.length - 1)]];
             }, [isMobile, mobileDayIndex, windTimeline]);
 
+            const timelineWrapperClasses = isMobile
+                ? 'absolute inset-y-4 right-2 flex items-center justify-end pointer-events-none z-[1150]'
+                : 'absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-[1150]';
+
+            const timelineCardSizing = isMobile
+                ? 'w-[45vw] max-w-[420px] max-h-[92vh]'
+                : 'w-[640px] max-w-[92vw] max-h-[60vh]';
+
             useEffect(() => {
                 if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
                     setMobileDayIndex(0);
@@ -1055,8 +1063,16 @@
                                 </div>
                             )}
 
-                            {showTimeline && visibleTimeline.length > 0 && (
-                                <div className={`pointer-events-auto bg-white/95 backdrop-blur rounded-2xl border border-slate-200 shadow-2xl ${isMobile ? 'w-[86vw] max-h-[78vh]' : 'w-[480px] max-h-[70vh]'} overflow-hidden`}>
+                            <div className="flex flex-col items-end gap-2 pointer-events-auto">
+                                <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => setSidebarOpen(o => !o)} />
+                                <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => setRealtimePanelOpen(o => !o)} />
+                                <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => setShowTimeline(v => !v)} />
+                            </div>
+                        </div>
+
+                        {showTimeline && visibleTimeline.length > 0 && (
+                            <div className={timelineWrapperClasses}>
+                                <div className={`pointer-events-auto bg-white/95 backdrop-blur rounded-2xl border border-slate-200 shadow-2xl overflow-hidden ${timelineCardSizing}`}>
                                     <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[12px] text-slate-700 border-b border-slate-100">
                                         <div className="flex items-center gap-2 font-bold text-slate-900">
                                             <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center"><Icon name="calendar" size={15}/></span>
@@ -1171,14 +1187,8 @@
                                         </div>
                                     </div>
                                 </div>
-                            )}
-
-                            <div className="flex flex-col items-end gap-2 pointer-events-auto">
-                                <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => setSidebarOpen(o => !o)} />
-                                <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => setRealtimePanelOpen(o => !o)} />
-                                <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => setShowTimeline(v => !v)} />
                             </div>
-                        </div>
+                        )}
                         {/* Heatmap Legend */}
                         {dtmData && (
                             <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
