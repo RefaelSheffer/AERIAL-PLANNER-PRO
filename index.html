@@ -80,16 +80,17 @@
         };
 
         // --- Color Utils ---
-        const gustToColor = (gust) => {
-            if (gust === null || gust === undefined || Number.isNaN(gust)) return '#cbd5e1';
-            const clamped = Math.max(0, Math.min(gust, 80));
-            const hue = 120 - (clamped / 80) * 120; // 0=אדום (חזק), 120=ירוק (חלש)
-            return `hsl(${hue}, 70%, 55%)`;
+        const windSpeedToColor = (speed) => {
+            if (speed === null || speed === undefined || Number.isNaN(speed)) return '#cbd5e1';
+            const clamped = Math.max(0, Math.min(speed, 25));
+            // 0 m/s -> כחול, ~12 m/s -> ירוק, 25 m/s -> אדום
+            const hue = 240 - (clamped / 25) * 240;
+            return `hsl(${hue}, 85%, 55%)`;
         };
 
-        const gustTextColor = (gust) => {
-            if (gust === null || gust === undefined || Number.isNaN(gust)) return 'text-slate-900';
-            return gust > 45 ? 'text-white' : 'text-slate-900';
+        const windTextColor = (speed) => {
+            if (speed === null || speed === undefined || Number.isNaN(speed)) return 'text-slate-800';
+            return speed >= 18 ? 'text-white' : 'text-slate-800';
         };
 
         // --- Geometry Utils ---
@@ -161,17 +162,15 @@
             // Weather & DTM
             const [weather, setWeather] = useState(null);
             const [hourlyForecast, setHourlyForecast] = useState(null);
-            const [dailyGusts, setDailyGusts] = useState([]);
             const [dtmData, setDtmData] = useState(null);
             const [isFetchingDTM, setIsFetchingDTM] = useState(false);
             const [dtmStats, setDtmStats] = useState(null);
             const [terrainShadows, setTerrainShadows] = useState([]);
             const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
+            const [showTimeline, setShowTimeline] = useState(true);
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
-
-            const selectedDay = useMemo(() => flightDate.slice(0, 10), [flightDate]);
 
             // --- Geolocation ---
             useEffect(() => {
@@ -185,22 +184,6 @@
             }, []);
 
             // --- Weather ---
-            const buildDailyGusts = useCallback((hourly) => {
-                if(!hourly?.time) return [];
-                const buckets = {};
-                hourly.time.forEach((t, idx) => {
-                    const dayKey = t.slice(0, 10);
-                    const gust = hourly.wind_gusts_10m?.[idx];
-                    if (gust === null || gust === undefined) return;
-                    if(!buckets[dayKey]) buckets[dayKey] = [];
-                    buckets[dayKey].push(gust);
-                });
-                return Object.entries(buckets).map(([day, gusts]) => ({
-                    day,
-                    avg: gusts.reduce((a,b)=>a+b,0) / gusts.length
-                }));
-            }, []);
-
             const updateWeatherFromForecast = useCallback((forecastOverride = null) => {
                 const src = forecastOverride || hourlyForecast;
                 if(!src?.time) { setWeather(null); return; }
@@ -228,7 +211,6 @@
 
                     if (data?.hourly) {
                         setHourlyForecast(data.hourly);
-                        setDailyGusts(buildDailyGusts(data.hourly));
                         updateWeatherFromForecast(data.hourly);
                     }
                 } catch(e) { console.error(e); }
@@ -237,17 +219,31 @@
             useEffect(() => { fetchWeather() }, [mapCenter]);
             useEffect(() => { updateWeatherFromForecast(); }, [flightDate, updateWeatherFromForecast]);
 
-            const hourlyBySelectedDay = useMemo(() => {
+            const windTimeline = useMemo(() => {
                 if(!hourlyForecast?.time) return [];
-                return hourlyForecast.time.map((t, i) => {
-                    if(!t.startsWith(selectedDay)) return null;
-                    return {
+                const days = new Map();
+
+                hourlyForecast.time.forEach((t, i) => {
+                    const hour = Number(t.slice(11, 13));
+                    if (hour % 3 !== 0) return; // רק כל 3 שעות
+
+                    const dayKey = t.slice(0, 10);
+                    if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
+
+                    days.get(dayKey).slots.push({
+                        key: t,
                         time: t.slice(11, 16),
-                        gust: hourlyForecast.wind_gusts_10m?.[i],
                         wind: hourlyForecast.wind_speed_10m?.[i],
-                    };
-                }).filter(Boolean);
-            }, [hourlyForecast, selectedDay]);
+                        clouds: hourlyForecast.cloud_cover?.[i],
+                        isMajor: hour % 6 === 0,
+                    });
+                });
+
+                return Array.from(days.values()).map(day => ({
+                    ...day,
+                    label: new Date(day.day).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })
+                }));
+            }, [hourlyForecast]);
 
             // --- DTM (With Fallback) ---
             const fetchDTM = async () => {
@@ -484,6 +480,8 @@
                 return { gsd: gsd.toFixed(2), time: timeMin, images: imgCount, dist: Math.round(totalDistance) };
             }, [selectedDrone, altitude, totalDistance, speed, overlapFront]);
 
+            const selectedSlotKey = useMemo(() => `${flightDate.slice(0, 13)}:00`, [flightDate]);
+
             return (
                 <div className="flex flex-col md:flex-row h-full">
                     {/* Controls Sidebar */}
@@ -506,50 +504,6 @@
                                         <div className="bg-slate-700 p-1 rounded"><div className="font-bold text-blue-400">{weather.rain.toFixed(1)}mm</div><div className="text-[9px]">גשם</div></div>
                                     </div>
                                 ) : <div className="text-[10px] text-slate-500 text-center">טוען...</div>}
-
-                                {dailyGusts.length > 0 && (
-                                    <div className="mt-3 space-y-2">
-                                        <div className="text-[10px] text-slate-400">לוח ימים עם משבים ממוצעים באזור</div>
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {dailyGusts.map(day => {
-                                                const label = new Date(day.day).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' });
-                                                return (
-                                                    <button
-                                                        key={day.day}
-                                                        onClick={() => setFlightDate(`${day.day}T${flightDate.slice(11, 16)}`)}
-                                                        className={`rounded p-2 text-xs font-semibold shadow-inner transition transform hover:scale-[1.01] ${gustTextColor(day.avg)}`}
-                                                        style={{ background: gustToColor(day.avg) }}
-                                                    >
-                                                        <div>{label}</div>
-                                                        <div className="text-[10px] font-normal">משבים {day.avg.toFixed(1)}</div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {hourlyBySelectedDay.length > 0 && (
-                                    <div className="mt-3 space-y-2">
-                                        <div className="text-[10px] text-slate-400 flex justify-between items-center">
-                                            <span>שעות היום לפי משבים</span>
-                                            <span className="text-[10px] text-slate-500">{selectedDay}</span>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto custom-scroll pr-1">
-                                            {hourlyBySelectedDay.map(slot => (
-                                                <button
-                                                    key={slot.time}
-                                                    onClick={() => setFlightDate(`${selectedDay}T${slot.time}`)}
-                                                    className={`rounded p-2 text-[11px] font-semibold shadow-inner transition transform hover:scale-[1.01] ${gustTextColor(slot.gust)}`}
-                                                    style={{ background: gustToColor(slot.gust) }}
-                                                >
-                                                    <div>{slot.time}</div>
-                                                    <div className="text-[10px] font-normal">{slot.gust?.toFixed(1) ?? '-'} קמ"ש</div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Flight Params */}
@@ -647,6 +601,62 @@
                                 </div>
                             </div>
                         )}
+
+                        {/* Wind & Clouds Timeline */}
+                        <div className="absolute bottom-3 left-3 right-3 z-[1000] flex flex-col gap-2 pointer-events-none">
+                            <div className="flex justify-end pointer-events-auto">
+                                <button
+                                    onClick={() => setShowTimeline(v => !v)}
+                                    className="bg-white/90 text-slate-800 text-xs font-semibold px-3 py-2 rounded-full shadow border border-slate-200 hover:bg-white"
+                                >
+                                    {showTimeline ? 'הסתר לוח רוח/עננות' : 'הצג לוח רוח/עננות'}
+                                </button>
+                            </div>
+
+                            {showTimeline && windTimeline.length > 0 && (
+                                <div className="bg-white/95 backdrop-blur rounded-2xl border border-slate-200 shadow-2xl overflow-hidden pointer-events-auto max-h-64">
+                                    {windTimeline.map(day => (
+                                        <div key={day.day} className="p-3 border-b last:border-0 border-slate-200">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="text-sm font-bold text-slate-800">{day.label}</div>
+                                                <div className="text-[10px] text-slate-500">{day.slots.length} נקודות 3 שעות</div>
+                                            </div>
+                                            <div className="overflow-x-auto custom-scroll pr-1">
+                                                <div className="flex gap-2 min-w-full">
+                                                    {day.slots.map(slot => {
+                                                        const slotKey = `${day.day}T${slot.time}`;
+                                                        const isActive = slotKey === selectedSlotKey;
+                                                        return (
+                                                            <button
+                                                                key={slot.key}
+                                                                onClick={() => setFlightDate(`${day.day}T${slot.time}`)}
+                                                                className={`w-20 flex-shrink-0 rounded-xl border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}
+                                                                style={{ background: 'white' }}
+                                                            >
+                                                                <div className="text-[10px] text-center text-slate-500 pt-1">{slot.time}</div>
+                                                                <div
+                                                                    className={`mt-1 mx-1 h-12 rounded-lg flex items-center justify-center text-xs font-bold ${windTextColor(slot.wind)}`}
+                                                                    style={{ background: windSpeedToColor(slot.wind) }}
+                                                                >
+                                                                    {slot.wind?.toFixed(1) ?? '-'} מ"ש
+                                                                    {slot.isMajor && <span className="absolute top-1 right-1 text-[8px] text-slate-100 bg-slate-900/50 px-1 rounded-full">6h</span>}
+                                                                </div>
+                                                                <div className="px-2 pb-2">
+                                                                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                                                                        <div className="h-full bg-blue-500" style={{ width: `${slot.clouds ?? 0}%` }}></div>
+                                                                    </div>
+                                                                    <div className="text-[9px] text-center text-slate-500 mt-1">עננות {slot.clouds ?? 0}%</div>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
