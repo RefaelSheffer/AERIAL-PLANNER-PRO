@@ -436,11 +436,11 @@
 
             const timelineWrapperClasses = isMobile
                 ? 'absolute inset-y-4 right-2 flex items-center justify-end pointer-events-none z-[1150]'
-                : 'absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-[1150]';
+                : 'absolute inset-x-0 bottom-3 flex justify-center pointer-events-none z-[1150]';
 
             const timelineCardSizing = isMobile
                 ? 'w-[45vw] max-w-[420px] max-h-[92vh]'
-                : 'w-[640px] max-w-[92vw] max-h-[60vh]';
+                : 'w-[560px] max-w-[80vw] max-h-[42vh]';
 
             useEffect(() => {
                 if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
