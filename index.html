@@ -331,6 +331,7 @@
             const [documentationOpen, setDocumentationOpen] = useState(false);
             const [docForm, setDocForm] = useState({ title: '', notes: '', images: [], location: null });
             const [docEntries, setDocEntries] = useState([]);
+            const [docLocationStatus, setDocLocationStatus] = useState('');
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
@@ -339,6 +340,7 @@
             const userLocationInitialized = useRef(false);
             const aircraftIntervalRef = useRef(null);
             const timelineContainerRef = useRef(null);
+            const docWatchRef = useRef(null);
 
             const toggleExclusivePanel = useCallback((panel) => {
                 const states = {
@@ -449,6 +451,8 @@
 
                 return () => navigator.geolocation.clearWatch(watchId);
             }, []);
+
+            useEffect(() => () => stopDocWatch(), []);
 
             useEffect(() => {
                 const handleResize = () => {
@@ -702,30 +706,54 @@
                 });
             };
 
+            const stopDocWatch = () => {
+                if (docWatchRef.current !== null) {
+                    navigator.geolocation.clearWatch(docWatchRef.current);
+                    docWatchRef.current = null;
+                }
+            };
+
+            const handleDocGeoSuccess = (pos, fromWatch = false) => {
+                const location = {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy,
+                };
+
+                setDocForm(prev => ({ ...prev, location }));
+                setDocLocationStatus('מיקום נלכד בהצלחה');
+                if (fromWatch) stopDocWatch();
+            };
+
+            const handleDocGeoError = (err) => {
+                const messages = {
+                    1: 'יש לאשר גישה למיקום כדי לדגום.',
+                    2: 'לא ניתן לאתר מיקום כרגע.',
+                    3: 'הזמן לקבלת מיקום הסתיים, נסה שוב.',
+                };
+                setDocLocationStatus(messages[err?.code] || 'שגיאה בקבלת מיקום.');
+                stopDocWatch();
+            };
+
             const sampleDocumentationLocation = () => {
-                if (userLocation) {
-                    setDocForm(prev => ({ ...prev, location: { lat: userLocation[0], lng: userLocation[1], accuracy: userAccuracy } }));
+                if (!navigator.geolocation) {
+                    setDocLocationStatus('המכשיר לא תומך בדגימת מיקום.');
                     return;
                 }
 
-                if (!navigator.geolocation) {
-                    alert('המכשיר לא תומך בדגימת מיקום.');
-                    return;
-                }
+                setDocLocationStatus('מאתר מיקום...');
 
                 navigator.geolocation.getCurrentPosition(
-                    pos => {
-                        setDocForm(prev => ({
-                            ...prev,
-                            location: {
-                                lat: pos.coords.latitude,
-                                lng: pos.coords.longitude,
-                                accuracy: pos.coords.accuracy
-                            }
-                        }));
-                    },
-                    () => alert('לא הצלחנו לקבל מיקום כעת'),
+                    pos => handleDocGeoSuccess(pos),
+                    handleDocGeoError,
                     { enableHighAccuracy: true, timeout: 10000 }
+                );
+
+                stopDocWatch();
+                docWatchRef.current = navigator.geolocation.watchPosition(
+                    pos => handleDocGeoSuccess(pos, true),
+                    handleDocGeoError,
+                    { enableHighAccuracy: true, maximumAge: 3000, timeout: 12000 }
                 );
             };
 
@@ -1196,6 +1224,59 @@
                     Lr.userAccuracy = null;
                 }
             }, [userLocation, userAccuracy]);
+
+            useEffect(() => {
+                if (!mapRef.current) return;
+
+                const map = mapRef.current;
+                const Lr = layersRef.current;
+
+                if (Lr.docDraft) {
+                    map.removeLayer(Lr.docDraft);
+                    Lr.docDraft = null;
+                }
+
+                if (Lr.docLayer) {
+                    map.removeLayer(Lr.docLayer);
+                    Lr.docLayer = null;
+                }
+
+                if (docForm.location) {
+                    Lr.docDraft = L.circleMarker([docForm.location.lat, docForm.location.lng], {
+                        radius: 9,
+                        color: '#0ea5e9',
+                        weight: 2,
+                        fillColor: '#22d3ee',
+                        fillOpacity: 0.9,
+                    })
+                        .bindPopup('<div class="text-[12px] font-bold text-slate-800">אובייקט חדש בתיעוד</div>')
+                        .addTo(map);
+                }
+
+                const docMarkers = docEntries
+                    .filter(e => e.location)
+                    .map(entry => {
+                        const popup = `
+                            <div class="text-[12px]">
+                                <div class="font-bold text-slate-800">${entry.title || 'ללא כותרת'}</div>
+                                ${entry.notes ? `<div class="text-slate-700 mt-0.5">${entry.notes}</div>` : ''}
+                                <div class="text-slate-500 text-[11px] mt-1">${new Date(entry.timestamp).toLocaleString('he-IL')}</div>
+                            </div>
+                        `;
+
+                        return L.circleMarker([entry.location.lat, entry.location.lng], {
+                            radius: 7,
+                            color: '#1e293b',
+                            weight: 2,
+                            fillColor: '#6366f1',
+                            fillOpacity: 0.85,
+                        }).bindPopup(popup);
+                    });
+
+                if (docMarkers.length > 0) {
+                    Lr.docLayer = L.layerGroup(docMarkers).addTo(map);
+                }
+            }, [docEntries, docForm.location]);
 
             // Stats Calc
             const stats = useMemo(() => {
@@ -1740,9 +1821,14 @@
                                                             onClick={sampleDocumentationLocation}
                                                             className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1"
                                                         >
-                                                            <Icon name="gps" size={12}/> דגום
+                                                            <Icon name="gps" size={12}/> תעד מהמיקום שלי
                                                         </button>
                                                     </div>
+                                                    {docLocationStatus && (
+                                                        <div className="text-[11px] text-blue-700 bg-blue-100/70 border border-blue-200 rounded px-2 py-1">
+                                                            {docLocationStatus}
+                                                        </div>
+                                                    )}
 
                                                     <label className="flex items-center justify-between gap-2 cursor-pointer text-[11px] text-blue-800 bg-white rounded-lg border border-blue-200 px-3 py-2 hover:border-blue-400">
                                                         <span className="flex items-center gap-2 font-semibold"><Icon name="upload" size={14}/> העלאת תמונות</span>
