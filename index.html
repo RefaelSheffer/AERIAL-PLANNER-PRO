@@ -254,10 +254,32 @@
 
                 const shouldOpen = !states[panel];
 
-                setSidebarOpen(panel === 'sidebar' ? shouldOpen : false);
-                setRealtimePanelOpen(panel === 'realtime' ? shouldOpen : false);
-                setShowTimeline(panel === 'timeline' ? shouldOpen : false);
-            }, [sidebarOpen, realtimePanelOpen, showTimeline]);
+                // On mobile keep panels exclusive to avoid layout overlap.
+                if (isMobile) {
+                    setSidebarOpen(panel === 'sidebar' ? shouldOpen : false);
+                    setRealtimePanelOpen(panel === 'realtime' ? shouldOpen : false);
+                    setShowTimeline(panel === 'timeline' ? shouldOpen : false);
+                    return;
+                }
+
+                // Desktop: allow the planning sidebar and weather board together.
+                if (panel === 'sidebar') {
+                    setSidebarOpen(shouldOpen);
+                    return;
+                }
+
+                if (panel === 'timeline') {
+                    setShowTimeline(shouldOpen);
+                    return;
+                }
+
+                // Realtime panel remains exclusive to reduce clutter.
+                setRealtimePanelOpen(shouldOpen);
+                if (shouldOpen) {
+                    setSidebarOpen(false);
+                    setShowTimeline(false);
+                }
+            }, [sidebarOpen, realtimePanelOpen, showTimeline, isMobile]);
 
             const recenterOnUser = useCallback(() => {
                 if (!mapRef.current) return;
