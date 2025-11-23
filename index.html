@@ -1353,8 +1353,18 @@
                             </div>
 
                             {/* BOTTOM STATS BAR */}
-                            <div className="p-3 bg-slate-800 border-t border-slate-700 flex items-center gap-3">
-                                <div className="grid grid-cols-4 gap-2 text-center flex-1">
+                            <div className="p-3 bg-slate-800 border-t border-slate-700 flex flex-col gap-2">
+                                <div className="flex justify-end">
+                                    <button
+                                        onClick={()=>{setPolygon([]); setDtmData(null); setTotalDistance(0)}}
+                                        className="bg-red-600 text-white px-3 py-2 rounded-lg shadow hover:bg-red-700 flex items-center gap-2 text-xs font-semibold"
+                                        aria-label="איפוס תכנון"
+                                    >
+                                        <Icon name="trash" />
+                                        איפוס
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2 text-center">
                                     <div className="bg-slate-700/50 p-1 rounded">
                                         <div className="text-[9px] text-slate-400">מרחק</div>
                                         <div className="font-bold text-sm text-white">{stats.dist}m</div>
@@ -1372,14 +1382,6 @@
                                         <div className="font-bold text-sm text-white">{stats.gsd}</div>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={()=>{setPolygon([]); setDtmData(null); setTotalDistance(0)}}
-                                    className="flex-shrink-0 bg-red-600 text-white px-3 py-2 rounded-lg shadow hover:bg-red-700 flex items-center gap-2 text-xs font-semibold"
-                                    aria-label="איפוס תכנון"
-                                >
-                                    <Icon name="trash" />
-                                    איפוס
-                                </button>
                             </div>
                         </div>
                     )}
