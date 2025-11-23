@@ -499,7 +499,7 @@
 
                 hourlyForecast.time.forEach((t, i) => {
                     const hour = Number(t.slice(11, 13));
-                    if (hour % 3 !== 0) return; // רק כל 3 שעות
+                    if (hour % 6 !== 0) return; // רק כל 6 שעות
 
                     const dayKey = t.slice(0, 10);
                     if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
@@ -513,7 +513,7 @@
                         gust: hourlyForecast.wind_gusts_10m?.[i],
                         clouds: hourlyForecast.cloud_cover?.[i],
                         rainProb: hourlyForecast.precipitation_probability?.[i],
-                        isMajor: hour % 6 === 0,
+                        isMajor: hour % 12 === 0,
                         sunAlt: getSunAltitudeDeg(slotDate),
                     });
                 });
@@ -1420,7 +1420,7 @@
                                                                 </div>
                                                                 <div className="flex flex-col items-end text-[10px] text-slate-600">
                                                                     <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 font-semibold">{day.day}</span>
-                                                                    <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">מרווח 3 שעות</span>
+                                                                    <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">מרווח 6 שעות</span>
                                                                 </div>
                                                             </div>
 
@@ -1450,7 +1450,7 @@
                                                                                     style={{ background: windSpeedToColor(slot.wind) }}
                                                                                 >
                                                                                     {slot.wind?.toFixed(1) ?? '-'} מ"ש
-                                                                                    {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">מרווח 6ש'</span>}
+                                                                                    {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">מרווח 12ש'</span>}
                                                                                 </div>
                                                                                 <div className={`${isMobile ? 'w-full space-y-0.5' : 'w-full px-1.5 pb-1 space-y-1'}`}>
                                                                                     <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
