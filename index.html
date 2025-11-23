@@ -824,7 +824,7 @@
 
             const timelineCardSizing = isMobile
                 ? 'w-[45vw] max-w-[420px] max-h-[92vh]'
-                : 'w-full max-h-[55vh]';
+                : 'w-[95vw] max-w-5xl max-h-[55vh] mx-auto';
 
             const geolocateButtonStyle = {
                 bottom: (!isMobile && showTimeline) ? 'calc(55vh + 1rem)' : '1.5rem'
@@ -1212,7 +1212,7 @@
             const selectedSlotKey = useMemo(() => `${flightDate.slice(0, 13)}:00`, [flightDate]);
 
             const timelineBoard = (!showTimeline || visibleTimeline.length === 0) ? null : (
-                <div className={`pointer-events-auto bg-white/95 backdrop-blur ${isMobile ? 'rounded-2xl border border-slate-200' : 'rounded-none border-t border-slate-200 border-x-0'} shadow-2xl overflow-hidden ${timelineCardSizing}`}>
+                <div className={`pointer-events-auto bg-white/95 backdrop-blur ${isMobile ? 'rounded-2xl border border-slate-200' : 'rounded-t-2xl border-t border-slate-200 border-x border-slate-200'} shadow-2xl overflow-hidden ${timelineCardSizing}`}>
                     <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[12px] text-slate-700 border-b border-slate-100">
                         <div className="flex items-center gap-2 font-bold text-slate-900">
                             <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center"><Icon name="calendar" size={15}/></span>
@@ -1886,7 +1886,7 @@
                                 </div>
                             </div>
                             {!isMobile && timelineBoard && (
-                                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1075]">
+                                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1075] flex justify-center px-4 pb-4">
                                     <div className="pointer-events-auto">{timelineBoard}</div>
                                 </div>
                             )}
