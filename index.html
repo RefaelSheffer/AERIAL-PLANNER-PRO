@@ -178,6 +178,7 @@
             const [polygon, setPolygon] = useState([]);
             const [userLocation, setUserLocation] = useState(null);
             const [userAccuracy, setUserAccuracy] = useState(null);
+            const [locationMessage, setLocationMessage] = useState(null);
 
             // Flight Params
             const [selectedDrone, setSelectedDrone] = useState('mavic_3_e');
@@ -232,6 +233,48 @@
             const userLocationInitialized = useRef(false);
             const aircraftIntervalRef = useRef(null);
             const timelineContainerRef = useRef(null);
+
+            const recenterOnUser = useCallback(() => {
+                if (!mapRef.current) return;
+
+                const clearMessageLater = (delay = 2200) => {
+                    setTimeout(() => setLocationMessage(null), delay);
+                };
+
+                if (userLocation) {
+                    const zoom = Math.max(mapRef.current.getZoom(), 16);
+                    mapRef.current.flyTo(userLocation, zoom, { duration: 0.75 });
+                    setMapCenter(userLocation);
+                    setLocationMessage('ממקם לפי GPS...');
+                    clearMessageLater();
+                    return;
+                }
+
+                if (!navigator.geolocation) {
+                    setLocationMessage('המכשיר לא תומך ב-GPS');
+                    clearMessageLater(3200);
+                    return;
+                }
+
+                setLocationMessage('מאתר מיקום...');
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        const coords = [pos.coords.latitude, pos.coords.longitude];
+                        setUserLocation(coords);
+                        setUserAccuracy(pos.coords.accuracy);
+                        setMapCenter(coords);
+                        const zoom = Math.max(mapRef.current.getZoom(), 16);
+                        mapRef.current.flyTo(coords, zoom, { duration: 0.75 });
+                        setLocationMessage('מרכזתי לפי GPS');
+                        clearMessageLater();
+                    },
+                    () => {
+                        setLocationMessage('לא הצלחתי לקבל מיקום');
+                        clearMessageLater(3200);
+                    },
+                    { enableHighAccuracy: true, timeout: 9000 }
+                );
+            }, [userLocation]);
 
             const updateSuitabilitySetting = (key, value) => {
                 setSuitabilitySettings(prev => ({ ...prev, [key]: value }));
@@ -1179,6 +1222,20 @@
                     {/* Map */}
                     <div className={`flex-1 relative h-full bg-black`}>
                         <div id="map"></div>
+                        {locationMessage && (
+                            <div className="absolute bottom-28 right-6 z-[1150] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
+                                {locationMessage}
+                            </div>
+                        )}
+                        <div className="absolute bottom-6 right-6 z-[1150] pointer-events-auto flex flex-col items-end gap-2">
+                            <button
+                                onClick={recenterOnUser}
+                                className="w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
+                                aria-label="מרכז למיקום הנוכחי"
+                            >
+                                <Icon name="gps" size={18} />
+                            </button>
+                        </div>
                         {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
 
                         {/* Docked controls on the right */}
