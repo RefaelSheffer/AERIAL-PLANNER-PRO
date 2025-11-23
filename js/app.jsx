@@ -1,0 +1,1843 @@
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+// --- Drone Database ---
+const DRONE_PRESETS = window.DRONE_PRESETS || {};
+
+// --- Icons ---
+const Icon = ({ name, size = 16, className = '', strokeWidth = 2, color = 'currentColor' }) => {
+    const baseProps = {
+        width: size,
+        height: size,
+        viewBox: '0 0 24 24',
+        fill: 'none',
+        stroke: color,
+        strokeWidth,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+        className
+    };
+
+    const icons = {
+        map: (
+            <svg {...baseProps}>
+                <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+        ),
+        mountain: (
+            <svg {...baseProps}>
+                <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        ),
+        wind: (
+            <svg {...baseProps}>
+                <path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+                <path d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+            </svg>
+        ),
+        cloud: (
+            <svg {...baseProps}>
+                <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+            </svg>
+        ),
+        gps: (
+            <svg {...baseProps}>
+                <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        ),
+        trash: (
+            <svg {...baseProps}>
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        ),
+        close: (
+            <svg {...baseProps}>
+                <path d="M6 6l12 12M6 18L18 6" />
+            </svg>
+        ),
+        rotate: (
+            <svg {...baseProps}>
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        ),
+        camera: (
+            <svg {...baseProps}>
+                <path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        ),
+        clock: (
+            <svg {...baseProps}>
+                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+        warning: (
+            <svg {...baseProps}>
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+        ),
+        drone: (
+            <svg {...baseProps}>
+                <path d="M8 4H5a2 2 0 00-2 2v3m16-5h-3m3 0a2 2 0 012 2v3m-5 8h3a2 2 0 002-2v-3M4 16v3a2 2 0 002 2h3M9 9l1-1h4l1 1m-6 0l-1 2.5M15 9l1 2.5M10 12h4m-2 0v2" />
+            </svg>
+        ),
+        mission: (
+            <svg {...baseProps}>
+                <path d="M4 17l4-4 4 4 6-6" />
+                <path d="M3 5h4v4H3zM9 9h4v4H9zM16 4h5v5h-5z" />
+            </svg>
+        ),
+        radar: (
+            <svg {...baseProps}>
+                <path d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
+                <path d="M12 12l6-6" />
+                <path d="M12 3v4" />
+                <path d="M12 12h7" />
+            </svg>
+        ),
+        calendar: (
+            <svg {...baseProps}>
+                <path d="M8 7V3m8 4V3m-9 8h8M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        ),
+        doc: (
+            <svg {...baseProps}>
+                <path d="M7 7a2 2 0 012-2h5l4 4v9a2 2 0 01-2 2H9a2 2 0 01-2-2V7z" />
+                <path d="M14 3v4h4" />
+            </svg>
+        ),
+        upload: (
+            <svg {...baseProps}>
+                <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+                <path d="M7 9l5-5 5 5M12 4v12" />
+            </svg>
+        ),
+        export: (
+            <svg {...baseProps}>
+                <path d="M9 14l-6 6m0 0h7m-7 0v-7" />
+                <path d="M15 10h6m0 0V4m0 6l-9 9" />
+            </svg>
+        )
+    };
+
+    return icons[name] || null;
+};
+
+// --- Color Utils ---
+const windSpeedToColor = (speed) => {
+    if (speed === null || speed === undefined || Number.isNaN(speed)) return '#cbd5e1';
+    const clamped = Math.max(0, Math.min(speed, 25));
+    // 0 m/s -> כחול, ~12 m/s -> ירוק, 25 m/s -> אדום
+    const hue = 240 - (clamped / 25) * 240;
+    return `hsl(${hue}, 85%, 55%)`;
+};
+
+const windTextColor = (speed) => {
+    if (speed === null || speed === undefined || Number.isNaN(speed)) return 'text-slate-800';
+    return speed >= 18 ? 'text-white' : 'text-slate-800';
+};
+
+// --- Geometry Utils ---
+const getDistance = (p1, p2) => {
+    const R = 6371e3;
+    const φ1 = p1.lat * Math.PI/180, φ2 = p2.lat * Math.PI/180;
+    const Δφ = (p2.lat-p1.lat) * Math.PI/180, Δλ = (p2.lng-p1.lng) * Math.PI/180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+};
+
+const getBearing = (p1, p2) => {
+    const φ1 = p1.lat * Math.PI/180, φ2 = p2.lat * Math.PI/180;
+    const Δλ = (p2.lng-p1.lng) * Math.PI/180;
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+};
+
+const getAutoAzimuth = (points) => {
+    if(points.length < 2) return 0;
+    let maxDist = 0;
+    let bestBearing = 0;
+    for(let i=0; i<points.length; i++) {
+        const p1 = points[i];
+        const p2 = points[(i+1)%points.length];
+        const d = getDistance(p1, p2);
+        if(d > maxDist) {
+            maxDist = d;
+            bestBearing = getBearing(p1, p2);
+        }
+    }
+    return bestBearing;
+};
+
+const rotatePoint = (point, angleDeg, center) => {
+    const angleRad = angleDeg * (Math.PI / 180);
+    const cos = Math.cos(angleRad);
+    const sin = Math.sin(angleRad);
+    const dx = point.lng - center.lng;
+    const dy = point.lat - center.lat;
+    return {
+        lat: center.lat + (dx * sin + dy * cos),
+        lng: center.lng + (dx * cos - dy * sin)
+    };
+};
+
+const unrotatePoint = (point, angleDeg, center) => {
+    return rotatePoint(point, -angleDeg, center);
+};
+
+const DockButton = ({ icon, label, active, onClick }) => (
+    <button
+        onClick={onClick}
+        aria-label={label}
+        className={`bg-white/95 text-slate-800 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl p-1 ${active ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'}`}
+    >
+        <span className={`w-12 h-12 rounded-full flex items-center justify-center ${active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+            <Icon name={icon} size={18} />
+        </span>
+        <span className="sr-only">{label}</span>
+    </button>
+);
+
+const App = () => {
+    const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
+    const [mapCenter, setMapCenter] = useState([32.0853, 34.7818]);
+    const [weatherLocation, setWeatherLocation] = useState([32.0853, 34.7818]);
+    const [polygon, setPolygon] = useState([]);
+    const [userLocation, setUserLocation] = useState(null);
+    const [userAccuracy, setUserAccuracy] = useState(null);
+    const [locationMessage, setLocationMessage] = useState(null);
+
+    // Flight Params
+    const [selectedDrone, setSelectedDrone] = useState('mavic_3_e');
+    const [altitude, setAltitude] = useState(60);
+    const [overlapFront, setOverlapFront] = useState(75);
+    const [overlapSide, setOverlapSide] = useState(70);
+    const [speed, setSpeed] = useState(10); // m/s
+    const [azimuth, setAzimuth] = useState(0);
+    const [autoOrient, setAutoOrient] = useState(true);
+    const [flightDate, setFlightDate] = useState(new Date().toISOString().slice(0, 16));
+    const [showFlyableOnly, setShowFlyableOnly] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [settingsReadOnly, setSettingsReadOnly] = useState(true);
+    const [suitabilitySettings, setSuitabilitySettings] = useState({
+        maxWind: 12,
+        maxGust: 18,
+        maxCloudCover: 70,
+        maxRainProb: 20,
+        minSunAltitude: 5,
+        maxSunAltitude: 85,
+    });
+
+    // Stats
+    const [totalDistance, setTotalDistance] = useState(0);
+
+    // Weather & DTM
+    const [hourlyForecast, setHourlyForecast] = useState(null);
+    const [dtmData, setDtmData] = useState(null);
+    const [isFetchingDTM, setIsFetchingDTM] = useState(false);
+    const [dtmStats, setDtmStats] = useState(null);
+    const [terrainShadows, setTerrainShadows] = useState([]);
+    const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
+    const [showTimeline, setShowTimeline] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(!initialIsMobile);
+    const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
+    const [isMobile, setIsMobile] = useState(initialIsMobile);
+    const [mobileDayIndex, setMobileDayIndex] = useState(0);
+    const [realtimePanelOpen, setRealtimePanelOpen] = useState(false);
+    const [rainRadarEnabled, setRainRadarEnabled] = useState(false);
+    const [rainRadarStatus, setRainRadarStatus] = useState('idle');
+    const [rainRadarTimestamp, setRainRadarTimestamp] = useState(null);
+    const [aircraftEnabled, setAircraftEnabled] = useState(false);
+    const [aircraftStatus, setAircraftStatus] = useState('idle');
+    const [aircraftTimestamp, setAircraftTimestamp] = useState(null);
+    const [aircraftRangeKm, setAircraftRangeKm] = useState(80);
+    const [aircraftData, setAircraftData] = useState([]);
+    const [documentationOpen, setDocumentationOpen] = useState(false);
+    const [docForm, setDocForm] = useState({ title: '', notes: '', images: [], location: null });
+    const [docEntries, setDocEntries] = useState([]);
+
+    const mapRef = useRef(null);
+    const layersRef = useRef({});
+    const radarIntervalRef = useRef(null);
+    const rainRadarTimestampRef = useRef(null);
+    const userLocationInitialized = useRef(false);
+    const aircraftIntervalRef = useRef(null);
+    const timelineContainerRef = useRef(null);
+
+    const toggleExclusivePanel = useCallback((panel) => {
+        const states = {
+            sidebar: sidebarOpen,
+            realtime: realtimePanelOpen,
+            timeline: showTimeline,
+        };
+
+        const shouldOpen = !states[panel];
+
+        // On mobile keep panels exclusive to avoid layout overlap.
+        if (isMobile) {
+            setSidebarOpen(panel === 'sidebar' ? shouldOpen : false);
+            setRealtimePanelOpen(panel === 'realtime' ? shouldOpen : false);
+            setShowTimeline(panel === 'timeline' ? shouldOpen : false);
+            return;
+        }
+
+        // Desktop: allow the planning sidebar and weather board together.
+        if (panel === 'sidebar') {
+            setSidebarOpen(shouldOpen);
+            return;
+        }
+
+        if (panel === 'timeline') {
+            setShowTimeline(shouldOpen);
+            return;
+        }
+
+        // Realtime panel remains exclusive to reduce clutter.
+        setRealtimePanelOpen(shouldOpen);
+        if (shouldOpen) {
+            setSidebarOpen(false);
+            setShowTimeline(false);
+        }
+    }, [sidebarOpen, realtimePanelOpen, showTimeline, isMobile]);
+
+    const recenterOnUser = useCallback(() => {
+        if (!mapRef.current) return;
+
+        const clearMessageLater = (delay = 2200) => {
+            setTimeout(() => setLocationMessage(null), delay);
+        };
+
+        if (userLocation) {
+            const zoom = Math.max(mapRef.current.getZoom(), 16);
+            mapRef.current.flyTo(userLocation, zoom, { duration: 0.75 });
+            setMapCenter(userLocation);
+            setLocationMessage('ממקם לפי GPS...');
+            clearMessageLater();
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            setLocationMessage('המכשיר לא תומך ב-GPS');
+            clearMessageLater(3200);
+            return;
+        }
+
+        setLocationMessage('מאתר מיקום...');
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const coords = [pos.coords.latitude, pos.coords.longitude];
+                setUserLocation(coords);
+                setUserAccuracy(pos.coords.accuracy);
+                setMapCenter(coords);
+                const zoom = Math.max(mapRef.current.getZoom(), 16);
+                mapRef.current.flyTo(coords, zoom, { duration: 0.75 });
+                setLocationMessage('מרכזתי לפי GPS');
+                clearMessageLater();
+            },
+            () => {
+                setLocationMessage('לא הצלחתי לקבל מיקום');
+                clearMessageLater(3200);
+            },
+            { enableHighAccuracy: true, timeout: 9000 }
+        );
+    }, [userLocation]);
+
+    const updateSuitabilitySetting = (key, value) => {
+        setSuitabilitySettings(prev => ({ ...prev, [key]: value }));
+    };
+
+    const enableSettingsEditing = () => setSettingsReadOnly(false);
+
+    // --- Geolocation ---
+    useEffect(() => {
+        if (!navigator.geolocation) return;
+
+        const handlePosition = (pos) => {
+            const coords = [pos.coords.latitude, pos.coords.longitude];
+            setUserLocation(coords);
+            setUserAccuracy(pos.coords.accuracy);
+
+            if (!userLocationInitialized.current) {
+                setMapCenter(coords);
+                setWeatherLocation(coords);
+                if (mapRef.current) mapRef.current.setView(coords, 17);
+                userLocationInitialized.current = true;
+            }
+        };
+
+        const watchId = navigator.geolocation.watchPosition(
+            handlePosition,
+            err => console.warn("GPS Error:", err.code),
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+
+        return () => navigator.geolocation.clearWatch(watchId);
+    }, []);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const mobile = window.innerWidth < 768;
+            setIsMobile(mobile);
+            if (mobile) {
+                setSidebarOpen(false);
+                setDronePanelOpen(false);
+            }
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // --- Weather ---
+    const fetchWeather = async () => {
+        if(!weatherLocation) return;
+        try {
+            const [lat, lng] = weatherLocation;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,precipitation_probability&timezone=auto&forecast_days=7`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data?.hourly) {
+                setHourlyForecast(data.hourly);
+            }
+        } catch(e) { console.error(e); }
+    };
+
+    useEffect(() => { fetchWeather() }, [weatherLocation]);
+
+    useEffect(() => {
+        if (polygon.length > 2) {
+            const bounds = L.latLngBounds(polygon.map(p => L.latLng(p.lat, p.lng)));
+            const center = bounds.getCenter();
+            setWeatherLocation([center.lat, center.lng]);
+        } else {
+            setWeatherLocation(mapCenter);
+        }
+    }, [polygon, mapCenter]);
+
+    // --- Rain Radar (RainViewer) ---
+    const refreshRainRadar = async () => {
+        if (!mapRef.current) return;
+        setRainRadarStatus('loading');
+        try {
+            const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+            const data = await res.json();
+            const frames = data?.radar?.past;
+            if (!frames || frames.length === 0) throw new Error('No radar frames');
+            const latest = frames[frames.length - 1];
+            const ts = latest.time;
+
+            if (ts !== rainRadarTimestampRef.current) {
+                const Lr = layersRef.current;
+                if (Lr.rainRadar) {
+                    mapRef.current.removeLayer(Lr.rainRadar);
+                }
+
+                const radarLayer = L.tileLayer(
+                    `https://tilecache.rainviewer.com/v2/radar/${ts}/256/{z}/{x}/{y}/2/1_1.png`,
+                    {
+                        attribution: 'RainViewer',
+                        opacity: 0.6,
+                        crossOrigin: true,
+                        maxZoom: 18,
+                    }
+                );
+
+                radarLayer.addTo(mapRef.current);
+                Lr.rainRadar = radarLayer;
+                rainRadarTimestampRef.current = ts;
+                setRainRadarTimestamp(ts);
+            }
+
+            setRainRadarStatus('ready');
+        } catch (e) {
+            console.error('RainViewer error', e);
+            setRainRadarStatus('error');
+        }
+    };
+
+    useEffect(() => {
+        if (!rainRadarEnabled) {
+            if (radarIntervalRef.current) {
+                clearInterval(radarIntervalRef.current);
+                radarIntervalRef.current = null;
+            }
+
+            const Lr = layersRef.current;
+            if (Lr.rainRadar && mapRef.current) {
+                mapRef.current.removeLayer(Lr.rainRadar);
+                Lr.rainRadar = null;
+            }
+            setRainRadarStatus('idle');
+            return;
+        }
+
+        refreshRainRadar();
+        radarIntervalRef.current = setInterval(refreshRainRadar, 5 * 60 * 1000);
+
+        return () => {
+            if (radarIntervalRef.current) {
+                clearInterval(radarIntervalRef.current);
+                radarIntervalRef.current = null;
+            }
+            const Lr = layersRef.current;
+            if (Lr.rainRadar && mapRef.current) {
+                mapRef.current.removeLayer(Lr.rainRadar);
+                Lr.rainRadar = null;
+            }
+        };
+    }, [rainRadarEnabled]);
+
+    // --- Aircraft (ADSBexchange) ---
+    const fetchAircraft = useCallback(async () => {
+        if (!aircraftEnabled || !mapCenter) return;
+        setAircraftStatus(prev => prev === 'ready' ? 'updating' : 'loading');
+
+        try {
+            const [lat, lng] = mapCenter;
+            const url = `https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat=${lat}&lng=${lng}&fDstL=0&fDstU=${Math.max(5, aircraftRangeKm)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (!data?.acList) throw new Error('No aircraft list');
+
+            const filtered = data.acList.filter(a => a?.Lat && a?.Long);
+            setAircraftData(filtered);
+            setAircraftTimestamp(Date.now());
+            setAircraftStatus('ready');
+        } catch (e) {
+            console.error('ADSBexchange error', e);
+            setAircraftStatus('error');
+        }
+    }, [aircraftEnabled, mapCenter, aircraftRangeKm]);
+
+    useEffect(() => {
+        if (!aircraftEnabled) {
+            if (aircraftIntervalRef.current) {
+                clearInterval(aircraftIntervalRef.current);
+                aircraftIntervalRef.current = null;
+            }
+            setAircraftStatus('idle');
+            setAircraftData([]);
+            const Lr = layersRef.current;
+            if (Lr.aircraft && mapRef.current) {
+                mapRef.current.removeLayer(Lr.aircraft);
+                Lr.aircraft = null;
+            }
+            return;
+        }
+
+        fetchAircraft();
+        aircraftIntervalRef.current = setInterval(fetchAircraft, 15000);
+
+        return () => {
+            if (aircraftIntervalRef.current) {
+                clearInterval(aircraftIntervalRef.current);
+                aircraftIntervalRef.current = null;
+            }
+        };
+    }, [aircraftEnabled, fetchAircraft]);
+
+    const getSunAltitudeDeg = (dateStr) => {
+        if (!SunCalc || !weatherLocation) return null;
+        const [lat, lng] = weatherLocation;
+        const pos = SunCalc.getPosition(new Date(dateStr), lat, lng);
+        if (!pos || Number.isNaN(pos.altitude)) return null;
+        return pos.altitude * (180 / Math.PI);
+    };
+
+    const isSlotFlyable = (slot) => {
+        const { maxWind, maxGust, maxCloudCover, maxRainProb, minSunAltitude, maxSunAltitude } = suitabilitySettings;
+        const wind = typeof slot.wind === 'number' && !Number.isNaN(slot.wind) ? slot.wind : null;
+        const gust = typeof slot.gust === 'number' && !Number.isNaN(slot.gust) ? slot.gust : null;
+        const clouds = typeof slot.clouds === 'number' && !Number.isNaN(slot.clouds) ? slot.clouds : null;
+        const rainProb = typeof slot.rainProb === 'number' && !Number.isNaN(slot.rainProb) ? slot.rainProb : null;
+
+        const safeWind = wind === null ? true : wind <= maxWind;
+        const safeGust = gust === null
+            ? (wind === null ? true : wind <= maxGust)
+            : gust <= maxGust;
+        const safeCloud = clouds === null ? true : clouds <= maxCloudCover;
+        const safeRain = rainProb === null ? true : rainProb <= maxRainProb;
+
+        const sunOk = slot.sunAlt === null
+            ? true
+            : slot.sunAlt >= minSunAltitude && slot.sunAlt <= maxSunAltitude;
+
+        return safeWind && safeGust && safeCloud && safeRain && sunOk;
+    };
+
+    const windTimeline = useMemo(() => {
+        if(!hourlyForecast?.time) return [];
+        const days = new Map();
+
+        hourlyForecast.time.forEach((t, i) => {
+            const hour = Number(t.slice(11, 13));
+            if (hour % 6 !== 0) return; // רק כל 6 שעות
+
+            const dayKey = t.slice(0, 10);
+            if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
+
+            const slotDate = `${t.slice(0, 13)}:00`;
+
+            days.get(dayKey).slots.push({
+                key: t,
+                time: t.slice(11, 16),
+                wind: hourlyForecast.wind_speed_10m?.[i],
+                gust: hourlyForecast.wind_gusts_10m?.[i],
+                clouds: hourlyForecast.cloud_cover?.[i],
+                rainProb: hourlyForecast.precipitation_probability?.[i],
+                isMajor: hour % 12 === 0,
+                sunAlt: getSunAltitudeDeg(slotDate),
+            });
+        });
+
+        return Array.from(days.values()).map(day => ({
+            ...day,
+            label: new Date(day.day).toLocaleDateString('he-IL', { weekday: 'short', day: '2-digit', month: '2-digit' })
+        }));
+    }, [hourlyForecast, weatherLocation]);
+
+    const visibleTimeline = useMemo(() => {
+        if (!isMobile) return windTimeline;
+        if (windTimeline.length === 0) return [];
+        return [windTimeline[Math.min(mobileDayIndex, windTimeline.length - 1)]];
+    }, [isMobile, mobileDayIndex, windTimeline]);
+
+    const scrollTimeline = (direction) => {
+        const container = timelineContainerRef.current;
+        if (!container) return;
+        const delta = direction * Math.max(container.clientWidth * 0.8, 320);
+        container.scrollBy({ left: delta, behavior: 'smooth' });
+    };
+
+    const handleDocFileChange = (event) => {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        Promise.all(files.map(file => new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({ name: file.name, dataUrl: reader.result });
+            reader.readAsDataURL(file);
+        }))
+        ).then(results => {
+            setDocForm(prev => ({ ...prev, images: [...prev.images, ...results] }));
+        });
+    };
+
+    const sampleDocumentationLocation = () => {
+        if (userLocation) {
+            setDocForm(prev => ({ ...prev, location: { lat: userLocation[0], lng: userLocation[1], accuracy: userAccuracy } }));
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            alert('המכשיר לא תומך בדגימת מיקום.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                setDocForm(prev => ({
+                    ...prev,
+                    location: {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        accuracy: pos.coords.accuracy
+                    }
+                }));
+            },
+            () => alert('לא הצלחנו לקבל מיקום כעת'),
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
+    const addDocumentationEntry = () => {
+        if (!docForm.title && !docForm.notes && docForm.images.length === 0 && !docForm.location) {
+            alert('הוסף לפחות שם, מלל, מיקום או תמונה כדי לשמור אובייקט.');
+            return;
+        }
+
+        const entry = {
+            ...docForm,
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+        };
+
+        setDocEntries(prev => [entry, ...prev]);
+        setDocForm(prev => ({ ...prev, title: '', notes: '', images: [], location: prev.location }));
+    };
+
+    const exportDocumentationPDF = () => {
+        if (!window.jspdf?.jsPDF) {
+            alert('ספריית PDF לא נטענה.');
+            return;
+        }
+
+        if (docEntries.length === 0) {
+            alert('אין אובייקטים לייצוא.');
+            return;
+        }
+
+        const doc = new window.jspdf.jsPDF({ unit: 'mm' });
+        let y = 15;
+        doc.setFontSize(16);
+        doc.text('כרטיסיית תיעוד', 10, y);
+        y += 8;
+        doc.setFontSize(12);
+
+        docEntries.forEach((entry, idx) => {
+            if (y > 260) { doc.addPage(); y = 15; }
+            doc.setFont(undefined, 'bold');
+            doc.text(`${idx + 1}. ${entry.title || 'ללא כותרת'}`, 10, y);
+            doc.setFont(undefined, 'normal');
+            y += 6;
+            if (entry.timestamp) { doc.text(new Date(entry.timestamp).toLocaleString('he-IL'), 10, y); y += 6; }
+            if (entry.location) {
+                doc.text(`מיקום: ${entry.location.lat.toFixed(5)}, ${entry.location.lng.toFixed(5)}`, 10, y);
+                y += 6;
+                if (entry.location.accuracy) { doc.text(`דיוק: ~${Math.round(entry.location.accuracy)} מ'`, 10, y); y += 6; }
+            }
+            if (entry.notes) {
+                const lines = doc.splitTextToSize(entry.notes, 180);
+                doc.text(lines, 10, y);
+                y += lines.length * 6;
+            }
+            (entry.images || []).forEach(img => {
+                if (!img?.dataUrl?.startsWith('data:image')) return;
+                const props = doc.getImageProperties(img.dataUrl);
+                const width = 180;
+                const height = (props.height * width) / props.width;
+                if (y + height > 280) { doc.addPage(); y = 15; }
+                doc.addImage(img.dataUrl, props.fileType || 'JPEG', 15, y, width, height);
+                y += height + 4;
+            });
+            y += 6;
+        });
+
+        doc.save('documentation.pdf');
+    };
+
+    const exportDocumentationShapefile = () => {
+        if (!window.shpwrite) {
+            alert('ספריית Shapefile לא נטענה.');
+            return;
+        }
+
+        const features = docEntries
+            .filter(e => e.location)
+            .map(e => ({
+                type: 'Feature',
+                geometry: { type: 'Point', coordinates: [e.location.lng, e.location.lat] },
+                properties: {
+                    title: e.title || 'ללא כותרת',
+                    notes: e.notes || '',
+                    timestamp: e.timestamp,
+                    accuracy: e.location?.accuracy ?? null,
+                }
+            }));
+
+        if (features.length === 0) {
+            alert('אין אובייקטים עם מיקום לייצוא.');
+            return;
+        }
+
+        window.shpwrite.download({ type: 'FeatureCollection', features }, { folder: 'documentation', types: { point: 'docs' } });
+    };
+
+    const timelineCardSizing = isMobile
+        ? 'w-[45vw] max-w-[420px] max-h-[92vh]'
+        : 'w-[95vw] max-w-5xl max-h-[55vh] mx-auto';
+
+    const geolocateButtonStyle = {
+        bottom: (!isMobile && showTimeline) ? 'calc(55vh + 1rem)' : '1.5rem'
+    };
+
+    const dockPositionClasses = useMemo(() => {
+        return 'right-4 left-auto items-start justify-start';
+    }, []);
+
+    useEffect(() => {
+        if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
+            setMobileDayIndex(0);
+        }
+    }, [windTimeline.length, mobileDayIndex]);
+
+    // --- DTM (With Fallback) ---
+    const fetchDTM = async () => {
+        if (polygon.length < 3) return alert("סמן אזור תחילה");
+        setIsFetchingDTM(true);
+        setDtmData(null);
+        setTerrainShadows([]);
+        setIsSimulatedDTM(false);
+
+        // Grid generation
+        const latLngs = polygon.map(p => L.latLng(p.lat, p.lng));
+        const bounds = L.latLngBounds(latLngs);
+        const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+
+        const rows = 20, cols = 20; // Higher resolution
+        let locations = [];
+        for(let r=0; r<=rows; r++) {
+            for(let c=0; c<=cols; c++) {
+                locations.push({
+                    lat: sw.lat + (ne.lat-sw.lat)*(r/rows),
+                    lng: sw.lng + (ne.lng-sw.lng)*(c/cols)
+                });
+            }
+        }
+
+        try {
+            // Try Real API
+            const fetchWithTimeout = (url) => {
+                const fetchPromise = fetch(url);
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+                return Promise.race([fetchPromise, timeoutPromise]);
+            };
+
+            const batchSize = 100; // OpenTopoData limit per request
+            const batches = [];
+            for (let i = 0; i < locations.length; i += batchSize) {
+                batches.push(locations.slice(i, i + batchSize));
+            }
+
+            const allResults = [];
+            for (const batch of batches) {
+                const locStr = batch.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
+                const url = `https://api.opentopodata.org/v1/aster30m?locations=${locStr}`;
+                const res = await fetchWithTimeout(url);
+                if (!res.ok) throw new Error(`API Error ${res.status}`);
+                const data = await res.json();
+                if (!data.results) throw new Error('Invalid response');
+                allResults.push(...data.results);
+            }
+
+            if (allResults.length === 0) throw new Error('Empty DTM response');
+
+            const grid = allResults.map(r => ({ lat: r.location.lat, lng: r.location.lng, ele: r.elevation || 0 }));
+            processDTM(grid, false);
+        } catch(e) {
+            console.warn("DTM API Failed, switching to simulation.", e);
+            // Fallback: Generate Simulated Terrain based on Perlin-like noise
+            const simGrid = locations.map((loc, i) => {
+                // Simple fake terrain: Base height + Math.sin waves
+                const baseEle = 100;
+                const noise = Math.sin(loc.lat * 1000) * Math.cos(loc.lng * 1000) * 20;
+                return { lat: loc.lat, lng: loc.lng, ele: baseEle + noise };
+            });
+            processDTM(simGrid, true);
+        } finally {
+            setIsFetchingDTM(false);
+        }
+    };
+
+    const processDTM = (grid, isSim) => {
+        setDtmData(grid);
+        setIsSimulatedDTM(isSim);
+        const eles = grid.map(p => p.ele);
+        setDtmStats({min: Math.min(...eles), max: Math.max(...eles), avg: eles.reduce((a,b)=>a+b,0)/eles.length});
+        calcShadows(grid);
+    }
+
+    const calcShadows = (grid) => {
+        if(!SunCalc) return;
+        const sun = SunCalc.getPosition(new Date(flightDate), mapCenter[0], mapCenter[1]);
+        if(sun.altitude <= 0) return; // Night
+
+        const shadows = [];
+        const minEle = dtmStats ? dtmStats.min : Math.min(...grid.map(p=>p.ele));
+
+        grid.forEach(pt => {
+            // Calculate shadow based on height relative to local minimum
+            const relativeHeight = pt.ele - minEle;
+            if (relativeHeight <= 1) return;
+
+            // Shadow Length = h / tan(alpha)
+            // Exaggerate slightly for visibility
+            const len = (relativeHeight * 1.2) / Math.tan(sun.altitude); 
+
+            // Cap shadow length to avoid map artifacts
+            const displayLen = Math.min(len, 500); 
+
+            if (displayLen > 5) {
+                const az = sun.azimuth + Math.PI; 
+                const dLat = (Math.cos(az) * displayLen) / 111111;
+                const dLng = (Math.sin(az) * displayLen) / (111111 * Math.cos(pt.lat * Math.PI/180));
+                shadows.push([[pt.lat, pt.lng], [pt.lat+dLat, pt.lng+dLng]]);
+            }
+        });
+        setTerrainShadows(shadows);
+    };
+
+    useEffect(() => { if(dtmData) calcShadows(dtmData); }, [flightDate]);
+
+    // --- Path Generation ---
+    const generatePath = () => {
+        if (polygon.length < 3) {
+            setTotalDistance(0);
+            return [];
+        }
+
+        const drone = DRONE_PRESETS[selectedDrone];
+        const footprintW = (drone.sensorWidth * altitude) / drone.focalLength;
+        const spacingMeters = footprintW * (1 - overlapSide/100);
+
+        let angle = azimuth;
+        const polyPoints = polygon.map(p => ({lat: p.lat, lng: p.lng}));
+
+        if (autoOrient) {
+            angle = getAutoAzimuth(polyPoints);
+        }
+
+        const center = polyPoints[0]; 
+        const rotatedPoly = polyPoints.map(p => rotatePoint(p, -angle, center));
+
+        const lats = rotatedPoly.map(p => p.lat);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+
+        const spacingDeg = spacingMeters / 111111; 
+        const lines = [];
+
+        for (let y = maxLat - spacingDeg/2; y > minLat; y -= spacingDeg) {
+            let intersections = [];
+            for (let i = 0; i < rotatedPoly.length; i++) {
+                const p1 = rotatedPoly[i];
+                const p2 = rotatedPoly[(i + 1) % rotatedPoly.length];
+                if ((p1.lat > y && p2.lat <= y) || (p2.lat > y && p1.lat <= y)) {
+                    const x = p1.lng + (y - p1.lat) * (p2.lng - p1.lng) / (p2.lat - p1.lat);
+                    intersections.push(x);
+                }
+            }
+            intersections.sort((a, b) => a - b);
+            for (let i = 0; i < intersections.length; i += 2) {
+                if (i + 1 < intersections.length) {
+                    lines.push([{ lat: y, lng: intersections[i] }, { lat: y, lng: intersections[i+1] }]);
+                }
+            }
+        }
+
+        const finalPath = [];
+        let dist = 0;
+
+        lines.forEach((line, index) => {
+            const start = unrotatePoint(line[0], -angle, center);
+            const end = unrotatePoint(line[1], -angle, center);
+
+            dist += getDistance(start, end);
+
+            if (index > 0) {
+                const prevPoint = finalPath[finalPath.length - 1];
+                const currentStart = (index % 2 === 0) ? start : end;
+                dist += getDistance({lat: prevPoint[0], lng: prevPoint[1]}, currentStart);
+            }
+
+            if (index % 2 === 0) {
+                finalPath.push([start.lat, start.lng], [end.lat, end.lng]);
+            } else {
+                finalPath.push([end.lat, end.lng], [start.lat, start.lng]);
+            }
+        });
+
+        setTotalDistance(dist);
+        return finalPath;
+    };
+
+    useEffect(() => {
+        if(autoOrient && polygon.length > 2) {
+            const best = getAutoAzimuth(polygon.map(p => ({lat: p.lat, lng: p.lng})));
+            setAzimuth(Math.round(best));
+        }
+    }, [polygon, autoOrient]);
+
+    // --- Map Rendering ---
+    useEffect(() => {
+        if (!mapRef.current) {
+            const esriImagery = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                { attribution: 'Esri' }
+            );
+
+            const osmFallback = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                { attribution: '&copy; OpenStreetMap contributors' }
+            );
+
+            // If the Esri imagery fails (rate limit / CORS), fall back to OpenStreetMap so the map still renders.
+            esriImagery.on('tileerror', () => {
+                if (!mapRef.current.hasLayer(osmFallback)) {
+                    mapRef.current.addLayer(osmFallback);
+                }
+            });
+
+            mapRef.current = L.map('map', { center: mapCenter, zoom: 15, layers: [esriImagery], zoomControl: false });
+            mapRef.current.on('click', e => setPolygon(prev => [...prev, {lat: e.latlng.lat, lng: e.latlng.lng}]));
+            mapRef.current.on('moveend', () => {
+                const center = mapRef.current.getCenter();
+                setMapCenter([center.lat, center.lng]);
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        if (mapRef.current) {
+            setTimeout(() => mapRef.current.invalidateSize(), 150);
+        }
+    }, [sidebarOpen]);
+
+    useEffect(() => {
+        if (!mapRef.current) return;
+        const map = mapRef.current;
+        const Lr = layersRef.current;
+
+        if (Lr.poly) map.removeLayer(Lr.poly);
+        if (Lr.path) map.removeLayer(Lr.path);
+        if (Lr.shadows) map.removeLayer(Lr.shadows);
+        if (Lr.heat) map.removeLayer(Lr.heat);
+
+        if (polygon.length > 0) {
+            const latLngs = polygon.map(p => [p.lat, p.lng]);
+            Lr.poly = L.polygon(latLngs, {color: 'yellow', weight: 2, fillOpacity: 0.1}).addTo(map);
+        }
+
+        if (polygon.length > 2) {
+            const pathPoints = generatePath();
+            Lr.path = L.polyline(pathPoints, {color: '#3b82f6', weight: 3}).addTo(map);
+        }
+
+        if (terrainShadows.length > 0) {
+            // Draw Shadows
+            Lr.shadows = L.layerGroup(terrainShadows.map(l => L.polyline(l, {color: 'black', weight: 4, opacity: 0.6}))).addTo(map);
+        }
+
+        if (dtmData && dtmStats && L.heatLayer) {
+            // Draw smooth DTM heat layer
+            const heatPoints = dtmData.map(pt => {
+                const normalized = (pt.ele - dtmStats.min) / (dtmStats.max - dtmStats.min || 1);
+                const intensity = Math.max(0, Math.min(1, normalized));
+                return [pt.lat, pt.lng, intensity];
+            });
+
+            Lr.heat = L.heatLayer(heatPoints, {
+                radius: 28,
+                blur: 22,
+                max: 1,
+                gradient: {
+                    0.0: '#2563eb', // נמוך
+                    0.4: '#22c55e',
+                    0.7: '#f59e0b',
+                    1.0: '#ef4444'  // גבוה
+                }
+            }).addTo(map);
+        }
+
+        if (Lr.aircraft) {
+            map.removeLayer(Lr.aircraft);
+            Lr.aircraft = null;
+        }
+
+        if (aircraftEnabled && aircraftData.length > 0) {
+            const markers = aircraftData.map(a => {
+                const heading = Number.isFinite(a.Trak) ? a.Trak : 0;
+                const icon = L.divIcon({
+                    html: `<div style="transform: rotate(${heading}deg); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: #ef4444;">✈️</div>`,
+                    className: 'aircraft-icon',
+                    iconSize: [22, 22],
+                });
+
+                const marker = L.marker([a.Lat, a.Long], { icon });
+                const speed = a.Spd ? `${Math.round(a.Spd)} kt` : 'N/A';
+                const altitude = a.Alt ? `${a.Alt} ft` : 'N/A';
+                const callsign = a.Call || a.Reg || a.Icao || 'לא ידוע';
+
+                marker.bindPopup(`
+                    <div class="text-[12px]">
+                        <div class="font-bold text-slate-800">${callsign}</div>
+                        <div class="text-slate-700">גובה: ${altitude}</div>
+                        <div class="text-slate-700">מהירות: ${speed}</div>
+                        <div class="text-slate-700">כיוון: ${Math.round(heading)}°</div>
+                        ${a.Op ? `<div class="text-slate-500 text-[11px]">${a.Op}</div>` : ''}
+                    </div>
+                `);
+                return marker;
+            });
+
+            Lr.aircraft = L.layerGroup(markers).addTo(map);
+        }
+
+    }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, dtmStats, speed, aircraftEnabled, aircraftData]);
+
+    useEffect(() => {
+        if (!mapRef.current) return;
+
+        const map = mapRef.current;
+        const Lr = layersRef.current;
+
+        if (!userLocation) {
+            if (Lr.userMarker) {
+                map.removeLayer(Lr.userMarker);
+                Lr.userMarker = null;
+            }
+            if (Lr.userAccuracy) {
+                map.removeLayer(Lr.userAccuracy);
+                Lr.userAccuracy = null;
+            }
+            return;
+        }
+
+        const latlng = L.latLng(userLocation[0], userLocation[1]);
+
+        if (!Lr.userMarker) {
+            Lr.userMarker = L.circleMarker(latlng, {
+                radius: 8,
+                color: '#2563eb',
+                weight: 2,
+                fillColor: '#60a5fa',
+                fillOpacity: 0.9
+            }).addTo(map);
+        } else {
+            Lr.userMarker.setLatLng(latlng);
+        }
+
+        if (userAccuracy !== null && userAccuracy !== undefined) {
+            const radius = Math.max(userAccuracy, 10);
+            if (!Lr.userAccuracy) {
+                Lr.userAccuracy = L.circle(latlng, {
+                    radius,
+                    color: '#60a5fa',
+                    weight: 1,
+                    fillColor: '#bfdbfe',
+                    fillOpacity: 0.2,
+                    interactive: false
+                }).addTo(map);
+            } else {
+                Lr.userAccuracy.setLatLng(latlng);
+                Lr.userAccuracy.setRadius(radius);
+            }
+        } else if (Lr.userAccuracy) {
+            map.removeLayer(Lr.userAccuracy);
+            Lr.userAccuracy = null;
+        }
+    }, [userLocation, userAccuracy]);
+
+    // Stats Calc
+    const stats = useMemo(() => {
+        const d = DRONE_PRESETS[selectedDrone];
+        const gsd = (d.sensorWidth * altitude * 100) / (d.focalLength * d.imageWidth);
+        const timeMin = totalDistance > 0 ? Math.ceil((totalDistance / speed) / 60) : 0;
+        const footprintH = (d.sensorHeight * altitude) / d.focalLength;
+        const triggerDist = footprintH * (1 - overlapFront/100);
+        const imgCount = totalDistance > 0 ? Math.ceil(totalDistance / triggerDist) : 0;
+
+        return { gsd: gsd.toFixed(2), time: timeMin, images: imgCount, dist: Math.round(totalDistance) };
+    }, [selectedDrone, altitude, totalDistance, speed, overlapFront]);
+
+    const selectedSlotKey = useMemo(() => `${flightDate.slice(0, 13)}:00`, [flightDate]);
+
+    const timelineBoard = (!showTimeline || visibleTimeline.length === 0) ? null : (
+        <div className={`pointer-events-auto bg-white/95 backdrop-blur ${isMobile ? 'rounded-2xl border border-slate-200' : 'rounded-t-2xl border-t border-slate-200 border-x border-slate-200'} shadow-2xl overflow-hidden ${timelineCardSizing}`}>
+            <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[12px] text-slate-700 border-b border-slate-100">
+                <div className="flex items-center gap-2 font-bold text-slate-900">
+                    <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center"><Icon name="calendar" size={15}/></span>
+                    לוח רוח / עננות / גשם
+                </div>
+                <button
+                    onClick={() => setShowTimeline(false)}
+                    className="text-slate-500 hover:text-slate-700"
+                    aria-label="סגור לוח מזג אוויר"
+                >
+                    <Icon name="close" size={16}/>
+                </button>
+            </div>
+            <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[11px] text-slate-600">
+                <label className="flex items-center gap-2 bg-slate-100 text-slate-800 text-[11px] font-semibold px-3 py-1 rounded-full shadow border border-slate-200">
+                    <input
+                        type="checkbox"
+                        checked={showFlyableOnly}
+                        onChange={e => setShowFlyableOnly(e.target.checked)}
+                    />
+                    שעות טיסה יציבה בלבד
+                </label>
+                {!isMobile && <span className="text-[10px] text-slate-500">גלול להצגת כל השעות</span>}
+            </div>
+            {isMobile && windTimeline.length > 1 && (
+                <div className="flex items-center justify-between px-4 pt-3 text-[11px] text-slate-600">
+                    <button
+                        className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
+                        onClick={() => setMobileDayIndex(i => Math.max(0, i - 1))}
+                        disabled={mobileDayIndex === 0}
+                    >
+                        יום קודם
+                    </button>
+                    <div className="font-semibold text-slate-800">{visibleTimeline[0]?.label}</div>
+                    <button
+                        className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
+                        onClick={() => setMobileDayIndex(i => Math.min(windTimeline.length - 1, i + 1))}
+                        disabled={mobileDayIndex >= windTimeline.length - 1}
+                    >
+                        יום הבא
+                    </button>
+                </div>
+            )}
+            <div className="relative">
+                {!isMobile && windTimeline.length > 1 && (
+                    <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
+                        <button
+                            onClick={() => scrollTimeline(-1)}
+                            className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
+                            aria-label="הזז שמאלה"
+                        >
+                            ‹
+                        </button>
+                        <button
+                            onClick={() => scrollTimeline(1)}
+                            className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
+                            aria-label="הזז ימינה"
+                        >
+                            ›
+                        </button>
+                    </div>
+                )}
+                <div
+                    ref={timelineContainerRef}
+                    className={`${isMobile ? 'overflow-y-auto' : 'overflow-x-auto'} custom-scroll snap-x snap-mandatory`}
+                >
+                    <div className={`${isMobile ? 'flex flex-col gap-2 p-3' : 'flex gap-3 p-4 min-w-full'}`}>
+                        {visibleTimeline.map(day => {
+                            const enrichedSlots = day.slots.map(slot => ({ ...slot, isFlyable: isSlotFlyable(slot) }));
+                            const displaySlots = showFlyableOnly ? enrichedSlots.filter(slot => slot.isFlyable) : enrichedSlots;
+                            const flyableCount = enrichedSlots.filter(slot => slot.isFlyable).length;
+                            const firstFlyable = enrichedSlots.find(slot => slot.isFlyable);
+                            return (
+                                <div
+                                    key={day.day}
+                                    className={`${isMobile ? 'w-full' : 'min-w-[300px] max-w-[340px]'} snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-sm font-extrabold text-slate-900">{day.label}</div>
+                                            <div className="text-[10px] text-slate-500">{day.slots.length} חלונות זמן · {flyableCount} שעות יציבות</div>
+                                            {firstFlyable && (
+                                                <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 inline-flex items-center gap-1 mt-1">
+                                                    <Icon name="clock" size={11}/> החל מ-{firstFlyable.time}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col items-end text-[10px] text-slate-600">
+                                            <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 font-semibold">{day.day}</span>
+                                            <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">מרווח 6 שעות</span>
+                                        </div>
+                                    </div>
+                                    <div className={`grid ${isMobile ? 'grid-cols-2 gap-1.5' : 'grid-cols-3 gap-2'} auto-rows-fr`}>
+                                        {displaySlots.length > 0 ? (
+                                            displaySlots.map(slot => {
+                                                const slotKey = `${day.day}T${slot.time}`;
+                                                const isActive = slotKey === selectedSlotKey;
+                                                return (
+                                                    <button
+                                                        key={slot.key}
+                                                        onClick={() => setFlightDate(`${day.day}T${slot.time}`)}
+                                                        className={`${isMobile ? 'p-2 flex flex-col gap-1.5 text-[12px]' : 'p-2 flex flex-col gap-2 text-[12px]'} w-full h-full rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}
+                                                        style={{ background: 'white' }}
+                                                    >
+                                                        {slot.isFlyable && (
+                                                            <div className="absolute top-1 left-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                                                שעה יציבה
+                                                            </div>
+                                                        )}
+                                                        <div className={`${isMobile ? 'flex items-center justify-between w-full text-[12px]' : 'items-center justify-between text-xs'} text-slate-600`}>
+                                                            <span className="font-semibold">{slot.time}</span>
+                                                            {!isMobile && <span className="text-[11px] text-slate-500 flex items-center gap-1"><Icon name="clock" size={12}/> {day.label}</span>}
+                                                        </div>
+                                                        <div
+                                                            className={`${isMobile ? 'h-9 w-full text-[13px]' : 'h-9 w-full text-[12px]'} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
+                                                            style={{ background: windSpeedToColor(slot.wind) }}
+                                                        >
+                                                            {slot.wind?.toFixed(1) ?? '-'} מ"ש
+                                                            {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">מרווח 12ש'</span>}
+                                                        </div>
+                                                        <div className={`${isMobile ? 'w-full space-y-0.5' : 'w-full px-1.5 pb-1 space-y-1'}`}>
+                                                            <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
+                                                                <div className="h-full bg-blue-500" style={{ width:`${slot.clouds ?? 0}%` }}></div>
+                                                            </div>
+                                                            <div className={`${isMobile ? 'text-[10px] text-slate-600 grid grid-cols-2 gap-1' : 'text-[10px] text-slate-600 flex flex-wrap gap-1 justify-center'}`}>
+                                                                <span className="px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center">
+                                                                    עננות {slot.clouds ?? 0}%
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded-full border text-center ${slot.isFlyable ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                                    גשם {slot.rainProb ?? 0}%
+                                                                </span>
+                                                                <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center">
+                                                                    משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? '-'} מ"ש
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="text-[11px] text-slate-500 p-2 border border-dashed border-slate-300 rounded w-full text-center col-span-full">
+                                                אין שעות מתאימות לטיסה ביום זה
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <>
+            {showSettings && (
+                <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="relative bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
+
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                            <div className="pr-8 md:pr-0">
+                                <div className="text-sm uppercase tracking-widest text-blue-600 font-bold">הגדרות מערכת</div>
+                                <h2 className="text-2xl font-black text-slate-900">ספי יציבות לטיסה</h2>
+                                <p className="text-sm text-slate-600">
+                                    הגדר פרמטרים ברירת מחדל למה נחשב יום מתאים לטיסה. לחץ על פרמטר כדי לאפשר עריכה.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2 justify-end"></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-sm font-semibold text-slate-700">מקסימום רוח (מ"ש)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="40"
+                                    step="0.5"
+                                    value={suitabilitySettings.maxWind}
+                                    onChange={e => updateSuitabilitySetting('maxWind', Number(e.target.value) || 0)}
+                                onFocus={enableSettingsEditing}
+                                    onClick={enableSettingsEditing}
+                                    className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
+                                    readOnly={settingsReadOnly}
+                                />
+                                <p className="text-xs text-slate-500">ברירת מחדל: 12 מ"ש.</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-semibold text-slate-700">מקסימום משבי רוח (מ"ש)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="50"
+                                    step="0.5"
+                                    value={suitabilitySettings.maxGust}
+                                    onChange={e => updateSuitabilitySetting('maxGust', Number(e.target.value) || 0)}
+                                    onFocus={enableSettingsEditing}
+                                    onClick={enableSettingsEditing}
+                                    className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
+                                    readOnly={settingsReadOnly}
+                                />
+                                <p className="text-xs text-slate-500">ברירת מחדל: 18 מ"ש.</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-semibold text-slate-700">מקסימום כיסוי עננים (%)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={suitabilitySettings.maxCloudCover}
+                                    onChange={e => updateSuitabilitySetting('maxCloudCover', Number(e.target.value) || 0)}
+                                    onFocus={enableSettingsEditing}
+                                    onClick={enableSettingsEditing}
+                                    className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
+                                    readOnly={settingsReadOnly}
+                                />
+                                <p className="text-xs text-slate-500">ברירת מחדל: 70%.</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-semibold text-slate-700">מקסימום הסתברות גשם (%)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    value={suitabilitySettings.maxRainProb}
+                                    onChange={e => updateSuitabilitySetting('maxRainProb', Number(e.target.value) || 0)}
+                                    onFocus={enableSettingsEditing}
+                                    onClick={enableSettingsEditing}
+                                    className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
+                                    readOnly={settingsReadOnly}
+                                />
+                                <p className="text-xs text-slate-500">ברירת מחדל: 20%.</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-semibold text-slate-700">גובה שמש מינימלי (°)</label>
+                                <input
+                                    type="number"
+                                    min="-5"
+                                    max="90"
+                                    step="1"
+                                    value={suitabilitySettings.minSunAltitude}
+                                    onChange={e => updateSuitabilitySetting('minSunAltitude', Number(e.target.value) || 0)}
+                                    onFocus={enableSettingsEditing}
+                                    onClick={enableSettingsEditing}
+                                    className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
+                                    readOnly={settingsReadOnly}
+                                />
+                                <p className="text-xs text-slate-500">ברירת מחדל: 5°. ערך גבוה יותר ימנע טיסה בשעת דמדומים.</p>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-semibold text-slate-700">גובה שמש מקסימלי (°)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="90"
+                                    step="1"
+                                    value={suitabilitySettings.maxSunAltitude}
+                                    onChange={e => updateSuitabilitySetting('maxSunAltitude', Number(e.target.value) || 0)}
+                                    onFocus={enableSettingsEditing}
+                                    onClick={enableSettingsEditing}
+                                    className={`input-field ${settingsReadOnly ? 'opacity-70' : ''}`}
+                                    readOnly={settingsReadOnly}
+                                />
+                                <p className="text-xs text-slate-500">ברירת מחדל: 85°. ניתן להגביל במקרים של סינוור חזק.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm text-slate-600 bg-slate-100 border border-slate-200 rounded-lg p-3">
+                            <span>ההגדרות נשמרות למצב הנוכחי בלבד. שינוי הערכים משפיע על סימון השעות היציבות בלוח הרוח/עננות/גשם.</span>
+                            <button
+                                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-500"
+                                onClick={() => setShowSettings(false)}
+                            >
+                                שמור וסגור
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="flex flex-col md:flex-row h-full relative">
+            {/* Controls Sidebar */}
+            {sidebarOpen && (
+                <div className="w-[70%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static">
+
+                    <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
+                        <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
+                        <div className="flex items-center gap-2">
+                            <button className="bg-slate-700 p-2 rounded hover:bg-slate-600"><Icon name="gps"/></button>
+                            <button
+                                className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-blue-500"
+                                onClick={() => setShowSettings(true)}
+                            >
+                                הגדרות
+                            </button>
+                            <button
+                                onClick={() => setSidebarOpen(false)}
+                                className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"
+                                aria-label="סגור את לוח התכנון"
+                            >
+                                <Icon name="close" size={14} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-4 space-y-6 flex-1 pb-24 md:pb-6">
+                        {/* Flight Params */}
+                        <div className="space-y-4">
+                        <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-blue-300">
+                                    <Icon name="drone" size={18}/> בחר רחפן מבצעי
+                                </div>
+                                <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                                    <span>{Object.keys(DRONE_PRESETS).length} דגמים זמינים</span>
+                                    <button
+                                        className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
+                                        onClick={() => setDronePanelOpen(o => !o)}
+                                    >
+                                        {dronePanelOpen ? 'הסתר' : 'הצג'}
+                                    </button>
+                                </div>
+                            </div>
+                            {dronePanelOpen ? (
+                                <>
+                                    <p className="text-xs text-slate-400">בחר דגם כדי לראות חיישן, סוג משימה ולקבל חישובי טיסה מדויקים.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                            <button
+                                                key={k}
+                                                onClick={() => setSelectedDrone(k)}
+                                                className={`w-full text-right border rounded-lg px-3 py-2 transition shadow-sm hover:border-blue-400 hover:shadow-lg focus:outline-none ${selectedDrone === k ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-slate-700 bg-slate-900 text-slate-100'}`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-semibold text-sm">{v.name}</span>
+                                                    <span className={`text-[11px] px-2 py-1 rounded-full ${selectedDrone === k ? 'bg-blue-600/40 text-white' : 'bg-slate-700 text-slate-200'}`}>{v.type}</span>
+                                                </div>
+                                                <div className="text-[11px] text-slate-300 mt-1">חיישן {v.sensorWidth}x{v.sensorHeight} מ"מ · מוקד {v.focalLength} מ"מ</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-slate-400">פתיחה מלאה מציגה את כל הדגמים; ניתן לבחור מהרשימה המהירה.</p>
+                                    <select
+                                        value={selectedDrone}
+                                        onChange={e => setSelectedDrone(e.target.value)}
+                                        className="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                            <option key={k} value={k}>{v.name} • {v.type}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Sliders */}
+                        <div>
+                            <div className="flex justify-between text-xs mb-1"><span>גובה (AGL)</span><span className="text-blue-400">{altitude}m</span></div>
+                            <input type="range" min="20" max="200" value={altitude} onChange={e=>setAltitude(Number(e.target.value))} className="w-full"/>
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-xs mb-1"><span>מהירות טיסה</span><span className="text-blue-400">{speed} מ/ש</span></div>
+                            <input type="range" min="2" max="15" value={speed} onChange={e=>setSpeed(Number(e.target.value))} className="w-full"/>
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-xs mb-1"><span>חפיפה קדמית</span><span className="text-blue-400">{overlapFront}%</span></div>
+                            <input type="range" min="10" max="90" value={overlapFront} onChange={e=>setOverlapFront(Number(e.target.value))} className="w-full"/>
+                        </div>
+                        <div>
+                            <div className="flex justify-between text-xs mb-1"><span>חפיפה צידית</span><span className="text-blue-400">{overlapSide}%</span></div>
+                            <input type="range" min="10" max="90" value={overlapSide} onChange={e=>setOverlapSide(Number(e.target.value))} className="w-full"/>
+                        </div>
+
+                        {/* Azimuth Control */}
+                        <div className="bg-slate-800 p-2 rounded border border-slate-700">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><Icon name="rotate"/> כיוון טיסה</span>
+                                <label className="text-[10px] flex items-center gap-1 cursor-pointer">
+                                    <input type="checkbox" checked={autoOrient} onChange={e=>setAutoOrient(e.target.checked)}/> אוטומטי
+                                </label>
+                            </div>
+                            <input type="range" min="0" max="360" value={azimuth} disabled={autoOrient} 
+                                onChange={e=>{setAzimuth(Number(e.target.value)); setAutoOrient(false);}} 
+                                className={`w-full ${autoOrient ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            />
+                        </div>
+                    </div>
+
+                    {/* DTM */}
+                    <div className="pt-4 border-t border-slate-700">
+                        <div className="text-[11px] text-slate-300 bg-slate-800 border border-slate-700 rounded p-2 mb-2">
+                            בחירת המועד נעשית מלוח מזג האוויר בתחתית. בחר שעה רצויה בלוח כדי לחשב צל בהתאם.
+                        </div>
+                        <button onClick={fetchDTM} disabled={isFetchingDTM || polygon.length<3} className="w-full btn-primary bg-blue-600 hover:bg-blue-500">
+                            {isFetchingDTM ? 'טוען גבהים...' : 'טען DTM וחשב צל'}
+                        </button>
+                        {dtmStats && (
+                            <div className={`mt-2 text-[10px] text-center p-2 rounded border ${isSimulatedDTM ? 'bg-yellow-900/30 border-yellow-700 text-yellow-400' : 'bg-green-900/30 border-green-700 text-green-400'}`}>
+                                {isSimulatedDTM && <div className="flex justify-center items-center gap-1 mb-1 font-bold"><Icon name="warning"/> סימולציית שטח (Offline Mode)</div>}
+                                גבהים: {dtmStats.min.toFixed(0)}m - {dtmStats.max.toFixed(0)}m
+                            </div>
+                        )}
+                    </div>
+                    </div>
+
+                    {/* BOTTOM STATS BAR */}
+                    <div className="p-3 bg-slate-800 border-t border-slate-700 flex flex-col gap-2">
+                        <div className="flex justify-end">
+                            <button
+                                onClick={()=>{setPolygon([]); setDtmData(null); setTotalDistance(0)}}
+                                className="bg-red-600 text-white px-3 py-2 rounded-lg shadow hover:bg-red-700 flex items-center gap-2 text-xs font-semibold"
+                                aria-label="איפוס תכנון"
+                            >
+                                <Icon name="trash" />
+                                איפוס
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                            <div className="bg-slate-700/50 p-1 rounded">
+                                <div className="text-[9px] text-slate-400">מרחק</div>
+                                <div className="font-bold text-sm text-white">{stats.dist}m</div>
+                            </div>
+                            <div className="bg-slate-700/50 p-1 rounded">
+                                <div className="text-[9px] text-slate-400">זמן (דק')</div>
+                                <div className="font-bold text-sm text-blue-400"><Icon name="clock" size={10} className="inline mr-1"/>{stats.time}</div>
+                            </div>
+                            <div className="bg-slate-700/50 p-1 rounded">
+                                <div className="text-[9px] text-slate-400">תמונות</div>
+                                <div className="font-bold text-sm text-purple-400"><Icon name="camera" size={10} className="inline mr-1"/>{stats.images}</div>
+                            </div>
+                            <div className="bg-slate-700/50 p-1 rounded">
+                                <div className="text-[9px] text-slate-400">GSD</div>
+                                <div className="font-bold text-sm text-white">{stats.gsd}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Map */}
+            <div className={`flex-1 relative h-full bg-black`}>
+                <div id="map"></div>
+                {locationMessage && (
+                    <div className="absolute bottom-28 left-6 z-[1150] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
+                        {locationMessage}
+                    </div>
+                )}
+                <div
+                    className="absolute left-6 z-[1150] pointer-events-auto flex flex-col items-start gap-2"
+                    style={geolocateButtonStyle}
+                >
+                    <button
+                        onClick={recenterOnUser}
+                        className="w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
+                        aria-label="מרכז למיקום הנוכחי"
+                    >
+                        <Icon name="gps" size={18} />
+                    </button>
+                </div>
+                {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
+
+                {/* Docked controls aligned to the right */}
+                <div className={`absolute top-4 z-[1100] ${dockPositionClasses}`}>
+                    <div className="flex flex-row-reverse items-start gap-3 pointer-events-none">
+                        <div className="flex flex-col items-start gap-2 pointer-events-auto">
+                            <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => toggleExclusivePanel('sidebar')} />
+                            <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => toggleExclusivePanel('realtime')} />
+                            <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => toggleExclusivePanel('timeline')} />
+                            <DockButton icon="doc" label="כרטיסיית תיעוד" active={documentationOpen} onClick={() => setDocumentationOpen(o => !o)} />
+                        </div>
+
+                        <div className="flex flex-col items-start gap-3 pointer-events-none">
+                            {documentationOpen && (
+                                <div className="w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 text-sm font-black text-blue-800">
+                                            <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center"><Icon name="doc" size={16}/></span>
+                                            כרטיסיית תיעוד
+                                        </div>
+                                        <button
+                                            onClick={() => setDocumentationOpen(false)}
+                                            className="text-blue-700 hover:text-blue-900"
+                                            aria-label="סגור כרטיסיית תיעוד"
+                                        >
+                                            <Icon name="close" size={16}/>
+                                        </button>
+                                    </div>
+
+                                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <input
+                                                type="text"
+                                                value={docForm.title}
+                                                onChange={e => setDocForm(prev => ({ ...prev, title: e.target.value }))}
+                                                placeholder="שם האובייקט"
+                                                className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <textarea
+                                                rows="3"
+                                                value={docForm.notes}
+                                                onChange={e => setDocForm(prev => ({ ...prev, notes: e.target.value }))}
+                                                placeholder="מלל חופשי, הערות ודגשים"
+                                                className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col gap-2 text-[12px] text-blue-900">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 flex items-center gap-1"><Icon name="gps" size={12}/> מיקום</span>
+                                                    {docForm.location ? (
+                                                        <span className="text-[11px] text-blue-700">{docForm.location.lat.toFixed(5)}, {docForm.location.lng.toFixed(5)} ({docForm.location.accuracy ? `±${Math.round(docForm.location.accuracy)}מ'` : 'ללא דיוק'})</span>
+                                                    ) : (
+                                                        <span className="text-[11px] text-blue-700">לא דגמת מיקום</span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={sampleDocumentationLocation}
+                                                    className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1"
+                                                >
+                                                    <Icon name="gps" size={12}/> דגום
+                                                </button>
+                                            </div>
+
+                                            <label className="flex items-center justify-between gap-2 cursor-pointer text-[11px] text-blue-800 bg-white rounded-lg border border-blue-200 px-3 py-2 hover:border-blue-400">
+                                                <span className="flex items-center gap-2 font-semibold"><Icon name="upload" size={14}/> העלאת תמונות</span>
+                                                <input type="file" accept="image/*" multiple className="hidden" onChange={handleDocFileChange}/>
+                                                <span className="text-[10px] text-blue-700">{docForm.images.length} נבחרו</span>
+                                            </label>
+                                        </div>
+
+                                        <button
+                                            onClick={addDocumentationEntry}
+                                            className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-semibold hover:bg-blue-500 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="mission" size={16}/> שמור אובייקט
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={exportDocumentationPDF}
+                                            className="flex-1 bg-slate-900 text-white rounded-lg py-2 text-sm font-semibold hover:bg-slate-800 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="export" size={16}/> PDF
+                                        </button>
+                                        <button
+                                            onClick={exportDocumentationShapefile}
+                                            className="flex-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-lg py-2 text-sm font-semibold hover:bg-slate-200 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="map" size={16}/> Shapefile
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-2 max-h-72 overflow-y-auto custom-scroll">
+                                        {docEntries.length === 0 ? (
+                                            <div className="text-[11px] text-slate-500 border border-dashed border-slate-300 rounded-lg p-3 text-center">
+                                                אין אובייקטים מתועדים עדיין. שמור אובייקט כדי להתחיל.
+                                            </div>
+                                        ) : (
+                                            docEntries.map(entry => (
+                                                <div key={entry.id} className="border border-slate-200 rounded-lg p-3 bg-white/80 space-y-1">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <div className="font-bold text-slate-900 text-sm">{entry.title || 'ללא כותרת'}</div>
+                                                            <div className="text-[10px] text-slate-500">{new Date(entry.timestamp).toLocaleString('he-IL')}</div>
+                                                        </div>
+                                                        {entry.location && (
+                                                            <div className="text-[10px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                                                                {entry.location.lat.toFixed(4)}, {entry.location.lng.toFixed(4)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {entry.notes && <p className="text-[12px] text-slate-700 leading-relaxed">{entry.notes}</p>}
+                                                    {entry.images?.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {entry.images.map((img, idx) => (
+                                                                <img key={idx} src={img.dataUrl} alt={img.name || 'תמונה'} className="w-16 h-16 object-cover rounded" />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {realtimePanelOpen && (
+                                <div className="w-72 bg-white/95 backdrop-blur rounded-2xl border border-amber-200 shadow-2xl text-right text-slate-800 p-3 space-y-2 pointer-events-auto">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 text-sm font-black text-amber-800">
+                                            <span className="bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center"><Icon name="radar" size={16}/></span>
+                                            תצוגת זמן אמת
+                                        </div>
+                                        <button
+                                            onClick={() => setRealtimePanelOpen(false)}
+                                            className="text-amber-700 hover:text-amber-900"
+                                            aria-label="סגור תצוגת זמן אמת"
+                                        >
+                                            <Icon name="close" size={16}/>
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => setRainRadarEnabled(prev => !prev)}
+                                        className={`w-full flex items-center justify-between gap-3 text-sm rounded-xl border px-3 py-1.5 transition ${rainRadarEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'}`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="radar" size={16}/></span>
+                                            <div className="flex flex-col text-right">
+                                                <span className="font-bold">{rainRadarEnabled ? 'הסתר מקם גשם' : 'הצג מקם גשם'}</span>
+                                                <span className="text-[10px] text-amber-800/80">{rainRadarTimestamp ? `עודכן: ${new Date(rainRadarTimestamp * 1000).toLocaleString('he-IL')}` : 'מוכן להצגה'}</span>
+                                            </div>
+                                        </div>
+                                        <span className={`text-[11px] font-semibold ${rainRadarEnabled ? 'text-white' : 'text-amber-700'}`}>{rainRadarEnabled ? 'פעיל' : 'כבוי'}</span>
+                                    </button>
+                                    {rainRadarStatus === 'loading' && <div className="text-[10px] text-amber-700">טוען שכבת גשם...</div>}
+                                    {rainRadarStatus === 'error' && <div className="text-[10px] text-red-600">שגיאה בטעינת המקם</div>}
+
+                                    <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+                                        <button
+                                            onClick={() => setAircraftEnabled(prev => !prev)}
+                                            className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-1.5 transition ${aircraftEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-100/70'}`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="drone" size={16}/></span>
+                                                <div className="flex flex-col text-right">
+                                                    <span className="font-bold">{aircraftEnabled ? 'הסתר מיקומי מטוסים' : 'הצג מיקומי מטוסים'}</span>
+                                                    <span className="text-[10px] text-amber-800/80">{aircraftTimestamp ? `עודכן: ${new Date(aircraftTimestamp).toLocaleTimeString('he-IL')}` : 'עדכון אוטומטי כל 15 שניות'}</span>
+                                                </div>
+                                            </div>
+                                            <span className={`text-[11px] font-semibold ${aircraftEnabled ? 'text-white' : 'text-amber-700'}`}>{aircraftEnabled ? 'פעיל' : 'כבוי'}</span>
+                                        </button>
+                                        <div className="flex items-center justify-between text-[11px] text-amber-800">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">{aircraftData.length} בטווח</span>
+                                                <span className="text-[10px] text-amber-700">טווח: {aircraftRangeKm} ק"מ</span>
+                                            </div>
+                                            <div className="flex gap-1 text-[10px] text-amber-700">
+                                                {aircraftStatus === 'loading' && <span>מתחבר...</span>}
+                                                {aircraftStatus === 'updating' && <span>מרענן...</span>}
+                                                {aircraftStatus === 'error' && <span className="text-red-600">שגיאה</span>}
+                                                {aircraftEnabled && aircraftData.length === 0 && aircraftStatus === 'ready' && <span>אין מטוסים בטווח</span>}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[11px] text-amber-800">
+                                            <input
+                                                type="range"
+                                                min="20"
+                                                max="200"
+                                                step="5"
+                                                value={aircraftRangeKm}
+                                                onChange={e => setAircraftRangeKm(Number(e.target.value))}
+                                                className="flex-1 accent-amber-600"
+                                                disabled={!aircraftEnabled}
+                                            />
+                                            <span className="text-[10px] text-amber-700">חיפוש סביב מרכז המפה</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {isMobile && timelineBoard}
+                        </div>
+                    </div>
+                    {!isMobile && timelineBoard && (
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1075] flex justify-center px-4 pb-4">
+                            <div className="pointer-events-auto">{timelineBoard}</div>
+                        </div>
+                    )}
+                </div>
+                {/* Heatmap Legend */}
+                {dtmData && (
+                    <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
+                        <div className="font-bold mb-1">גבהים</div>
+                        <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 bg-red-500 rounded-full"></div> גבוה
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div> נמוך
+                        </div>
+                        <div className="flex items-center gap-1 mt-1 border-t pt-1">
+                            <div className="w-4 h-1 bg-black/60"></div> צל
+                        </div>
+                    </div>
+                )}
+
+            </div>
+        </div>
+    </>
+    );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
