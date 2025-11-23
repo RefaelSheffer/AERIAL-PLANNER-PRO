@@ -235,6 +235,20 @@
             const aircraftIntervalRef = useRef(null);
             const timelineContainerRef = useRef(null);
 
+            const toggleExclusivePanel = useCallback((panel) => {
+                const states = {
+                    sidebar: sidebarOpen,
+                    realtime: realtimePanelOpen,
+                    timeline: showTimeline,
+                };
+
+                const shouldOpen = !states[panel];
+
+                setSidebarOpen(panel === 'sidebar' ? shouldOpen : false);
+                setRealtimePanelOpen(panel === 'realtime' ? shouldOpen : false);
+                setShowTimeline(panel === 'timeline' ? shouldOpen : false);
+            }, [sidebarOpen, realtimePanelOpen, showTimeline]);
+
             const recenterOnUser = useCallback(() => {
                 if (!mapRef.current) return;
 
@@ -1316,9 +1330,9 @@
                             )}
 
                             <div className="flex flex-col items-end gap-2 pointer-events-auto">
-                                <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => setSidebarOpen(o => !o)} />
-                                <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => setRealtimePanelOpen(o => !o)} />
-                                <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => setShowTimeline(v => !v)} />
+                                <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => toggleExclusivePanel('sidebar')} />
+                                <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => toggleExclusivePanel('realtime')} />
+                                <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => toggleExclusivePanel('timeline')} />
                             </div>
                         </div>
 
