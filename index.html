@@ -498,13 +498,22 @@
 
             const isSlotFlyable = (slot) => {
                 const { maxWind, maxGust, maxCloudCover, maxRainProb, minSunAltitude, maxSunAltitude } = suitabilitySettings;
-                const safeWind = (slot.wind ?? Infinity) <= maxWind;
-                const safeGust = (slot.gust ?? slot.wind ?? Infinity) <= maxGust;
-                const safeCloud = (slot.clouds ?? 100) <= maxCloudCover;
-                const safeRain = (slot.rainProb ?? 100) <= maxRainProb;
+                const wind = typeof slot.wind === 'number' && !Number.isNaN(slot.wind) ? slot.wind : null;
+                const gust = typeof slot.gust === 'number' && !Number.isNaN(slot.gust) ? slot.gust : null;
+                const clouds = typeof slot.clouds === 'number' && !Number.isNaN(slot.clouds) ? slot.clouds : null;
+                const rainProb = typeof slot.rainProb === 'number' && !Number.isNaN(slot.rainProb) ? slot.rainProb : null;
+
+                const safeWind = wind === null ? true : wind <= maxWind;
+                const safeGust = gust === null
+                    ? (wind === null ? true : wind <= maxGust)
+                    : gust <= maxGust;
+                const safeCloud = clouds === null ? true : clouds <= maxCloudCover;
+                const safeRain = rainProb === null ? true : rainProb <= maxRainProb;
+
                 const sunOk = slot.sunAlt === null
                     ? true
                     : slot.sunAlt >= minSunAltitude && slot.sunAlt <= maxSunAltitude;
+
                 return safeWind && safeGust && safeCloud && safeRain && sunOk;
             };
 
