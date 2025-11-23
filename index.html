@@ -714,11 +714,8 @@
                 : 'w-[min(1100px,90vw)] max-h-[55vh]';
 
             const dockPositionClasses = useMemo(() => {
-                if (isMobile && sidebarOpen) {
-                    return 'left-4 right-auto items-start';
-                }
-                return 'right-4 left-auto items-end';
-            }, [isMobile, sidebarOpen]);
+                return 'right-4 left-auto items-start justify-end';
+            }, []);
 
             useEffect(() => {
                 if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
@@ -1409,7 +1406,7 @@
                         {/* Docked controls on the right */}
                         <div className={`absolute top-4 z-[1100] flex flex-row-reverse items-start gap-3 pointer-events-none ${dockPositionClasses}`}>
                             {realtimePanelOpen && (
-                                <div className="w-72 bg-white/95 backdrop-blur rounded-2xl border border-amber-200 shadow-2xl text-right text-slate-800 p-3 space-y-2 pointer-events-auto">
+                                <div className="order-2 w-72 bg-white/95 backdrop-blur rounded-2xl border border-amber-200 shadow-2xl text-right text-slate-800 p-3 space-y-2 pointer-events-auto">
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2 text-sm font-black text-amber-800">
                                             <span className="bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center"><Icon name="radar" size={16}/></span>
@@ -1483,7 +1480,7 @@
                             )}
 
                             {documentationOpen && (
-                                <div className="w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto">
+                                <div className="order-1 w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto">
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2 text-sm font-black text-blue-800">
                                             <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center"><Icon name="doc" size={16}/></span>
@@ -1598,7 +1595,7 @@
                                 </div>
                             )}
 
-                            <div className="flex flex-col items-end gap-2 pointer-events-auto">
+                            <div className="order-3 flex flex-col items-end gap-2 pointer-events-auto">
                                 <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => toggleExclusivePanel('sidebar')} />
                                 <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => toggleExclusivePanel('realtime')} />
                                 <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => toggleExclusivePanel('timeline')} />
