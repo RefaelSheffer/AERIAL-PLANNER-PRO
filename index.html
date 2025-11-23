@@ -234,6 +234,8 @@
             const [aircraftRangeKm, setAircraftRangeKm] = useState(80);
             const [aircraftData, setAircraftData] = useState([]);
             const [documentationOpen, setDocumentationOpen] = useState(false);
+            const [documentationMode, setDocumentationMode] = useState(false);
+            const [editingDocId, setEditingDocId] = useState(null);
             const [docForm, setDocForm] = useState({ title: '', notes: '', images: [], location: null });
             const [docEntries, setDocEntries] = useState([]);
 
@@ -640,15 +642,42 @@
                     return;
                 }
 
-                const entry = {
-                    ...docForm,
-                    id: Date.now(),
-                    timestamp: new Date().toISOString(),
-                };
+                if (editingDocId) {
+                    setDocEntries(prev => prev.map(entry => entry.id === editingDocId ? { ...entry, ...docForm } : entry));
+                } else {
+                    const entry = {
+                        ...docForm,
+                        id: Date.now(),
+                        timestamp: new Date().toISOString(),
+                    };
 
-                setDocEntries(prev => [entry, ...prev]);
+                    setDocEntries(prev => [entry, ...prev]);
+                }
+
+                setEditingDocId(null);
+                setDocumentationMode(false);
                 setDocForm(prev => ({ ...prev, title: '', notes: '', images: [], location: prev.location }));
             };
+
+            const deleteDocumentationEntry = useCallback((id) => {
+                setDocEntries(prev => prev.filter(entry => entry.id !== id));
+                if (editingDocId === id) {
+                    setEditingDocId(null);
+                    setDocForm(prev => ({ ...prev, title: '', notes: '', images: [], location: null }));
+                }
+            }, [editingDocId]);
+
+            const beginEditingEntry = useCallback((entry) => {
+                setEditingDocId(entry.id);
+                setDocForm({
+                    title: entry.title || '',
+                    notes: entry.notes || '',
+                    images: entry.images || [],
+                    location: entry.location || null,
+                });
+                setDocumentationOpen(true);
+                setDocumentationMode(true);
+            }, []);
 
             const exportDocumentationPDF = () => {
                 if (!window.jspdf?.jsPDF) {
@@ -953,13 +982,43 @@
                     });
 
                     mapRef.current = L.map('map', { center: mapCenter, zoom: 15, layers: [esriImagery], zoomControl: false });
-                    mapRef.current.on('click', e => setPolygon(prev => [...prev, {lat: e.latlng.lat, lng: e.latlng.lng}]));
                     mapRef.current.on('moveend', () => {
                         const center = mapRef.current.getCenter();
                         setMapCenter([center.lat, center.lng]);
                     });
                 }
             }, []);
+
+            const handleMapClick = useCallback((e) => {
+                if (!mapRef.current) return;
+
+                if (documentationMode) {
+                    setDocForm(prev => ({
+                        ...prev,
+                        location: {
+                            lat: e.latlng.lat,
+                            lng: e.latlng.lng,
+                            accuracy: null,
+                        },
+                    }));
+                    setDocumentationOpen(true);
+                    return;
+                }
+
+                setPolygon(prev => [...prev, { lat: e.latlng.lat, lng: e.latlng.lng }]);
+            }, [documentationMode]);
+
+            useEffect(() => {
+                if (!mapRef.current) return;
+
+                const map = mapRef.current;
+                map.off('click');
+                map.on('click', handleMapClick);
+
+                return () => {
+                    map.off('click', handleMapClick);
+                };
+            }, [handleMapClick]);
 
             useEffect(() => {
                 if (mapRef.current) {
@@ -976,6 +1035,7 @@
                 if (Lr.path) map.removeLayer(Lr.path);
                 if (Lr.shadows) map.removeLayer(Lr.shadows);
                 if (Lr.heat) map.removeLayer(Lr.heat);
+                if (Lr.docsLayer) map.removeLayer(Lr.docsLayer);
 
                 if (polygon.length > 0) {
                     const latLngs = polygon.map(p => [p.lat, p.lng]);
@@ -1047,7 +1107,7 @@
                     Lr.aircraft = L.layerGroup(markers).addTo(map);
                 }
 
-            }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, dtmStats, speed, aircraftEnabled, aircraftData]);
+            }, [polygon, selectedDrone, altitude, overlapSide, azimuth, autoOrient, terrainShadows, dtmData, dtmStats, speed, aircraftEnabled, aircraftData, docEntries, beginEditingEntry, deleteDocumentationEntry]);
 
             useEffect(() => {
                 if (!mapRef.current) return;
@@ -1100,7 +1160,66 @@
                     map.removeLayer(Lr.userAccuracy);
                     Lr.userAccuracy = null;
                 }
-            }, [userLocation, userAccuracy]);
+
+                if (docEntries.length > 0) {
+                    const docLayer = L.layerGroup();
+                    docEntries.forEach(entry => {
+                        if (!entry.location) return;
+                        const marker = L.circleMarker([entry.location.lat, entry.location.lng], {
+                            radius: 7,
+                            color: '#1d4ed8',
+                            weight: 2,
+                            fillColor: '#bfdbfe',
+                            fillOpacity: 0.9,
+                        });
+
+                        const popupContent = document.createElement('div');
+                        popupContent.className = 'text-right text-sm text-slate-800 space-y-2';
+
+                        const titleEl = document.createElement('div');
+                        titleEl.className = 'font-bold text-slate-900';
+                        titleEl.textContent = entry.title || 'ללא כותרת';
+                        popupContent.appendChild(titleEl);
+
+                        if (entry.notes) {
+                            const notesEl = document.createElement('div');
+                            notesEl.className = 'text-[12px] text-slate-700';
+                            notesEl.textContent = entry.notes;
+                            popupContent.appendChild(notesEl);
+                        }
+
+                        const actions = document.createElement('div');
+                        actions.className = 'flex gap-2 justify-start';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'px-2 py-1 rounded bg-blue-600 text-white text-[11px]';
+                        editBtn.textContent = 'ערוך';
+                        editBtn.addEventListener('click', () => {
+                            beginEditingEntry(entry);
+                            map.closePopup();
+                        });
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'px-2 py-1 rounded bg-red-600 text-white text-[11px]';
+                        deleteBtn.textContent = 'מחק';
+                        deleteBtn.addEventListener('click', () => {
+                            deleteDocumentationEntry(entry.id);
+                            map.closePopup();
+                        });
+
+                        actions.appendChild(editBtn);
+                        actions.appendChild(deleteBtn);
+                        popupContent.appendChild(actions);
+
+                        marker.bindPopup(popupContent);
+                        docLayer.addLayer(marker);
+                    });
+
+                    Lr.docsLayer = docLayer.addTo(map);
+                } else {
+                    Lr.docsLayer = null;
+                }
+            }, [userLocation, userAccuracy, docEntries, beginEditingEntry, deleteDocumentationEntry]);
 
             // Stats Calc
             const stats = useMemo(() => {
@@ -1583,8 +1702,20 @@
                             >
                                 <Icon name="gps" size={18} />
                             </button>
+                            <button
+                                onClick={() => setDocumentationMode(m => !m)}
+                                className={`rounded-full px-4 py-2 text-xs font-bold shadow-lg border transition ${documentationMode ? 'bg-blue-600 text-white border-blue-500 shadow-xl' : 'bg-white/95 text-slate-800 border-slate-200 hover:-translate-y-0.5 hover:shadow-xl'}`}
+                                aria-label="הפעל מצב תיעוד"
+                            >
+                                מצב תיעוד: {documentationMode ? 'פעיל' : 'כבוי'}
+                            </button>
                         </div>
                         {polygon.length===0 && <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">לחץ במפה לסימון</div>}
+                        {documentationMode && (
+                            <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full text-xs shadow-lg pointer-events-none z-[1000]">
+                                מצב תיעוד פעיל · לחץ במפה להוספת נקודת תיעוד
+                            </div>
+                        )}
 
                         {/* Docked controls aligned to the right */}
                         <div className={`absolute top-4 z-[1100] ${dockPositionClasses}`}>
@@ -1613,6 +1744,19 @@
                                                 </button>
                                             </div>
 
+                                            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-[11px] text-blue-800">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold">מצב תיעוד במפה</span>
+                                                    <span className="text-[10px]">כשפעיל, לחיצה במפה תיצור נקודת תיעוד ותפתח את הטופס.</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setDocumentationMode(m => !m)}
+                                                    className={`px-3 py-1 rounded-full text-[11px] font-bold border ${documentationMode ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-800 border-blue-300 hover:bg-blue-100'}`}
+                                                >
+                                                    {documentationMode ? 'פעיל' : 'כבוי'}
+                                                </button>
+                                            </div>
+
                                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
                                                 <div className="grid grid-cols-1 gap-2">
                                                     <input
@@ -1630,6 +1774,18 @@
                                                         className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     />
                                                 </div>
+
+                                                {editingDocId && (
+                                                    <div className="text-[11px] text-blue-800 bg-blue-100 border border-blue-300 rounded-lg px-2 py-1 flex items-center justify-between">
+                                                        <span>מצב עריכה עבור נקודה קיימת</span>
+                                                        <button
+                                                            onClick={() => { setEditingDocId(null); setDocForm(prev => ({ ...prev, title: '', notes: '', images: [], location: prev.location })); setDocumentationMode(false); }}
+                                                            className="text-blue-700 font-bold text-[10px] underline"
+                                                        >
+                                                            ביטול
+                                                        </button>
+                                                    </div>
+                                                )}
 
                                                 <div className="flex flex-col gap-2 text-[12px] text-blue-900">
                                                     <div className="flex items-center justify-between gap-2">
@@ -1660,7 +1816,7 @@
                                                     onClick={addDocumentationEntry}
                                                     className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-semibold hover:bg-blue-500 flex items-center justify-center gap-2"
                                                 >
-                                                    <Icon name="mission" size={16}/> שמור אובייקט
+                                                    <Icon name="mission" size={16}/> {editingDocId ? 'עדכן נקודת תיעוד' : 'שמור נקודת תיעוד'}
                                                 </button>
                                             </div>
 
@@ -1697,6 +1853,20 @@
                                                                         {entry.location.lat.toFixed(4)}, {entry.location.lng.toFixed(4)}
                                                                     </div>
                                                                 )}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-[11px] text-slate-600">
+                                                                <button
+                                                                    onClick={() => beginEditingEntry(entry)}
+                                                                    className="px-2 py-1 rounded bg-blue-600 text-white"
+                                                                >
+                                                                    עריכה
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => deleteDocumentationEntry(entry.id)}
+                                                                    className="px-2 py-1 rounded bg-red-600 text-white"
+                                                                >
+                                                                    מחיקה
+                                                                </button>
                                                             </div>
                                                             {entry.notes && <p className="text-[12px] text-slate-700 leading-relaxed">{entry.notes}</p>}
                                                             {entry.images?.length > 0 && (
