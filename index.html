@@ -30,6 +30,10 @@
     <!-- SunCalc -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
 
+    <!-- Exports -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/shp-write@0.3.3/shpwrite.bundle.js"></script>
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
 
@@ -90,7 +94,10 @@
                 drone: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 4H5a2 2 0 00-2 2v3m16-5h-3m3 0a2 2 0 012 2v3m-5 8h3a2 2 0 002-2v-3M4 16v3a2 2 0 002 2h3M9 9l1-1h4l1 1m-6 0l-1 2.5M15 9l1 2.5M10 12h4m-2 0v2"/></svg>,
                 mission: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 17l4-4 4 4 6-6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h4v4H3zM9 9h4v4H9zM16 4h5v5h-5z"/></svg>,
                 radar: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 21a9 9 0 100-18 9 9 0 000 18z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 12l6-6"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v4"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 12h7"/></svg>,
-                calendar: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h8M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                calendar: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h8M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>,
+                doc: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7a2 2 0 012-2h5l4 4v9a2 2 0 01-2 2H9a2 2 0 01-2-2V7z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 3v4h4"/></svg>,
+                upload: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 9l5-5 5 5M12 4v12"/></svg>,
+                export: <svg width={size} height={size} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 14l-6 6m0 0h7m-7 0v-7"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10h6m0 0V4m0 6l-9 9"/></svg>
             };
             return icons[name] || null;
         };
@@ -226,6 +233,9 @@
             const [aircraftTimestamp, setAircraftTimestamp] = useState(null);
             const [aircraftRangeKm, setAircraftRangeKm] = useState(80);
             const [aircraftData, setAircraftData] = useState([]);
+            const [documentationOpen, setDocumentationOpen] = useState(false);
+            const [docForm, setDocForm] = useState({ title: '', notes: '', images: [], location: null });
+            const [docEntries, setDocEntries] = useState([]);
 
             const mapRef = useRef(null);
             const layersRef = useRef({});
@@ -559,6 +569,140 @@
                 if (!container) return;
                 const delta = direction * Math.max(container.clientWidth * 0.8, 320);
                 container.scrollBy({ left: delta, behavior: 'smooth' });
+            };
+
+            const handleDocFileChange = (event) => {
+                const files = Array.from(event.target.files || []);
+                if (files.length === 0) return;
+
+                Promise.all(files.map(file => new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve({ name: file.name, dataUrl: reader.result });
+                    reader.readAsDataURL(file);
+                }))
+                ).then(results => {
+                    setDocForm(prev => ({ ...prev, images: [...prev.images, ...results] }));
+                });
+            };
+
+            const sampleDocumentationLocation = () => {
+                if (userLocation) {
+                    setDocForm(prev => ({ ...prev, location: { lat: userLocation[0], lng: userLocation[1], accuracy: userAccuracy } }));
+                    return;
+                }
+
+                if (!navigator.geolocation) {
+                    alert('המכשיר לא תומך בדגימת מיקום.');
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        setDocForm(prev => ({
+                            ...prev,
+                            location: {
+                                lat: pos.coords.latitude,
+                                lng: pos.coords.longitude,
+                                accuracy: pos.coords.accuracy
+                            }
+                        }));
+                    },
+                    () => alert('לא הצלחנו לקבל מיקום כעת'),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            };
+
+            const addDocumentationEntry = () => {
+                if (!docForm.title && !docForm.notes && docForm.images.length === 0 && !docForm.location) {
+                    alert('הוסף לפחות שם, מלל, מיקום או תמונה כדי לשמור אובייקט.');
+                    return;
+                }
+
+                const entry = {
+                    ...docForm,
+                    id: Date.now(),
+                    timestamp: new Date().toISOString(),
+                };
+
+                setDocEntries(prev => [entry, ...prev]);
+                setDocForm(prev => ({ ...prev, title: '', notes: '', images: [], location: prev.location }));
+            };
+
+            const exportDocumentationPDF = () => {
+                if (!window.jspdf?.jsPDF) {
+                    alert('ספריית PDF לא נטענה.');
+                    return;
+                }
+
+                if (docEntries.length === 0) {
+                    alert('אין אובייקטים לייצוא.');
+                    return;
+                }
+
+                const doc = new window.jspdf.jsPDF({ unit: 'mm' });
+                let y = 15;
+                doc.setFontSize(16);
+                doc.text('כרטיסיית תיעוד', 10, y);
+                y += 8;
+                doc.setFontSize(12);
+
+                docEntries.forEach((entry, idx) => {
+                    if (y > 260) { doc.addPage(); y = 15; }
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${idx + 1}. ${entry.title || 'ללא כותרת'}`, 10, y);
+                    doc.setFont(undefined, 'normal');
+                    y += 6;
+                    if (entry.timestamp) { doc.text(new Date(entry.timestamp).toLocaleString('he-IL'), 10, y); y += 6; }
+                    if (entry.location) {
+                        doc.text(`מיקום: ${entry.location.lat.toFixed(5)}, ${entry.location.lng.toFixed(5)}`, 10, y);
+                        y += 6;
+                        if (entry.location.accuracy) { doc.text(`דיוק: ~${Math.round(entry.location.accuracy)} מ'`, 10, y); y += 6; }
+                    }
+                    if (entry.notes) {
+                        const lines = doc.splitTextToSize(entry.notes, 180);
+                        doc.text(lines, 10, y);
+                        y += lines.length * 6;
+                    }
+                    (entry.images || []).forEach(img => {
+                        if (!img?.dataUrl?.startsWith('data:image')) return;
+                        const props = doc.getImageProperties(img.dataUrl);
+                        const width = 180;
+                        const height = (props.height * width) / props.width;
+                        if (y + height > 280) { doc.addPage(); y = 15; }
+                        doc.addImage(img.dataUrl, props.fileType || 'JPEG', 15, y, width, height);
+                        y += height + 4;
+                    });
+                    y += 6;
+                });
+
+                doc.save('documentation.pdf');
+            };
+
+            const exportDocumentationShapefile = () => {
+                if (!window.shpwrite) {
+                    alert('ספריית Shapefile לא נטענה.');
+                    return;
+                }
+
+                const features = docEntries
+                    .filter(e => e.location)
+                    .map(e => ({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: [e.location.lng, e.location.lat] },
+                        properties: {
+                            title: e.title || 'ללא כותרת',
+                            notes: e.notes || '',
+                            timestamp: e.timestamp,
+                            accuracy: e.location?.accuracy ?? null,
+                        }
+                    }));
+
+                if (features.length === 0) {
+                    alert('אין אובייקטים עם מיקום לייצוא.');
+                    return;
+                }
+
+                window.shpwrite.download({ type: 'FeatureCollection', features }, { folder: 'documentation', types: { point: 'docs' } });
             };
 
             const timelineWrapperClasses = isMobile
@@ -1338,10 +1482,127 @@
                                 </div>
                             )}
 
+                            {documentationOpen && (
+                                <div className="w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 text-sm font-black text-blue-800">
+                                            <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center"><Icon name="doc" size={16}/></span>
+                                            כרטיסיית תיעוד
+                                        </div>
+                                        <button
+                                            onClick={() => setDocumentationOpen(false)}
+                                            className="text-blue-700 hover:text-blue-900"
+                                            aria-label="סגור כרטיסיית תיעוד"
+                                        >
+                                            <Icon name="close" size={16}/>
+                                        </button>
+                                    </div>
+
+                                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <input
+                                                type="text"
+                                                value={docForm.title}
+                                                onChange={e => setDocForm(prev => ({ ...prev, title: e.target.value }))}
+                                                placeholder="שם האובייקט"
+                                                className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <textarea
+                                                rows="3"
+                                                value={docForm.notes}
+                                                onChange={e => setDocForm(prev => ({ ...prev, notes: e.target.value }))}
+                                                placeholder="מלל חופשי, הערות ודגשים"
+                                                className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col gap-2 text-[12px] text-blue-900">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 flex items-center gap-1"><Icon name="gps" size={12}/> מיקום</span>
+                                                    {docForm.location ? (
+                                                        <span className="text-[11px] text-blue-700">{docForm.location.lat.toFixed(5)}, {docForm.location.lng.toFixed(5)} ({docForm.location.accuracy ? `±${Math.round(docForm.location.accuracy)}מ'` : 'ללא דיוק'})</span>
+                                                    ) : (
+                                                        <span className="text-[11px] text-blue-700">לא דגמת מיקום</span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={sampleDocumentationLocation}
+                                                    className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1"
+                                                >
+                                                    <Icon name="gps" size={12}/> דגום
+                                                </button>
+                                            </div>
+
+                                            <label className="flex items-center justify-between gap-2 cursor-pointer text-[11px] text-blue-800 bg-white rounded-lg border border-blue-200 px-3 py-2 hover:border-blue-400">
+                                                <span className="flex items-center gap-2 font-semibold"><Icon name="upload" size={14}/> העלאת תמונות</span>
+                                                <input type="file" accept="image/*" multiple className="hidden" onChange={handleDocFileChange}/>
+                                                <span className="text-[10px] text-blue-700">{docForm.images.length} נבחרו</span>
+                                            </label>
+                                        </div>
+
+                                        <button
+                                            onClick={addDocumentationEntry}
+                                            className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-semibold hover:bg-blue-500 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="mission" size={16}/> שמור אובייקט
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={exportDocumentationPDF}
+                                            className="flex-1 bg-slate-900 text-white rounded-lg py-2 text-sm font-semibold hover:bg-slate-800 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="export" size={16}/> PDF
+                                        </button>
+                                        <button
+                                            onClick={exportDocumentationShapefile}
+                                            className="flex-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-lg py-2 text-sm font-semibold hover:bg-slate-200 flex items-center justify-center gap-2"
+                                        >
+                                            <Icon name="map" size={16}/> Shapefile
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-2 max-h-72 overflow-y-auto custom-scroll">
+                                        {docEntries.length === 0 ? (
+                                            <div className="text-[11px] text-slate-500 border border-dashed border-slate-300 rounded-lg p-3 text-center">
+                                                אין אובייקטים מתועדים עדיין. שמור אובייקט כדי להתחיל.
+                                            </div>
+                                        ) : (
+                                            docEntries.map(entry => (
+                                                <div key={entry.id} className="border border-slate-200 rounded-lg p-3 bg-white/80 space-y-1">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <div className="font-bold text-slate-900 text-sm">{entry.title || 'ללא כותרת'}</div>
+                                                            <div className="text-[10px] text-slate-500">{new Date(entry.timestamp).toLocaleString('he-IL')}</div>
+                                                        </div>
+                                                        {entry.location && (
+                                                            <div className="text-[10px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                                                                {entry.location.lat.toFixed(4)}, {entry.location.lng.toFixed(4)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {entry.notes && <p className="text-[12px] text-slate-700 leading-relaxed">{entry.notes}</p>}
+                                                    {entry.images?.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {entry.images.map((img, idx) => (
+                                                                <img key={idx} src={img.dataUrl} alt={img.name || 'תמונה'} className="w-16 h-16 object-cover rounded" />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex flex-col items-end gap-2 pointer-events-auto">
                                 <DockButton icon="mission" label="תוכנית טיסה" active={sidebarOpen} onClick={() => toggleExclusivePanel('sidebar')} />
                                 <DockButton icon="radar" label="זמן אמת" active={realtimePanelOpen} onClick={() => toggleExclusivePanel('realtime')} />
                                 <DockButton icon="calendar" label="לוח מזג אוויר" active={showTimeline} onClick={() => toggleExclusivePanel('timeline')} />
+                                <DockButton icon="doc" label="כרטיסיית תיעוד" active={documentationOpen} onClick={() => setDocumentationOpen(o => !o)} />
                             </div>
                         </div>
 
