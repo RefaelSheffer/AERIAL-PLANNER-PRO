@@ -77,6 +77,10 @@
         // --- Drone Database ---
         const DRONE_PRESETS = window.DRONE_PRESETS || {};
 
+        // --- Network helpers ---
+        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+        const withCorsProxy = (url) => `${CORS_PROXY}${encodeURIComponent(url)}`;
+
         // --- Icons ---
         const Icon = ({ name, size = 16 }) => {
             const icons = {
@@ -425,6 +429,9 @@
                             }
                         );
 
+                        const originalGetTileUrl = radarLayer.getTileUrl.bind(radarLayer);
+                        radarLayer.getTileUrl = (coords) => withCorsProxy(originalGetTileUrl(coords));
+
                         radarLayer.addTo(mapRef.current);
                         Lr.rainRadar = radarLayer;
                         rainRadarTimestampRef.current = ts;
@@ -478,7 +485,8 @@
                 try {
                     const [lat, lng] = mapCenter;
                     const url = `https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat=${lat}&lng=${lng}&fDstL=0&fDstU=${Math.max(5, aircraftRangeKm)}`;
-                    const res = await fetch(url);
+                    const res = await fetch(withCorsProxy(url));
+                    if (!res.ok) throw new Error(`ADSBexchange status ${res.status}`);
                     const data = await res.json();
 
                     if (!data?.acList) throw new Error('No aircraft list');
