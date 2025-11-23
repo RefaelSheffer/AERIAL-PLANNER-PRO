@@ -161,12 +161,13 @@
         const DockButton = ({ icon, label, active, onClick }) => (
             <button
                 onClick={onClick}
-                className={`flex items-center gap-2 bg-white/95 text-slate-800 px-3 py-2 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl ${active ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'}`}
+                aria-label={label}
+                className={`bg-white/95 text-slate-800 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl p-1 ${active ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'}`}
             >
-                <span className={`w-9 h-9 rounded-full flex items-center justify-center ${active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                <span className={`w-12 h-12 rounded-full flex items-center justify-center ${active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
                     <Icon name={icon} size={18} />
                 </span>
-                <span className="text-xs font-bold">{label}</span>
+                <span className="sr-only">{label}</span>
             </button>
         );
 
@@ -1223,11 +1224,11 @@
                     <div className={`flex-1 relative h-full bg-black`}>
                         <div id="map"></div>
                         {locationMessage && (
-                            <div className="absolute bottom-28 right-6 z-[1150] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
+                            <div className="absolute bottom-28 left-6 z-[1150] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
                                 {locationMessage}
                             </div>
                         )}
-                        <div className="absolute bottom-6 right-6 z-[1150] pointer-events-auto flex flex-col items-end gap-2">
+                        <div className="absolute bottom-6 left-6 z-[1150] pointer-events-auto flex flex-col items-start gap-2">
                             <button
                                 onClick={recenterOnUser}
                                 className="w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
