@@ -1255,67 +1255,60 @@
                                             <Icon name="close" size={16}/>
                                         </button>
                                     </div>
-                                    <label className="flex items-center justify-between gap-3 text-sm bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                                        <div>
-                                            <div className="font-semibold">מקם גשם (RainViewer)</div>
-                                            <div className="text-[11px] text-amber-800/80">כיסוי גלובלי לפי מיקום התצוגה</div>
-                                            {rainRadarTimestamp && (
-                                                <div className="text-[10px] text-amber-700 mt-1">עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleString('he-IL')}</div>
-                                            )}
-                                            {rainRadarStatus === 'loading' && <div className="text-[10px] text-amber-700 mt-1">טוען שכבת גשם...</div>}
-                                            {rainRadarStatus === 'error' && <div className="text-[10px] text-red-600 mt-1">שגיאה בטעינת המקם</div>}
+                                    <button
+                                        onClick={() => setRainRadarEnabled(prev => !prev)}
+                                        className={`w-full flex items-center justify-between gap-3 text-sm rounded-xl border px-3 py-2 transition ${rainRadarEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'}`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <span className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="radar" size={16}/></span>
+                                            <div className="flex flex-col text-right">
+                                                <span className="font-bold">{rainRadarEnabled ? 'הסתר מקם גשם' : 'הצג מקם גשם'}</span>
+                                                <span className="text-[10px] text-amber-800/80">{rainRadarTimestamp ? `עודכן: ${new Date(rainRadarTimestamp * 1000).toLocaleString('he-IL')}` : 'מוכן להצגה'}</span>
+                                            </div>
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={rainRadarEnabled}
-                                            onChange={e => setRainRadarEnabled(e.target.checked)}
-                                            className="h-5 w-5 accent-amber-600"
-                                        />
-                                    </label>
+                                        <span className={`text-[11px] font-semibold ${rainRadarEnabled ? 'text-white' : 'text-amber-700'}`}>{rainRadarEnabled ? 'פעיל' : 'כבוי'}</span>
+                                    </button>
+                                    {rainRadarStatus === 'loading' && <div className="text-[10px] text-amber-700">טוען שכבת גשם...</div>}
+                                    {rainRadarStatus === 'error' && <div className="text-[10px] text-red-600">שגיאה בטעינת המקם</div>}
 
                                     <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <div>
-                                                <div className="font-semibold">מיקומי מטוסים (ADSBexchange)</div>
-                                                <div className="text-[11px] text-amber-800/80">מבוסס על מרכז המפה ועדכון כל 15 שניות</div>
-                                                {aircraftTimestamp && (
-                                                    <div className="text-[10px] text-amber-700 mt-1">עודכן: {new Date(aircraftTimestamp).toLocaleTimeString('he-IL')}</div>
-                                                )}
-                                                {aircraftStatus === 'loading' && <div className="text-[10px] text-amber-700 mt-1">מתחבר להזנת ADSB...</div>}
-                                                {aircraftStatus === 'updating' && <div className="text-[10px] text-amber-700 mt-1">מרענן נתונים...</div>}
-                                                {aircraftStatus === 'error' && <div className="text-[10px] text-red-600 mt-1">שגיאה בטעינת המידע</div>}
-                                                {aircraftEnabled && aircraftData.length === 0 && aircraftStatus === 'ready' && (
-                                                    <div className="text-[10px] text-amber-700 mt-1">אין מטוסים בטווח שנבחר</div>
-                                                )}
+                                        <button
+                                            onClick={() => setAircraftEnabled(prev => !prev)}
+                                            className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-2 transition ${aircraftEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-100/70'}`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="drone" size={16}/></span>
+                                                <div className="flex flex-col text-right">
+                                                    <span className="font-bold">{aircraftEnabled ? 'הסתר מיקומי מטוסים' : 'הצג מיקומי מטוסים'}</span>
+                                                    <span className="text-[10px] text-amber-800/80">{aircraftTimestamp ? `עודכן: ${new Date(aircraftTimestamp).toLocaleTimeString('he-IL')}` : 'עדכון אוטומטי כל 15 שניות'}</span>
+                                                </div>
                                             </div>
-                                            <input
-                                                type="checkbox"
-                                                checked={aircraftEnabled}
-                                                onChange={e => setAircraftEnabled(e.target.checked)}
-                                                className="h-5 w-5 accent-amber-600"
-                                            />
+                                            <span className={`text-[11px] font-semibold ${aircraftEnabled ? 'text-white' : 'text-amber-700'}`}>{aircraftEnabled ? 'פעיל' : 'כבוי'}</span>
+                                        </button>
+                                        <div className="flex items-center justify-between text-[11px] text-amber-800">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">{aircraftData.length} בטווח</span>
+                                                <span className="text-[10px] text-amber-700">טווח: {aircraftRangeKm} ק"מ</span>
+                                            </div>
+                                            <div className="flex gap-1 text-[10px] text-amber-700">
+                                                {aircraftStatus === 'loading' && <span>מתחבר...</span>}
+                                                {aircraftStatus === 'updating' && <span>מרענן...</span>}
+                                                {aircraftStatus === 'error' && <span className="text-red-600">שגיאה</span>}
+                                                {aircraftEnabled && aircraftData.length === 0 && aircraftStatus === 'ready' && <span>אין מטוסים בטווח</span>}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-2 text-[11px] text-amber-800">
-                                            <div className="flex-1">
-                                                <div className="flex justify-between text-[10px] text-amber-700 mb-1">
-                                                    <span>טווח חיפוש</span>
-                                                    <span>{aircraftRangeKm} ק"מ</span>
-                                                </div>
-                                                <input
-                                                    type="range"
-                                                    min="20"
-                                                    max="200"
-                                                    step="5"
-                                                    value={aircraftRangeKm}
-                                                    onChange={e => setAircraftRangeKm(Number(e.target.value))}
-                                                    className="w-full accent-amber-600"
-                                                    disabled={!aircraftEnabled}
-                                                />
-                                            </div>
-                                            <span className="text-xs font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-1">{aircraftData.length}</span>
-                                        </div>
-                                        <div className="text-[10px] text-amber-700 bg-white/60 border border-dashed border-amber-200 rounded p-2">
-                                            הסימון נעשה סביב מרכז המפה. הגדל/קטן טווח כדי לראות יותר או פחות תנועה.
+                                            <input
+                                                type="range"
+                                                min="20"
+                                                max="200"
+                                                step="5"
+                                                value={aircraftRangeKm}
+                                                onChange={e => setAircraftRangeKm(Number(e.target.value))}
+                                                className="flex-1 accent-amber-600"
+                                                disabled={!aircraftEnabled}
+                                            />
+                                            <span className="text-[10px] text-amber-700">חיפוש סביב מרכז המפה</span>
                                         </div>
                                     </div>
                                 </div>
