@@ -1,7 +1,11 @@
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
+window.AerialPlanner = window.AerialPlanner || {};
+const AerialPlanner = window.AerialPlanner;
 
 // --- Drone Database ---
-const DRONE_PRESETS = window.DRONE_PRESETS || {};
+AerialPlanner.config = {
+    DRONE_PRESETS: window.DRONE_PRESETS || {},
+};
 
 // --- Icons ---
 const Icon = ({ name, size = 16, className = '', strokeWidth = 2, color = 'currentColor' }) => {
@@ -123,8 +127,8 @@ const Icon = ({ name, size = 16, className = '', strokeWidth = 2, color = 'curre
     return icons[name] || null;
 };
 
-// --- Color Utils ---
-const windSpeedToColor = (speed) => {
+AerialPlanner.helpers = {};
+AerialPlanner.helpers.windSpeedToColor = (speed) => {
     if (speed === null || speed === undefined || Number.isNaN(speed)) return '#cbd5e1';
     const clamped = Math.max(0, Math.min(speed, 25));
     // 0 m/s -> כחול, ~12 m/s -> ירוק, 25 m/s -> אדום
@@ -132,13 +136,14 @@ const windSpeedToColor = (speed) => {
     return `hsl(${hue}, 85%, 55%)`;
 };
 
-const windTextColor = (speed) => {
+AerialPlanner.helpers.windTextColor = (speed) => {
     if (speed === null || speed === undefined || Number.isNaN(speed)) return 'text-slate-800';
     return speed >= 18 ? 'text-white' : 'text-slate-800';
 };
 
 // --- Geometry Utils ---
-const getDistance = (p1, p2) => {
+AerialPlanner.geometry = {};
+AerialPlanner.geometry.getDistance = (p1, p2) => {
     const R = 6371e3;
     const φ1 = p1.lat * Math.PI/180, φ2 = p2.lat * Math.PI/180;
     const Δφ = (p2.lat-p1.lat) * Math.PI/180, Δλ = (p2.lng-p1.lng) * Math.PI/180;
@@ -146,7 +151,7 @@ const getDistance = (p1, p2) => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 };
 
-const getBearing = (p1, p2) => {
+AerialPlanner.geometry.getBearing = (p1, p2) => {
     const φ1 = p1.lat * Math.PI/180, φ2 = p2.lat * Math.PI/180;
     const Δλ = (p2.lng-p1.lng) * Math.PI/180;
     const y = Math.sin(Δλ) * Math.cos(φ2);
@@ -154,23 +159,23 @@ const getBearing = (p1, p2) => {
     return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 };
 
-const getAutoAzimuth = (points) => {
+AerialPlanner.geometry.getAutoAzimuth = (points) => {
     if(points.length < 2) return 0;
     let maxDist = 0;
     let bestBearing = 0;
     for(let i=0; i<points.length; i++) {
         const p1 = points[i];
         const p2 = points[(i+1)%points.length];
-        const d = getDistance(p1, p2);
+        const d = AerialPlanner.geometry.getDistance(p1, p2);
         if(d > maxDist) {
             maxDist = d;
-            bestBearing = getBearing(p1, p2);
+            bestBearing = AerialPlanner.geometry.getBearing(p1, p2);
         }
     }
     return bestBearing;
 };
 
-const rotatePoint = (point, angleDeg, center) => {
+AerialPlanner.geometry.rotatePoint = (point, angleDeg, center) => {
     const angleRad = angleDeg * (Math.PI / 180);
     const cos = Math.cos(angleRad);
     const sin = Math.sin(angleRad);
@@ -182,8 +187,8 @@ const rotatePoint = (point, angleDeg, center) => {
     };
 };
 
-const unrotatePoint = (point, angleDeg, center) => {
-    return rotatePoint(point, -angleDeg, center);
+AerialPlanner.geometry.unrotatePoint = (point, angleDeg, center) => {
+    return AerialPlanner.geometry.rotatePoint(point, -angleDeg, center);
 };
 
 const DockButton = ({ icon, label, active, onClick }) => (
@@ -881,7 +886,7 @@ const App = () => {
             return [];
         }
 
-        const drone = DRONE_PRESETS[selectedDrone];
+        const drone = AerialPlanner.config.DRONE_PRESETS[selectedDrone];
         const footprintW = (drone.sensorWidth * altitude) / drone.focalLength;
         const spacingMeters = footprintW * (1 - overlapSide/100);
 
@@ -889,11 +894,11 @@ const App = () => {
         const polyPoints = polygon.map(p => ({lat: p.lat, lng: p.lng}));
 
         if (autoOrient) {
-            angle = getAutoAzimuth(polyPoints);
+            angle = AerialPlanner.geometry.getAutoAzimuth(polyPoints);
         }
 
         const center = polyPoints[0]; 
-        const rotatedPoly = polyPoints.map(p => rotatePoint(p, -angle, center));
+        const rotatedPoly = polyPoints.map(p => AerialPlanner.geometry.rotatePoint(p, -angle, center));
 
         const lats = rotatedPoly.map(p => p.lat);
         const minLat = Math.min(...lats);
@@ -924,15 +929,15 @@ const App = () => {
         let dist = 0;
 
         lines.forEach((line, index) => {
-            const start = unrotatePoint(line[0], -angle, center);
-            const end = unrotatePoint(line[1], -angle, center);
+            const start = AerialPlanner.geometry.unrotatePoint(line[0], -angle, center);
+            const end = AerialPlanner.geometry.unrotatePoint(line[1], -angle, center);
 
-            dist += getDistance(start, end);
+            dist += AerialPlanner.geometry.getDistance(start, end);
 
             if (index > 0) {
                 const prevPoint = finalPath[finalPath.length - 1];
                 const currentStart = (index % 2 === 0) ? start : end;
-                dist += getDistance({lat: prevPoint[0], lng: prevPoint[1]}, currentStart);
+                dist += AerialPlanner.geometry.getDistance({lat: prevPoint[0], lng: prevPoint[1]}, currentStart);
             }
 
             if (index % 2 === 0) {
@@ -948,7 +953,7 @@ const App = () => {
 
     useEffect(() => {
         if(autoOrient && polygon.length > 2) {
-            const best = getAutoAzimuth(polygon.map(p => ({lat: p.lat, lng: p.lng})));
+            const best = AerialPlanner.geometry.getAutoAzimuth(polygon.map(p => ({lat: p.lat, lng: p.lng})));
             setAzimuth(Math.round(best));
         }
     }, [polygon, autoOrient]);
@@ -1125,7 +1130,7 @@ const App = () => {
 
     // Stats Calc
     const stats = useMemo(() => {
-        const d = DRONE_PRESETS[selectedDrone];
+        const d = AerialPlanner.config.DRONE_PRESETS[selectedDrone];
         const gsd = (d.sensorWidth * altitude * 100) / (d.focalLength * d.imageWidth);
         const timeMin = totalDistance > 0 ? Math.ceil((totalDistance / speed) / 60) : 0;
         const footprintH = (d.sensorHeight * altitude) / d.focalLength;
@@ -1253,8 +1258,8 @@ const App = () => {
                                                             {!isMobile && <span className="text-[11px] text-slate-500 flex items-center gap-1"><Icon name="clock" size={12}/> {day.label}</span>}
                                                         </div>
                                                         <div
-                                                            className={`${isMobile ? 'h-9 w-full text-[13px]' : 'h-9 w-full text-[12px]'} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
-                                                            style={{ background: windSpeedToColor(slot.wind) }}
+                                                            className={`${isMobile ? 'h-9 w-full text-[13px]' : 'h-9 w-full text-[12px]'} rounded-md flex items-center justify-center font-bold ${AerialPlanner.helpers.windTextColor(slot.wind)}`}
+                                                            style={{ background: AerialPlanner.helpers.windSpeedToColor(slot.wind) }}
                                                         >
                                                             {slot.wind?.toFixed(1) ?? '-'} מ"ש
                                                             {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">מרווח 12ש'</span>}
@@ -1457,7 +1462,7 @@ const App = () => {
                                     <Icon name="drone" size={18}/> בחר רחפן מבצעי
                                 </div>
                                 <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                                    <span>{Object.keys(DRONE_PRESETS).length} דגמים זמינים</span>
+                                    <span>{Object.keys(AerialPlanner.config.DRONE_PRESETS).length} דגמים זמינים</span>
                                     <button
                                         className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
                                         onClick={() => setDronePanelOpen(o => !o)}
@@ -1470,7 +1475,7 @@ const App = () => {
                                 <>
                                     <p className="text-xs text-slate-400">בחר דגם כדי לראות חיישן, סוג משימה ולקבל חישובי טיסה מדויקים.</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                        {Object.entries(AerialPlanner.config.DRONE_PRESETS).map(([k, v]) => (
                                             <button
                                                 key={k}
                                                 onClick={() => setSelectedDrone(k)}
@@ -1493,7 +1498,7 @@ const App = () => {
                                         onChange={e => setSelectedDrone(e.target.value)}
                                         className="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        {Object.entries(DRONE_PRESETS).map(([k, v]) => (
+                                        {Object.entries(AerialPlanner.config.DRONE_PRESETS).map(([k, v]) => (
                                             <option key={k} value={k}>{v.name} • {v.type}</option>
                                         ))}
                                     </select>
