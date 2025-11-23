@@ -1,214 +1,15 @@
+
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
-window.AerialPlanner = window.AerialPlanner || {};
-const AerialPlanner = window.AerialPlanner;
-
-// --- Drone Database ---
-AerialPlanner.config = {
-    DRONE_PRESETS: window.DRONE_PRESETS || {},
-};
-
-// --- Icons ---
-const Icon = ({ name, size = 16, className = '', strokeWidth = 2, color = 'currentColor' }) => {
-    const baseProps = {
-        width: size,
-        height: size,
-        viewBox: '0 0 24 24',
-        fill: 'none',
-        stroke: color,
-        strokeWidth,
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
-        className
-    };
-
-    const icons = {
-        map: (
-            <svg {...baseProps}>
-                <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-        ),
-        mountain: (
-            <svg {...baseProps}>
-                <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-        ),
-        wind: (
-            <svg {...baseProps}>
-                <path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-                <path d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
-            </svg>
-        ),
-        cloud: (
-            <svg {...baseProps}>
-                <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-            </svg>
-        ),
-        gps: (
-            <svg {...baseProps}>
-                <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        ),
-        trash: (
-            <svg {...baseProps}>
-                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-        ),
-        close: (
-            <svg {...baseProps}>
-                <path d="M6 6l12 12M6 18L18 6" />
-            </svg>
-        ),
-        rotate: (
-            <svg {...baseProps}>
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-        ),
-        camera: (
-            <svg {...baseProps}>
-                <path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        ),
-        clock: (
-            <svg {...baseProps}>
-                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        ),
-        warning: (
-            <svg {...baseProps}>
-                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-        ),
-        drone: (
-            <svg {...baseProps}>
-                <path d="M8 4H5a2 2 0 00-2 2v3m16-5h-3m3 0a2 2 0 012 2v3m-5 8h3a2 2 0 002-2v-3M4 16v3a2 2 0 002 2h3M9 9l1-1h4l1 1m-6 0l-1 2.5M15 9l1 2.5M10 12h4m-2 0v2" />
-            </svg>
-        ),
-        mission: (
-            <svg {...baseProps}>
-                <path d="M4 17l4-4 4 4 6-6" />
-                <path d="M3 5h4v4H3zM9 9h4v4H9zM16 4h5v5h-5z" />
-            </svg>
-        ),
-        radar: (
-            <svg {...baseProps}>
-                <path d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
-                <path d="M12 12l6-6" />
-                <path d="M12 3v4" />
-                <path d="M12 12h7" />
-            </svg>
-        ),
-        calendar: (
-            <svg {...baseProps}>
-                <path d="M8 7V3m8 4V3m-9 8h8M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-        ),
-        doc: (
-            <svg {...baseProps}>
-                <path d="M7 7a2 2 0 012-2h5l4 4v9a2 2 0 01-2 2H9a2 2 0 01-2-2V7z" />
-                <path d="M14 3v4h4" />
-            </svg>
-        ),
-        upload: (
-            <svg {...baseProps}>
-                <path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-                <path d="M7 9l5-5 5 5M12 4v12" />
-            </svg>
-        ),
-        export: (
-            <svg {...baseProps}>
-                <path d="M9 14l-6 6m0 0h7m-7 0v-7" />
-                <path d="M15 10h6m0 0V4m0 6l-9 9" />
-            </svg>
-        )
-    };
-
-    return icons[name] || null;
-};
-
-AerialPlanner.helpers = {};
-AerialPlanner.helpers.windSpeedToColor = (speed) => {
-    if (speed === null || speed === undefined || Number.isNaN(speed)) return '#cbd5e1';
-    const clamped = Math.max(0, Math.min(speed, 25));
-    // 0 m/s -> כחול, ~12 m/s -> ירוק, 25 m/s -> אדום
-    const hue = 240 - (clamped / 25) * 240;
-    return `hsl(${hue}, 85%, 55%)`;
-};
-
-AerialPlanner.helpers.windTextColor = (speed) => {
-    if (speed === null || speed === undefined || Number.isNaN(speed)) return 'text-slate-800';
-    return speed >= 18 ? 'text-white' : 'text-slate-800';
-};
-
-// --- Geometry Utils ---
-AerialPlanner.geometry = {};
-AerialPlanner.geometry.getDistance = (p1, p2) => {
-    const R = 6371e3;
-    const φ1 = p1.lat * Math.PI/180, φ2 = p2.lat * Math.PI/180;
-    const Δφ = (p2.lat-p1.lat) * Math.PI/180, Δλ = (p2.lng-p1.lng) * Math.PI/180;
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-};
-
-AerialPlanner.geometry.getBearing = (p1, p2) => {
-    const φ1 = p1.lat * Math.PI/180, φ2 = p2.lat * Math.PI/180;
-    const Δλ = (p2.lng-p1.lng) * Math.PI/180;
-    const y = Math.sin(Δλ) * Math.cos(φ2);
-    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-};
-
-AerialPlanner.geometry.getAutoAzimuth = (points) => {
-    if(points.length < 2) return 0;
-    let maxDist = 0;
-    let bestBearing = 0;
-    for(let i=0; i<points.length; i++) {
-        const p1 = points[i];
-        const p2 = points[(i+1)%points.length];
-        const d = AerialPlanner.geometry.getDistance(p1, p2);
-        if(d > maxDist) {
-            maxDist = d;
-            bestBearing = AerialPlanner.geometry.getBearing(p1, p2);
-        }
-    }
-    return bestBearing;
-};
-
-AerialPlanner.geometry.rotatePoint = (point, angleDeg, center) => {
-    const angleRad = angleDeg * (Math.PI / 180);
-    const cos = Math.cos(angleRad);
-    const sin = Math.sin(angleRad);
-    const dx = point.lng - center.lng;
-    const dy = point.lat - center.lat;
-    return {
-        lat: center.lat + (dx * sin + dy * cos),
-        lng: center.lng + (dx * cos - dy * sin)
-    };
-};
-
-AerialPlanner.geometry.unrotatePoint = (point, angleDeg, center) => {
-    return AerialPlanner.geometry.rotatePoint(point, -angleDeg, center);
-};
-
-const DockButton = ({ icon, label, active, onClick }) => (
-    <button
-        onClick={onClick}
-        aria-label={label}
-        className={`bg-white/95 text-slate-800 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl p-1 ${active ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'}`}
-    >
-        <span className={`w-12 h-12 rounded-full flex items-center justify-center ${active ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`}>
-            <Icon name={icon} size={18} />
-        </span>
-        <span className="sr-only">{label}</span>
-    </button>
-);
+const Config = window.AerialPlannerConfig;
+const Services = window.AerialPlannerServices;
+const { Sidebar, MapView, TimelineBoard, RealtimePanel, DocumentationPanel, Dock, Icon, DockButton } = window.AerialPlannerComponents;
+const AerialPlanner = { config: Config, helpers: Config.helpers, geometry: Config.geometry };
 
 const App = () => {
     const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
 
-    const [mapCenter, setMapCenter] = useState([32.0853, 34.7818]);
-    const [weatherLocation, setWeatherLocation] = useState([32.0853, 34.7818]);
+    const [mapCenter, setMapCenter] = useState(Config.DEFAULT_MAP_CENTER);
+    const [weatherLocation, setWeatherLocation] = useState(Config.DEFAULT_MAP_CENTER);
     const [polygon, setPolygon] = useState([]);
     const [userLocation, setUserLocation] = useState(null);
     const [userAccuracy, setUserAccuracy] = useState(null);
@@ -226,14 +27,7 @@ const App = () => {
     const [showFlyableOnly, setShowFlyableOnly] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [settingsReadOnly, setSettingsReadOnly] = useState(true);
-    const [suitabilitySettings, setSuitabilitySettings] = useState({
-        maxWind: 12,
-        maxGust: 18,
-        maxCloudCover: 70,
-        maxRainProb: 20,
-        minSunAltitude: 5,
-        maxSunAltitude: 85,
-    });
+    const [suitabilitySettings, setSuitabilitySettings] = useState(Config.DEFAULT_SUITABILITY);
 
     // Stats
     const [totalDistance, setTotalDistance] = useState(0);
@@ -400,14 +194,8 @@ const App = () => {
     const fetchWeather = async () => {
         if(!weatherLocation) return;
         try {
-            const [lat, lng] = weatherLocation;
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,precipitation_probability&timezone=auto&forecast_days=7`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if (data?.hourly) {
-                setHourlyForecast(data.hourly);
-            }
+            const data = await Services.fetchWeather(weatherLocation);
+            if (data) setHourlyForecast(data);
         } catch(e) { console.error(e); }
     };
 
@@ -428,35 +216,10 @@ const App = () => {
         if (!mapRef.current) return;
         setRainRadarStatus('loading');
         try {
-            const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-            const data = await res.json();
-            const frames = data?.radar?.past;
-            if (!frames || frames.length === 0) throw new Error('No radar frames');
-            const latest = frames[frames.length - 1];
-            const ts = latest.time;
-
-            if (ts !== rainRadarTimestampRef.current) {
-                const Lr = layersRef.current;
-                if (Lr.rainRadar) {
-                    mapRef.current.removeLayer(Lr.rainRadar);
-                }
-
-                const radarLayer = L.tileLayer(
-                    `https://tilecache.rainviewer.com/v2/radar/${ts}/256/{z}/{x}/{y}/2/1_1.png`,
-                    {
-                        attribution: 'RainViewer',
-                        opacity: 0.6,
-                        crossOrigin: true,
-                        maxZoom: 18,
-                    }
-                );
-
-                radarLayer.addTo(mapRef.current);
-                Lr.rainRadar = radarLayer;
-                rainRadarTimestampRef.current = ts;
-                setRainRadarTimestamp(ts);
+            const result = await Services.fetchRainRadar(mapRef.current, layersRef, rainRadarTimestampRef);
+            if (result?.timestamp) {
+                setRainRadarTimestamp(result.timestamp);
             }
-
             setRainRadarStatus('ready');
         } catch (e) {
             console.error('RainViewer error', e);
@@ -502,14 +265,7 @@ const App = () => {
         setAircraftStatus(prev => prev === 'ready' ? 'updating' : 'loading');
 
         try {
-            const [lat, lng] = mapCenter;
-            const url = `https://public-api.adsbexchange.com/VirtualRadar/AircraftList.json?lat=${lat}&lng=${lng}&fDstL=0&fDstU=${Math.max(5, aircraftRangeKm)}`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if (!data?.acList) throw new Error('No aircraft list');
-
-            const filtered = data.acList.filter(a => a?.Lat && a?.Long);
+            const filtered = await Services.fetchAircraft(mapCenter, aircraftRangeKm);
             setAircraftData(filtered);
             setAircraftTimestamp(Date.now());
             setAircraftStatus('ready');
@@ -779,61 +535,11 @@ const App = () => {
         setTerrainShadows([]);
         setIsSimulatedDTM(false);
 
-        // Grid generation
-        const latLngs = polygon.map(p => L.latLng(p.lat, p.lng));
-        const bounds = L.latLngBounds(latLngs);
-        const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
-
-        const rows = 20, cols = 20; // Higher resolution
-        let locations = [];
-        for(let r=0; r<=rows; r++) {
-            for(let c=0; c<=cols; c++) {
-                locations.push({
-                    lat: sw.lat + (ne.lat-sw.lat)*(r/rows),
-                    lng: sw.lng + (ne.lng-sw.lng)*(c/cols)
-                });
-            }
-        }
-
         try {
-            // Try Real API
-            const fetchWithTimeout = (url) => {
-                const fetchPromise = fetch(url);
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
-                return Promise.race([fetchPromise, timeoutPromise]);
-            };
-
-            const batchSize = 100; // OpenTopoData limit per request
-            const batches = [];
-            for (let i = 0; i < locations.length; i += batchSize) {
-                batches.push(locations.slice(i, i + batchSize));
-            }
-
-            const allResults = [];
-            for (const batch of batches) {
-                const locStr = batch.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join('|');
-                const url = `https://api.opentopodata.org/v1/aster30m?locations=${locStr}`;
-                const res = await fetchWithTimeout(url);
-                if (!res.ok) throw new Error(`API Error ${res.status}`);
-                const data = await res.json();
-                if (!data.results) throw new Error('Invalid response');
-                allResults.push(...data.results);
-            }
-
-            if (allResults.length === 0) throw new Error('Empty DTM response');
-
-            const grid = allResults.map(r => ({ lat: r.location.lat, lng: r.location.lng, ele: r.elevation || 0 }));
-            processDTM(grid, false);
+            const result = await Services.fetchDTM(polygon);
+            processDTM(result.grid, result.simulated);
         } catch(e) {
-            console.warn("DTM API Failed, switching to simulation.", e);
-            // Fallback: Generate Simulated Terrain based on Perlin-like noise
-            const simGrid = locations.map((loc, i) => {
-                // Simple fake terrain: Base height + Math.sin waves
-                const baseEle = 100;
-                const noise = Math.sin(loc.lat * 1000) * Math.cos(loc.lng * 1000) * 20;
-                return { lat: loc.lat, lng: loc.lng, ele: baseEle + noise };
-            });
-            processDTM(simGrid, true);
+            console.error(e);
         } finally {
             setIsFetchingDTM(false);
         }
