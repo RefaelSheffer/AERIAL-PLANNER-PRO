@@ -1,3 +1,6 @@
+// main.jsx
+// Bootstraps the Aerial Planner app, manages state, and wires config, services, and components together.
+// Uses global AerialPlannerConfig, DRONE_PRESETS, AerialPlannerServices, and AerialPlannerComponents to render the experience.
 "use strict";
 
 // Main application setup
