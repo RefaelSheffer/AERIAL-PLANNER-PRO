@@ -509,10 +509,6 @@ const App = () => {
         window.shpwrite.download({ type: 'FeatureCollection', features }, { folder: 'documentation', types: { point: 'docs' } });
     };
 
-    const timelineCardSizing = isMobile
-        ? 'w-[45vw] max-w-[420px] max-h-[92vh]'
-        : 'w-[95vw] max-w-5xl max-h-[55vh] mx-auto';
-
     const geolocateButtonStyle = {
         bottom: (!isMobile && showTimeline) ? 'calc(55vh + 1rem)' : '1.5rem'
     };
@@ -848,160 +844,23 @@ const App = () => {
 
     const selectedSlotKey = useMemo(() => `${flightDate.slice(0, 13)}:00`, [flightDate]);
 
-    const timelineBoard = (!showTimeline || visibleTimeline.length === 0) ? null : (
-        <div className={`pointer-events-auto bg-white/95 backdrop-blur ${isMobile ? 'rounded-2xl border border-slate-200' : 'rounded-t-2xl border-t border-slate-200 border-x border-slate-200'} shadow-2xl overflow-hidden ${timelineCardSizing}`}>
-            <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[12px] text-slate-700 border-b border-slate-100">
-                <div className="flex items-center gap-2 font-bold text-slate-900">
-                    <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center"><Icon name="calendar" size={15}/></span>
-                    לוח רוח / עננות / גשם
-                </div>
-                <button
-                    onClick={() => setShowTimeline(false)}
-                    className="text-slate-500 hover:text-slate-700"
-                    aria-label="סגור לוח מזג אוויר"
-                >
-                    <Icon name="close" size={16}/>
-                </button>
-            </div>
-            <div className="flex items-center justify-between px-4 pt-3 pb-1 text-[11px] text-slate-600">
-                <label className="flex items-center gap-2 bg-slate-100 text-slate-800 text-[11px] font-semibold px-3 py-1 rounded-full shadow border border-slate-200">
-                    <input
-                        type="checkbox"
-                        checked={showFlyableOnly}
-                        onChange={e => setShowFlyableOnly(e.target.checked)}
-                    />
-                    שעות טיסה יציבה בלבד
-                </label>
-                {!isMobile && <span className="text-[10px] text-slate-500">גלול להצגת כל השעות</span>}
-            </div>
-            {isMobile && windTimeline.length > 1 && (
-                <div className="flex items-center justify-between px-4 pt-3 text-[11px] text-slate-600">
-                    <button
-                        className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
-                        onClick={() => setMobileDayIndex(i => Math.max(0, i - 1))}
-                        disabled={mobileDayIndex === 0}
-                    >
-                        יום קודם
-                    </button>
-                    <div className="font-semibold text-slate-800">{visibleTimeline[0]?.label}</div>
-                    <button
-                        className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
-                        onClick={() => setMobileDayIndex(i => Math.min(windTimeline.length - 1, i + 1))}
-                        disabled={mobileDayIndex >= windTimeline.length - 1}
-                    >
-                        יום הבא
-                    </button>
-                </div>
-            )}
-            <div className="relative">
-                {!isMobile && windTimeline.length > 1 && (
-                    <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
-                        <button
-                            onClick={() => scrollTimeline(-1)}
-                            className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
-                            aria-label="הזז שמאלה"
-                        >
-                            ‹
-                        </button>
-                        <button
-                            onClick={() => scrollTimeline(1)}
-                            className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
-                            aria-label="הזז ימינה"
-                        >
-                            ›
-                        </button>
-                    </div>
-                )}
-                <div
-                    ref={timelineContainerRef}
-                    className={`${isMobile ? 'overflow-y-auto' : 'overflow-x-auto'} custom-scroll snap-x snap-mandatory`}
-                >
-                    <div className={`${isMobile ? 'flex flex-col gap-2 p-3' : 'flex gap-3 p-4 min-w-full'}`}>
-                        {visibleTimeline.map(day => {
-                            const enrichedSlots = day.slots.map(slot => ({ ...slot, isFlyable: isSlotFlyable(slot) }));
-                            const displaySlots = showFlyableOnly ? enrichedSlots.filter(slot => slot.isFlyable) : enrichedSlots;
-                            const flyableCount = enrichedSlots.filter(slot => slot.isFlyable).length;
-                            const firstFlyable = enrichedSlots.find(slot => slot.isFlyable);
-                            return (
-                                <div
-                                    key={day.day}
-                                    className={`${isMobile ? 'w-full' : 'min-w-[300px] max-w-[340px]'} snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <div className="text-sm font-extrabold text-slate-900">{day.label}</div>
-                                            <div className="text-[10px] text-slate-500">{day.slots.length} חלונות זמן · {flyableCount} שעות יציבות</div>
-                                            {firstFlyable && (
-                                                <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 inline-flex items-center gap-1 mt-1">
-                                                    <Icon name="clock" size={11}/> החל מ-{firstFlyable.time}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col items-end text-[10px] text-slate-600">
-                                            <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 font-semibold">{day.day}</span>
-                                            <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">מרווח 6 שעות</span>
-                                        </div>
-                                    </div>
-                                    <div className={`grid ${isMobile ? 'grid-cols-2 gap-1.5' : 'grid-cols-3 gap-2'} auto-rows-fr`}>
-                                        {displaySlots.length > 0 ? (
-                                            displaySlots.map(slot => {
-                                                const slotKey = `${day.day}T${slot.time}`;
-                                                const isActive = slotKey === selectedSlotKey;
-                                                return (
-                                                    <button
-                                                        key={slot.key}
-                                                        onClick={() => setFlightDate(`${day.day}T${slot.time}`)}
-                                                        className={`${isMobile ? 'p-2 flex flex-col gap-1.5 text-[12px]' : 'p-2 flex flex-col gap-2 text-[12px]'} w-full h-full rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}
-                                                        style={{ background: 'white' }}
-                                                    >
-                                                        {slot.isFlyable && (
-                                                            <div className="absolute top-1 left-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
-                                                                שעה יציבה
-                                                            </div>
-                                                        )}
-                                                        <div className={`${isMobile ? 'flex items-center justify-between w-full text-[12px]' : 'items-center justify-between text-xs'} text-slate-600`}>
-                                                            <span className="font-semibold">{slot.time}</span>
-                                                            {!isMobile && <span className="text-[11px] text-slate-500 flex items-center gap-1"><Icon name="clock" size={12}/> {day.label}</span>}
-                                                        </div>
-                                                        <div
-                                                            className={`${isMobile ? 'h-9 w-full text-[13px]' : 'h-9 w-full text-[12px]'} rounded-md flex items-center justify-center font-bold ${AerialPlanner.helpers.windTextColor(slot.wind)}`}
-                                                            style={{ background: AerialPlanner.helpers.windSpeedToColor(slot.wind) }}
-                                                        >
-                                                            {slot.wind?.toFixed(1) ?? '-'} מ"ש
-                                                            {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">מרווח 12ש'</span>}
-                                                        </div>
-                                                        <div className={`${isMobile ? 'w-full space-y-0.5' : 'w-full px-1.5 pb-1 space-y-1'}`}>
-                                                            <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
-                                                                <div className="h-full bg-blue-500" style={{ width:`${slot.clouds ?? 0}%` }}></div>
-                                                            </div>
-                                                            <div className={`${isMobile ? 'text-[10px] text-slate-600 grid grid-cols-2 gap-1' : 'text-[10px] text-slate-600 flex flex-wrap gap-1 justify-center'}`}>
-                                                                <span className="px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center">
-                                                                    עננות {slot.clouds ?? 0}%
-                                                                </span>
-                                                                <span className={`px-1.5 py-0.5 rounded-full border text-center ${slot.isFlyable ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-                                                                    גשם {slot.rainProb ?? 0}%
-                                                                </span>
-                                                                <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center">
-                                                                    משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? '-'} מ"ש
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })
-                                        ) : (
-                                            <div className="text-[11px] text-slate-500 p-2 border border-dashed border-slate-300 rounded w-full text-center col-span-full">
-                                                אין שעות מתאימות לטיסה ביום זה
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        </div>
+    const timelineBoard = (
+        <TimelineBoard
+            show={showTimeline}
+            isMobile={isMobile}
+            windTimeline={windTimeline}
+            visibleTimeline={visibleTimeline}
+            showFlyableOnly={showFlyableOnly}
+            selectedSlotKey={selectedSlotKey}
+            onSlotSelect={setFlightDate}
+            onScroll={scrollTimeline}
+            timelineContainerRef={timelineContainerRef}
+            mobileDayIndex={mobileDayIndex}
+            onMobileDayChange={(delta) => setMobileDayIndex(i => Math.min(Math.max(0, i + delta), windTimeline.length - 1))}
+            isSlotFlyable={isSlotFlyable}
+            windTextColor={AerialPlanner.helpers.windTextColor}
+            windSpeedToColor={AerialPlanner.helpers.windSpeedToColor}
+        />
     );
 
     return (
@@ -1131,13 +990,11 @@ const App = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                </Sidebar>
 
             <div className="flex flex-col md:flex-row h-full relative">
             {/* Controls Sidebar */}
-            {sidebarOpen && (
-                <div className="w-[70%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static">
+            <Sidebar open={sidebarOpen} className="w-[70%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static">
 
                     <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
                         <h1 className="font-black text-lg tracking-wider text-blue-400">SMART PLANNER</h1>
@@ -1297,7 +1154,7 @@ const App = () => {
             )}
 
             {/* Map */}
-            <div className={`flex-1 relative h-full bg-black`}>
+            <MapView className={`flex-1 relative h-full bg-black`}>
                 <div id="map"></div>
                 {locationMessage && (
                     <div className="absolute bottom-28 left-6 z-[1150] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
@@ -1445,79 +1302,21 @@ const App = () => {
                                 </div>
                             )}
 
-                            {realtimePanelOpen && (
-                                <div className="w-72 bg-white/95 backdrop-blur rounded-2xl border border-amber-200 shadow-2xl text-right text-slate-800 p-3 space-y-2 pointer-events-auto">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2 text-sm font-black text-amber-800">
-                                            <span className="bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center"><Icon name="radar" size={16}/></span>
-                                            תצוגת זמן אמת
-                                        </div>
-                                        <button
-                                            onClick={() => setRealtimePanelOpen(false)}
-                                            className="text-amber-700 hover:text-amber-900"
-                                            aria-label="סגור תצוגת זמן אמת"
-                                        >
-                                            <Icon name="close" size={16}/>
-                                        </button>
-                                    </div>
-                                    <button
-                                        onClick={() => setRainRadarEnabled(prev => !prev)}
-                                        className={`w-full flex items-center justify-between gap-3 text-sm rounded-xl border px-3 py-1.5 transition ${rainRadarEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50'}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <span className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="radar" size={16}/></span>
-                                            <div className="flex flex-col text-right">
-                                                <span className="font-bold">{rainRadarEnabled ? 'הסתר מקם גשם' : 'הצג מקם גשם'}</span>
-                                                <span className="text-[10px] text-amber-800/80">{rainRadarTimestamp ? `עודכן: ${new Date(rainRadarTimestamp * 1000).toLocaleString('he-IL')}` : 'מוכן להצגה'}</span>
-                                            </div>
-                                        </div>
-                                        <span className={`text-[11px] font-semibold ${rainRadarEnabled ? 'text-white' : 'text-amber-700'}`}>{rainRadarEnabled ? 'פעיל' : 'כבוי'}</span>
-                                    </button>
-                                    {rainRadarStatus === 'loading' && <div className="text-[10px] text-amber-700">טוען שכבת גשם...</div>}
-                                    {rainRadarStatus === 'error' && <div className="text-[10px] text-red-600">שגיאה בטעינת המקם</div>}
-
-                                    <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-                                        <button
-                                            onClick={() => setAircraftEnabled(prev => !prev)}
-                                            className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-1.5 transition ${aircraftEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-100/70'}`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="drone" size={16}/></span>
-                                                <div className="flex flex-col text-right">
-                                                    <span className="font-bold">{aircraftEnabled ? 'הסתר מיקומי מטוסים' : 'הצג מיקומי מטוסים'}</span>
-                                                    <span className="text-[10px] text-amber-800/80">{aircraftTimestamp ? `עודכן: ${new Date(aircraftTimestamp).toLocaleTimeString('he-IL')}` : 'עדכון אוטומטי כל 15 שניות'}</span>
-                                                </div>
-                                            </div>
-                                            <span className={`text-[11px] font-semibold ${aircraftEnabled ? 'text-white' : 'text-amber-700'}`}>{aircraftEnabled ? 'פעיל' : 'כבוי'}</span>
-                                        </button>
-                                        <div className="flex items-center justify-between text-[11px] text-amber-800">
-                                            <div className="flex items-center gap-2">
-                                                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">{aircraftData.length} בטווח</span>
-                                                <span className="text-[10px] text-amber-700">טווח: {aircraftRangeKm} ק"מ</span>
-                                            </div>
-                                            <div className="flex gap-1 text-[10px] text-amber-700">
-                                                {aircraftStatus === 'loading' && <span>מתחבר...</span>}
-                                                {aircraftStatus === 'updating' && <span>מרענן...</span>}
-                                                {aircraftStatus === 'error' && <span className="text-red-600">שגיאה</span>}
-                                                {aircraftEnabled && aircraftData.length === 0 && aircraftStatus === 'ready' && <span>אין מטוסים בטווח</span>}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-[11px] text-amber-800">
-                                            <input
-                                                type="range"
-                                                min="20"
-                                                max="200"
-                                                step="5"
-                                                value={aircraftRangeKm}
-                                                onChange={e => setAircraftRangeKm(Number(e.target.value))}
-                                                className="flex-1 accent-amber-600"
-                                                disabled={!aircraftEnabled}
-                                            />
-                                            <span className="text-[10px] text-amber-700">חיפוש סביב מרכז המפה</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            <RealtimePanel
+                                open={realtimePanelOpen}
+                                rainRadarEnabled={rainRadarEnabled}
+                                onToggleRainRadar={() => setRainRadarEnabled(prev => !prev)}
+                                rainRadarStatus={rainRadarStatus}
+                                rainRadarTimestamp={rainRadarTimestamp}
+                                onRefreshRainRadar={refreshRainRadar}
+                                aircraftEnabled={aircraftEnabled}
+                                onToggleAircraft={() => setAircraftEnabled(prev => !prev)}
+                                aircraftStatus={aircraftStatus}
+                                aircraftTimestamp={aircraftTimestamp}
+                                aircraftRangeKm={aircraftRangeKm}
+                                aircraftData={aircraftData}
+                                onRangeChange={setAircraftRangeKm}
+                            />
 
                             {isMobile && timelineBoard}
                         </div>
@@ -1544,7 +1343,7 @@ const App = () => {
                     </div>
                 )}
 
-            </div>
+            </MapView>
         </div>
     </>
     );
