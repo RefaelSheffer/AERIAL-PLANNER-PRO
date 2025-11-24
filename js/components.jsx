@@ -305,7 +305,7 @@ const TimelineBoard = ({
                   </div>
                 </div>
                 <div
-                  className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-3 gap-2"} auto-rows-fr`}
+                  className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-3 gap-2"}`}
                 >
                   {!timelineEmpty && day.displaySlots.length > 0 ? (
                     day.displaySlots.map((slot) => {
@@ -315,7 +315,7 @@ const TimelineBoard = ({
                         <button
                           key={slot.key}
                           onClick={() => onSlotSelect(`${day.day}T${slot.time}`)}
-                          className={`${isMobile ? "p-2 flex flex-col gap-1.5 text-[12px]" : "p-2 flex flex-col gap-2 text-[12px]"} w-full h-full rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`}
+                          className={`${isMobile ? "p-2 flex flex-col gap-1.5 text-[12px]" : "p-2 flex flex-col gap-2 text-[12px]"} w-full h-full min-h-[120px] rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`}
                           style={{ background: "white" }}
                         >
                           {slot.isFlyable && (
