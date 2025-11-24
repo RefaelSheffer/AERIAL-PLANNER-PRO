@@ -159,6 +159,7 @@ const TimelineBoard = ({
   isMobile,
   windTimeline,
   visibleTimeline,
+  dataUnavailable = false,
   showFlyableOnly,
   selectedSlotKey,
   onSlotSelect,
@@ -170,7 +171,9 @@ const TimelineBoard = ({
   windTextColor,
   windSpeedToColor,
 }) => {
-  if (!show || visibleTimeline.length === 0) return null;
+  if (!show) return null;
+
+  const timelineEmpty = visibleTimeline.length === 0;
 
   const timelineCardSizing = isMobile
     ? "w-[45vw] max-w-[420px] max-h-[92vh]"
@@ -180,6 +183,16 @@ const TimelineBoard = ({
     <div
       className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
     >
+      {dataUnavailable && (
+        <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
+          מקור הנתונים לא זמין כרגע
+        </div>
+      )}
+      {timelineEmpty && (
+        <div className="p-4 text-center text-sm text-slate-600">
+          אין נתוני תחזית זמינים כרגע.
+        </div>
+      )}
       {isMobile && windTimeline.length > 1 && (
         <div className="flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700">
           <button
@@ -272,7 +285,7 @@ const TimelineBoard = ({
                   <div
                     className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-3 gap-2"} auto-rows-fr`}
                   >
-                    {displaySlots.length > 0 ? (
+                    {!timelineEmpty && displaySlots.length > 0 ? (
                       displaySlots.map((slot) => {
                         const slotKey = `${day.day}T${slot.time}`;
                         const isActive = slotKey === selectedSlotKey;
@@ -369,11 +382,13 @@ const RealtimePanel = ({
   rainRadarEnabled,
   onToggleRainRadar,
   rainRadarStatus,
+  rainRadarUnavailable,
   rainRadarTimestamp,
   onRefreshRainRadar,
   aircraftEnabled,
   onToggleAircraft,
   aircraftStatus,
+  aircraftUnavailable,
   aircraftTimestamp,
   aircraftRangeKm,
   aircraftData,
@@ -399,6 +414,11 @@ const RealtimePanel = ({
           {rainRadarStatus === "loading" && <span>מקם טוען...</span>}
           {rainRadarStatus === "error" && (
             <span className="text-red-600">מקם לא זמין</span>
+          )}
+          {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
+            <span className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+              מקור הנתונים לא זמין כרגע
+            </span>
           )}
           {rainRadarTimestamp && (
             <span>
@@ -460,6 +480,11 @@ const RealtimePanel = ({
               {rainRadarEnabled ? "פעיל" : "כבוי"}
             </span>
           </button>
+          {rainRadarUnavailable && (
+            <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-2">
+              מקור הנתונים לא זמין כרגע
+            </div>
+          )}
         </div>
 
         <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
@@ -505,16 +530,21 @@ const RealtimePanel = ({
                   </span>
                 </div>
               </div>
-              <span
-                className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-amber-700"}`}
-              >
-                {aircraftEnabled ? "פעיל" : "כבוי"}
-              </span>
-            </button>
-            <div className="flex items-center justify-between text-[11px] text-amber-800">
-              <div className="flex items-center gap-2">
-                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">
-                  {aircraftData.length} בטווח
+            <span
+              className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-amber-700"}`}
+            >
+              {aircraftEnabled ? "פעיל" : "כבוי"}
+            </span>
+          </button>
+          {(aircraftUnavailable || aircraftStatus === "error") && (
+            <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-2">
+              מקור הנתונים לא זמין כרגע
+            </div>
+          )}
+          <div className="flex items-center justify-between text-[11px] text-amber-800">
+            <div className="flex items-center gap-2">
+              <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">
+                {aircraftData.length} בטווח
                 </span>
                 <span className="text-[10px] text-amber-700">
                   טווח: {aircraftRangeKm} ק"מ

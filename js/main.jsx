@@ -162,6 +162,7 @@ const App = () => {
   const [dtmStats, setDtmStats] = useState(null);
   const [terrainShadows, setTerrainShadows] = useState([]);
   const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
+  const [weatherUnavailable, setWeatherUnavailable] = useState(false);
   const [showTimeline, setShowTimeline] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(!initialIsMobile);
   const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
@@ -171,11 +172,13 @@ const App = () => {
   const [rainRadarEnabled, setRainRadarEnabled] = useState(false);
   const [rainRadarStatus, setRainRadarStatus] = useState("idle");
   const [rainRadarTimestamp, setRainRadarTimestamp] = useState(null);
+  const [rainRadarUnavailable, setRainRadarUnavailable] = useState(false);
   const [aircraftEnabled, setAircraftEnabled] = useState(false);
   const [aircraftStatus, setAircraftStatus] = useState("idle");
   const [aircraftTimestamp, setAircraftTimestamp] = useState(null);
   const [aircraftRangeKm, setAircraftRangeKm] = useState(80);
   const [aircraftData, setAircraftData] = useState([]);
+  const [aircraftUnavailable, setAircraftUnavailable] = useState(false);
   const [documentationOpen, setDocumentationOpen] = useState(false);
   const [docForm, setDocForm] = useState({
     title: "",
@@ -330,9 +333,17 @@ const App = () => {
     if (!weatherLocation) return;
     try {
       const data = await Services.fetchWeather(weatherLocation);
-      if (data) setHourlyForecast(data);
+      if (data) {
+        setHourlyForecast(data);
+        setWeatherUnavailable(false);
+      } else {
+        setHourlyForecast(null);
+        setWeatherUnavailable(true);
+      }
     } catch (e) {
       console.error(e);
+      setHourlyForecast(null);
+      setWeatherUnavailable(true);
     }
   };
 
@@ -354,6 +365,7 @@ const App = () => {
   const refreshRainRadar = async () => {
     if (!mapRef.current) return;
     setRainRadarStatus("loading");
+    setRainRadarUnavailable(false);
     try {
       const result = await Services.fetchRainRadar(
         mapRef.current,
@@ -362,11 +374,15 @@ const App = () => {
       );
       if (result?.timestamp) {
         setRainRadarTimestamp(result.timestamp);
+        setRainRadarStatus("ready");
+      } else {
+        setRainRadarStatus("unavailable");
+        setRainRadarUnavailable(true);
       }
-      setRainRadarStatus("ready");
     } catch (e) {
       console.error("RainViewer error", e);
       setRainRadarStatus("error");
+      setRainRadarUnavailable(true);
     }
   };
 
@@ -382,6 +398,7 @@ const App = () => {
         mapRef.current.removeLayer(Lr.rainRadar);
         Lr.rainRadar = null;
       }
+      setRainRadarUnavailable(false);
       setRainRadarStatus("idle");
       return;
     }
@@ -406,15 +423,18 @@ const App = () => {
   const fetchAircraft = useCallback(async () => {
     if (!aircraftEnabled || !mapCenter) return;
     setAircraftStatus((prev) => (prev === "ready" ? "updating" : "loading"));
+    setAircraftUnavailable(false);
 
     try {
       const filtered = await Services.fetchAircraft(mapCenter, aircraftRangeKm);
       setAircraftData(filtered);
+      setAircraftUnavailable(filtered.length === 0);
       setAircraftTimestamp(Date.now());
       setAircraftStatus("ready");
     } catch (e) {
       console.error("ADSBexchange error", e);
       setAircraftStatus("error");
+      setAircraftUnavailable(true);
     }
   }, [aircraftEnabled, mapCenter, aircraftRangeKm]);
 
@@ -425,6 +445,7 @@ const App = () => {
         aircraftIntervalRef.current = null;
       }
       setAircraftStatus("idle");
+      setAircraftUnavailable(false);
       setAircraftData([]);
       const Lr = layersRef.current;
       if (Lr.aircraft && mapRef.current) {
@@ -1084,6 +1105,7 @@ const App = () => {
       isMobile={isMobile}
       windTimeline={windTimeline}
       visibleTimeline={visibleTimeline}
+      dataUnavailable={weatherUnavailable}
       showFlyableOnly={showFlyableOnly}
       selectedSlotKey={selectedSlotKey}
       onSlotSelect={setFlightDate}
@@ -1781,11 +1803,13 @@ const App = () => {
                   rainRadarEnabled={rainRadarEnabled}
                   onToggleRainRadar={() => setRainRadarEnabled((prev) => !prev)}
                   rainRadarStatus={rainRadarStatus}
+                  rainRadarUnavailable={rainRadarUnavailable}
                   rainRadarTimestamp={rainRadarTimestamp}
                   onRefreshRainRadar={refreshRainRadar}
                   aircraftEnabled={aircraftEnabled}
                   onToggleAircraft={() => setAircraftEnabled((prev) => !prev)}
                   aircraftStatus={aircraftStatus}
+                  aircraftUnavailable={aircraftUnavailable}
                   aircraftTimestamp={aircraftTimestamp}
                   aircraftRangeKm={aircraftRangeKm}
                   aircraftData={aircraftData}
