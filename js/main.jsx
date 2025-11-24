@@ -1894,7 +1894,7 @@ const App = () => {
 
             {!isMobile && timelineBoard && (
               <div
-                className={`pointer-events-none absolute left-0 bottom-0 z-[910] flex justify-center px-4 pb-4 ${
+                className={`pointer-events-none fixed left-0 bottom-0 z-[910] flex justify-center px-4 pb-4 ${
                   sidebarOpen ? "right-96" : "right-0"
                 }`}
               >
