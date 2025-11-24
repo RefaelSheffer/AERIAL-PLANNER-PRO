@@ -1339,7 +1339,7 @@ const App = () => {
         {/* Controls Sidebar */}
         <Sidebar
           open={sidebarOpen}
-          className="w-[70%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-20 shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static"
+          className="w-[70%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-[960] shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static"
         >
           <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
             <h1 className="font-black text-lg tracking-wider text-blue-400">
