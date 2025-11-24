@@ -1853,10 +1853,16 @@ const App = () => {
                   aircraftData={aircraftData}
                   onRangeChange={setAircraftRangeKm}
                 />
-
-                {isMobile && timelineBoard}
               </div>
             </div>
+            {isMobile && timelineBoard && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[910] flex justify-center px-3 pb-4">
+                <div className="pointer-events-auto w-full flex justify-center">
+                  {timelineBoard}
+                </div>
+              </div>
+            )}
+
             {!isMobile && timelineBoard && (
               <div
                 className={`pointer-events-none absolute left-0 bottom-0 z-[910] flex justify-center px-4 pb-4 ${
