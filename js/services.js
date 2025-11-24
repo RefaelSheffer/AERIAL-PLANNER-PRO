@@ -1,3 +1,6 @@
+// services.js
+// Implements external data fetchers (weather forecasts, rain radar, aircraft activity, elevation grids) with resilience helpers.
+// Exposes AerialPlannerServices on window so main.jsx can orchestrate data loading for the UI and calculations.
 (() => {
   "use strict";
 

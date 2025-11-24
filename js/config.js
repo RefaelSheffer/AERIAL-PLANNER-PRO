@@ -1,3 +1,6 @@
+// config.js
+// Defines configuration constants, visualization helpers, and geometry utilities for the planner.
+// Exposes AerialPlannerConfig on window so main.jsx and services can share app-wide settings.
 "use strict";
 
 // Configuration and constants for Aerial Planner

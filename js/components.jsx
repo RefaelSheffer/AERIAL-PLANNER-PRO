@@ -1,3 +1,6 @@
+// components.jsx
+// Defines presentational React components (layout, sidebar, timeline board, realtime panel, shared controls).
+// Exposes AerialPlannerComponents on window as UI building blocks consumed by main.jsx.
 (function () {
   "use strict";
 

@@ -1,3 +1,6 @@
+// drone-data.js
+// Provides static drone presets (sensor size, focal length, image width, etc.) for planner calculations.
+// Exposes DRONE_PRESETS on window so mapping tools can consume shared drone configurations.
 "use strict";
 
 // נתוני רחפנים - קובץ נתונים בלבד
