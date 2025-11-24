@@ -150,9 +150,15 @@ const buildDtmHeatPoints = (grid, stats) => {
   });
 };
 
+const computeIsMobile = () => {
+  if (typeof window === "undefined") return false;
+
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  return window.innerWidth < 900 || coarsePointer;
+};
+
 const App = () => {
-  const initialIsMobile =
-    typeof window !== "undefined" ? window.innerWidth < 768 : false;
+  const initialIsMobile = computeIsMobile();
 
   const [mapCenter, setMapCenter] = useState(Config.DEFAULT_MAP_CENTER);
   const [weatherLocation, setWeatherLocation] = useState(
@@ -192,7 +198,7 @@ const App = () => {
   const [terrainShadows, setTerrainShadows] = useState([]);
   const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
   const [weatherUnavailable, setWeatherUnavailable] = useState(false);
-  const [showTimeline, setShowTimeline] = useState(true);
+  const [showTimeline, setShowTimeline] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(!initialIsMobile);
   const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
   const [isMobile, setIsMobile] = useState(initialIsMobile);
@@ -347,11 +353,12 @@ const App = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+      const mobile = computeIsMobile();
       setIsMobile(mobile);
       if (mobile) {
         setSidebarOpen(false);
         setDronePanelOpen(false);
+        setShowTimeline(false);
       }
     };
 
