@@ -210,8 +210,8 @@ const TimelineBoard = ({
   const timelineEmpty = preparedTimeline.length === 0;
 
   const timelineCardSizing = isMobile
-    ? "w-[45vw] max-w-[420px] max-h-[92vh]"
-    : "w-[95vw] max-w-5xl max-h-[55vh] mx-auto";
+    ? "w-full max-w-xs mx-auto max-h-[55vh]"
+    : "w-full max-w-5xl max-h-[55vh] mx-auto";
 
   return (
     <div
@@ -269,10 +269,12 @@ const TimelineBoard = ({
         )}
         <div
           ref={timelineContainerRef}
-          className={`${isMobile ? "overflow-y-auto" : "overflow-x-auto"} custom-scroll snap-x snap-mandatory`}
+          className={`${
+            isMobile ? "overflow-y-auto" : "overflow-x-auto"
+          } custom-scroll snap-x snap-mandatory max-h-[55vh]`}
         >
           <div
-            className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-full"}`}
+            className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
           >
             {preparedTimeline.map((day) => (
               <div
