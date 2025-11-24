@@ -3,7 +3,11 @@
 // External API helpers for Aerial Planner
 const Config = window.AerialPlannerConfig;
 
-// Weather fetch (Open-Meteo)
+/**
+ * Fetch hourly weather forecast data from Open-Meteo for a specific location.
+ * @param {[number, number]} location - Tuple of [latitude, longitude] in decimal degrees.
+ * @returns {Promise<object|null>} Promise resolving to the hourly forecast payload or null when unavailable.
+ */
 const fetchWeather = async (location) => {
   if (!location) return null;
   const [lat, lng] = location;
@@ -13,7 +17,13 @@ const fetchWeather = async (location) => {
   return data?.hourly || null;
 };
 
-// Rain radar overlay (RainViewer)
+/**
+ * Retrieve the latest RainViewer radar frame and render it on a Leaflet map, updating cached state when needed.
+ * @param {L.Map} map - Leaflet map instance to draw the radar overlay on.
+ * @param {React.MutableRefObject<object>} layersRef - Ref object storing active Leaflet layers to manage lifecycle.
+ * @param {React.MutableRefObject<number|null>} rainRadarTimestampRef - Ref containing the timestamp of the currently loaded radar frame.
+ * @returns {Promise<{timestamp?: number}>} Promise resolving to metadata with the applied radar frame timestamp.
+ */
 const fetchRainRadar = async (map, layersRef, rainRadarTimestampRef) => {
   const res = await fetch(
     "https://api.rainviewer.com/public/weather-maps.json",
@@ -45,7 +55,12 @@ const fetchRainRadar = async (map, layersRef, rainRadarTimestampRef) => {
   return { timestamp: ts };
 };
 
-// Aircraft fetch (ADSBexchange)
+/**
+ * Fetch aircraft detected near a center point from ADSBexchange.
+ * @param {[number, number]} center - Tuple of [latitude, longitude] for the query center.
+ * @param {number} rangeKm - Search radius in kilometers.
+ * @returns {Promise<object[]>} Promise resolving to an array of aircraft entries with valid coordinates.
+ */
 const fetchAircraft = async (center, rangeKm) => {
   if (!center) return [];
   const [lat, lng] = center;
@@ -56,7 +71,11 @@ const fetchAircraft = async (center, rangeKm) => {
   return data.acList.filter((a) => a?.Lat && a?.Long);
 };
 
-// DTM sampling (OpenTopoData with fallback simulation)
+/**
+ * Sample Digital Terrain Model (DTM) values across a polygon using OpenTopoData, with a local simulation fallback.
+ * @param {{lat: number, lng: number}[]} polygon - Array of polygon vertices (at least three) in latitude/longitude degrees.
+ * @returns {Promise<{grid: {lat: number, lng: number, ele: number}[], simulated: boolean}>} Promise resolving to a grid of elevations and a flag indicating whether simulation was used.
+ */
 const fetchDTM = async (polygon) => {
   if (!polygon || polygon.length < 3) throw new Error("Polygon required");
   const latLngs = polygon.map((p) => L.latLng(p.lat, p.lng));

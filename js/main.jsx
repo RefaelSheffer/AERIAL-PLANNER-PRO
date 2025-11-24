@@ -92,6 +92,10 @@ const App = () => {
   const aircraftIntervalRef = useRef(null);
   const timelineContainerRef = useRef(null);
 
+  /**
+   * Toggle visibility of the sidebar, realtime panel, or timeline with mobile-aware exclusivity rules.
+   * @param {"sidebar"|"realtime"|"timeline"} panel - Target panel key to toggle.
+   */
   const toggleExclusivePanel = useCallback(
     (panel) => {
       const states = {
@@ -340,6 +344,11 @@ const App = () => {
     };
   }, [aircraftEnabled, fetchAircraft]);
 
+  /**
+   * Calculate the sun altitude for the current weather location and a given timestamp.
+   * @param {string} dateStr - ISO-like datetime string (YYYY-MM-DDTHH:mm) representing the slot time.
+   * @returns {number|null} Sun altitude in degrees above the horizon, or null when unavailable.
+   */
   const getSunAltitudeDeg = (dateStr) => {
     if (!SunCalc || !weatherLocation) return null;
     const [lat, lng] = weatherLocation;
@@ -348,6 +357,11 @@ const App = () => {
     return pos.altitude * (180 / Math.PI);
   };
 
+  /**
+   * Determine whether a forecast slot meets user-defined suitability thresholds for flight.
+   * @param {{wind:number|null, gust:number|null, clouds:number|null, rainProb:number|null, sunAlt:number|null}} slot - Normalized forecast slot values.
+   * @returns {boolean} True when all constraints are satisfied.
+   */
   const isSlotFlyable = (slot) => {
     const {
       maxWind,
@@ -392,6 +406,10 @@ const App = () => {
     return safeWind && safeGust && safeCloud && safeRain && sunOk;
   };
 
+  /**
+   * Build a condensed wind timeline grouped by day, sampling every 6 hours with sun altitude enrichment.
+   * @returns {{day: string, label: string, slots: object[]}[]} Timeline structure for TimelineBoard consumption.
+   */
   const windTimeline = useMemo(() => {
     if (!hourlyForecast?.time) return [];
     const days = new Map();
@@ -658,6 +676,11 @@ const App = () => {
     }
   };
 
+  /**
+   * Persist sampled DTM data, compute basic statistics, and derive terrain shadow geometry.
+   * @param {{lat: number, lng: number, ele: number}[]} grid - Elevation samples across the polygon.
+   * @param {boolean} isSim - Whether the data originated from the fallback simulator.
+   */
   const processDTM = (grid, isSim) => {
     setDtmData(grid);
     setIsSimulatedDTM(isSim);
@@ -670,6 +693,10 @@ const App = () => {
     calcShadows(grid);
   };
 
+  /**
+   * Estimate terrain shadow segments for the current flight time using the SunCalc library.
+   * @param {{lat: number, lng: number, ele: number}[]} grid - Elevation samples used to derive relative heights.
+   */
   const calcShadows = (grid) => {
     if (!SunCalc) return;
     const sun = SunCalc.getPosition(
@@ -716,6 +743,10 @@ const App = () => {
   }, [flightDate]);
 
   // --- Path Generation ---
+  /**
+   * Generate a lawnmower-style flight path over the selected polygon, updating total distance.
+   * @returns {number[][]} Ordered lat/lng pairs for the flight polyline.
+   */
   const generatePath = () => {
     if (polygon.length < 3) {
       setTotalDistance(0);
