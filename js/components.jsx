@@ -1,6 +1,3 @@
-const Config = window.AerialPlannerConfig;
-const Services = window.AerialPlannerServices;
-
 const Icon = ({ name, size = 16, className = '', strokeWidth = 2, color = 'currentColor' }) => {
     const baseProps = {
         width: size,
@@ -133,10 +130,298 @@ const DockButton = ({ icon, label, active, onClick }) => (
     </button>
 );
 
-const Sidebar = ({ children }) => children;
-const MapView = ({ children }) => children;
-const TimelineBoard = ({ children }) => children;
-const RealtimePanel = ({ children }) => children;
+const Sidebar = ({ open, className = '', children }) => {
+    if (!open) return null;
+    return <aside className={className}>{children}</aside>;
+};
+
+const MapView = ({ className = '', children }) => (
+    <div className={className}>{children}</div>
+);
+
+const TimelineBoard = ({
+    show,
+    isMobile,
+    windTimeline,
+    visibleTimeline,
+    showFlyableOnly,
+    selectedSlotKey,
+    onSlotSelect,
+    onScroll,
+    timelineContainerRef,
+    mobileDayIndex,
+    onMobileDayChange,
+    isSlotFlyable,
+    windTextColor,
+    windSpeedToColor,
+}) => {
+    if (!show || visibleTimeline.length === 0) return null;
+
+    const timelineCardSizing = isMobile
+        ? 'w-[45vw] max-w-[420px] max-h-[92vh]'
+        : 'w-[95vw] max-w-5xl max-h-[55vh] mx-auto';
+
+    return (
+        <div className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}>
+            {isMobile && windTimeline.length > 1 && (
+                <div className="flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700">
+                    <button
+                        className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
+                        onClick={() => onMobileDayChange(-1)}
+                        disabled={mobileDayIndex === 0}
+                    >
+                        יום קודם
+                    </button>
+                    <div className="font-semibold text-slate-800">{visibleTimeline[0]?.label}</div>
+                    <button
+                        className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
+                        onClick={() => onMobileDayChange(1)}
+                        disabled={mobileDayIndex >= windTimeline.length - 1}
+                    >
+                        יום הבא
+                    </button>
+                </div>
+            )}
+            <div className="relative">
+                {!isMobile && windTimeline.length > 1 && (
+                    <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
+                        <button
+                            onClick={() => onScroll(-1)}
+                            className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
+                            aria-label="הזז שמאלה"
+                        >
+                            ‹
+                        </button>
+                        <button
+                            onClick={() => onScroll(1)}
+                            className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
+                            aria-label="הזז ימינה"
+                        >
+                            ›
+                        </button>
+                    </div>
+                )}
+                <div
+                    ref={timelineContainerRef}
+                    className={`${isMobile ? 'overflow-y-auto' : 'overflow-x-auto'} custom-scroll snap-x snap-mandatory`}
+                >
+                    <div className={`${isMobile ? 'flex flex-col gap-2 p-3' : 'flex gap-3 p-4 min-w-full'}`}>
+                        {visibleTimeline.map(day => {
+                            const enrichedSlots = day.slots.map(slot => ({ ...slot, isFlyable: isSlotFlyable(slot) }));
+                            const displaySlots = showFlyableOnly ? enrichedSlots.filter(slot => slot.isFlyable) : enrichedSlots;
+                            const flyableCount = enrichedSlots.filter(slot => slot.isFlyable).length;
+                            const firstFlyable = enrichedSlots.find(slot => slot.isFlyable);
+                            return (
+                                <div
+                                    key={day.day}
+                                    className={`${isMobile ? 'w-full' : 'min-w-[300px] max-w-[340px]'} snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="text-sm font-extrabold text-slate-900">{day.label}</div>
+                                            <div className="text-[10px] text-slate-500">{day.slots.length} חלונות זמן · {flyableCount} שעות יציבות</div>
+                                            {firstFlyable && (
+                                                <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 inline-flex items-center gap-1 mt-1">
+                                                    <Icon name="clock" size={11} /> החל מ-{firstFlyable.time}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col items-end text-[10px] text-slate-600">
+                                            <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 font-semibold">{day.day}</span>
+                                            <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">מרווח 6 שעות</span>
+                                        </div>
+                                    </div>
+                                    <div className={`grid ${isMobile ? 'grid-cols-2 gap-1.5' : 'grid-cols-3 gap-2'} auto-rows-fr`}>
+                                        {displaySlots.length > 0 ? (
+                                            displaySlots.map(slot => {
+                                                const slotKey = `${day.day}T${slot.time}`;
+                                                const isActive = slotKey === selectedSlotKey;
+                                                return (
+                                                    <button
+                                                        key={slot.key}
+                                                        onClick={() => onSlotSelect(`${day.day}T${slot.time}`)}
+                                                        className={`${isMobile ? 'p-2 flex flex-col gap-1.5 text-[12px]' : 'p-2 flex flex-col gap-2 text-[12px]'} w-full h-full rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}
+                                                        style={{ background: 'white' }}
+                                                    >
+                                                        {slot.isFlyable && (
+                                                            <div className="absolute top-1 left-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                                                שעה יציבה
+                                                            </div>
+                                                        )}
+                                                        <div className={`${isMobile ? 'flex items-center justify-between w-full text-[12px]' : 'items-center justify-between text-xs'} text-slate-600`}>
+                                                            <span className="font-semibold">{slot.time}</span>
+                                                            {!isMobile && <span className="text-[11px] text-slate-500 flex items-center gap-1"><Icon name="clock" size={12} /> {day.label}</span>}
+                                                        </div>
+                                                        <div
+                                                            className={`${isMobile ? 'h-9 w-full text-[13px]' : 'h-9 w-full text-[12px]'} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
+                                                            style={{ background: windSpeedToColor(slot.wind) }}
+                                                        >
+                                                            {slot.wind?.toFixed(1) ?? '-'} מ"ש
+                                                            {!isMobile && slot.isMajor && <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">מרווח 12ש'</span>}
+                                                        </div>
+                                                        <div className={`${isMobile ? 'w-full space-y-0.5' : 'w-full px-1.5 pb-1 space-y-1'}`}>
+                                                            <div className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? 'bg-green-100' : 'bg-slate-200'}`}>
+                                                                <div className="h-full bg-blue-500" style={{ width: `${slot.clouds ?? 0}%` }}></div>
+                                                            </div>
+                                                            <div className={`${isMobile ? 'text-[10px] text-slate-600 grid grid-cols-2 gap-1' : 'text-[10px] text-slate-600 flex flex-wrap gap-1 justify-center'}`}>
+                                                                <span className="px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center">
+                                                                    עננות {slot.clouds ?? 0}%
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded-full border text-center ${slot.isFlyable ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                                                    גשם {slot.rainProb ?? 0}%
+                                                                </span>
+                                                                <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center">
+                                                                    משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? '-'} מ"ש
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="text-[11px] text-slate-500 p-2 border border-dashed border-slate-300 rounded w-full text-center col-span-full">
+                                                אין שעות מתאימות לטיסה ביום זה
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const RealtimePanel = ({
+    open,
+    rainRadarEnabled,
+    onToggleRainRadar,
+    rainRadarStatus,
+    rainRadarTimestamp,
+    onRefreshRainRadar,
+    aircraftEnabled,
+    onToggleAircraft,
+    aircraftStatus,
+    aircraftTimestamp,
+    aircraftRangeKm,
+    aircraftData,
+    onRangeChange,
+}) => {
+    if (!open) return null;
+
+    return (
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-50 to-white text-slate-900 flex flex-col p-4 gap-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <div className="text-xs uppercase tracking-[0.3em] text-amber-700 font-bold">זמן אמת</div>
+                    <h2 className="text-xl font-black text-slate-900">מקם גשם ומיקומי מטוסים</h2>
+                    <p className="text-sm text-slate-600">הפעלת מקורות נתוני זמן אמת על שכבת המפה.</p>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] text-slate-600">
+                    {rainRadarStatus === 'loading' && <span>מקם טוען...</span>}
+                    {rainRadarStatus === 'error' && <span className="text-red-600">מקם לא זמין</span>}
+                    {rainRadarTimestamp && <span>עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleTimeString('he-IL')}</span>}
+                    <button
+                        onClick={onRefreshRainRadar}
+                        className="px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-semibold hover:bg-amber-500"
+                    >
+                        רענן שכבת גשם
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+                <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center"><Icon name="radar" size={18} /></span>
+                            <div>
+                                <div className="font-bold text-slate-900">מקם גשם</div>
+                                <div className="text-[11px] text-amber-800/80">RainViewer API · מתעדכן כל 5 דק'</div>
+                            </div>
+                        </div>
+                        <span className={`text-[11px] font-semibold ${rainRadarEnabled ? 'text-amber-700' : 'text-slate-400'}`}>
+                            {rainRadarEnabled ? 'מוצג' : 'מוסתר'}
+                        </span>
+                    </div>
+                    <button
+                        onClick={onToggleRainRadar}
+                        className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-2 transition ${rainRadarEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-50/80'}`}
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="cloud" size={16} /></span>
+                            <div className="flex flex-col text-right">
+                                <span className="font-bold">{rainRadarEnabled ? 'הסתר שכבת גשם' : 'הצג שכבת גשם'}</span>
+                                <span className="text-[10px] text-amber-800/80">שמירת ההגדרה נשמרת כל עוד העמוד פתוח</span>
+                            </div>
+                        </div>
+                        <span className={`text-[11px] font-semibold ${rainRadarEnabled ? 'text-white' : 'text-amber-700'}`}>
+                            {rainRadarEnabled ? 'פעיל' : 'כבוי'}
+                        </span>
+                    </button>
+                </div>
+
+                <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center"><Icon name="drone" size={18} /></span>
+                            <div>
+                                <div className="font-bold text-slate-900">מטוסים בסביבה</div>
+                                <div className="text-[11px] text-amber-800/80">ADSBExchange · רענון כל 15 שניות</div>
+                            </div>
+                        </div>
+                        <span className={`text-[11px] font-semibold ${aircraftEnabled ? 'text-amber-700' : 'text-slate-400'}`}>
+                            {aircraftEnabled ? 'מוצג' : 'מוסתר'}
+                        </span>
+                    </div>
+                    <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+                        <button
+                            onClick={onToggleAircraft}
+                            className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-1.5 transition ${aircraftEnabled ? 'bg-amber-600 text-white border-amber-600 shadow-inner' : 'bg-white text-amber-800 border-amber-200 hover:bg-amber-100/70'}`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? 'bg-white/20' : 'bg-amber-100 text-amber-700'}`}><Icon name="drone" size={16} /></span>
+                                <div className="flex flex-col text-right">
+                                    <span className="font-bold">{aircraftEnabled ? 'הסתר מיקומי מטוסים' : 'הצג מיקומי מטוסים'}</span>
+                                    <span className="text-[10px] text-amber-800/80">{aircraftTimestamp ? `עודכן: ${new Date(aircraftTimestamp).toLocaleTimeString('he-IL')}` : 'עדכון אוטומטי כל 15 שניות'}</span>
+                                </div>
+                            </div>
+                            <span className={`text-[11px] font-semibold ${aircraftEnabled ? 'text-white' : 'text-amber-700'}`}>{aircraftEnabled ? 'פעיל' : 'כבוי'}</span>
+                        </button>
+                        <div className="flex items-center justify-between text-[11px] text-amber-800">
+                            <div className="flex items-center gap-2">
+                                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">{aircraftData.length} בטווח</span>
+                                <span className="text-[10px] text-amber-700">טווח: {aircraftRangeKm} ק"מ</span>
+                            </div>
+                            <div className="flex gap-1 text-[10px] text-amber-700">
+                                {aircraftStatus === 'loading' && <span>מתחבר...</span>}
+                                {aircraftStatus === 'updating' && <span>מרענן...</span>}
+                                {aircraftStatus === 'error' && <span className="text-red-600">שגיאה</span>}
+                                {aircraftEnabled && aircraftData.length === 0 && aircraftStatus === 'ready' && <span>אין מטוסים בטווח</span>}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-amber-800">
+                            <input
+                                type="range"
+                                min="20"
+                                max="200"
+                                step="5"
+                                value={aircraftRangeKm}
+                                onChange={e => onRangeChange(Number(e.target.value))}
+                                className="flex-1 accent-amber-600"
+                                disabled={!aircraftEnabled}
+                            />
+                            <span className="text-[10px] text-amber-700">חיפוש סביב מרכז המפה</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const DocumentationPanel = ({ children }) => children;
 
 const Dock = ({ children }) => (
