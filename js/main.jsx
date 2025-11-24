@@ -1114,14 +1114,37 @@ const App = () => {
     const triggerDist = footprintH * (1 - overlapFront / 100);
     const imgCount =
       totalDistance > 0 ? Math.ceil(totalDistance / triggerDist) : 0;
+    const polygonAreaSqM = (() => {
+      if (!polygon || polygon.length < 3) return 0;
+      const refLatRad = (polygon[0].lat * Math.PI) / 180;
+      const meterPerDegLat = 111132.92 - 559.82 * Math.cos(2 * refLatRad) + 1.175 * Math.cos(4 * refLatRad);
+      const meterPerDegLng =
+        (Math.PI / 180) * 6378137 * Math.cos(refLatRad);
+
+      const coords = polygon.map((p) => ({
+        x: (p.lng - polygon[0].lng) * meterPerDegLng,
+        y: (p.lat - polygon[0].lat) * meterPerDegLat,
+      }));
+
+      let sum = 0;
+      for (let i = 0; i < coords.length; i++) {
+        const current = coords[i];
+        const next = coords[(i + 1) % coords.length];
+        sum += current.x * next.y - next.x * current.y;
+      }
+      return Math.abs(sum) / 2;
+    })();
+
+    const coverageKm2 = polygonAreaSqM > 0 ? (polygonAreaSqM / 1_000_000).toFixed(2) : "0";
 
     return {
       gsd: gsd.toFixed(2),
       time: timeMin,
       images: imgCount,
       dist: Math.round(totalDistance),
+      coverageKm2,
     };
-  }, [selectedDrone, altitude, totalDistance, speed, overlapFront]);
+  }, [selectedDrone, altitude, totalDistance, speed, overlapFront, polygon]);
 
   const selectedSlotKey = useMemo(
     () => `${flightDate.slice(0, 13)}:00`,
@@ -1573,7 +1596,7 @@ const App = () => {
                 איפוס
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-2 text-center">
+            <div className="grid grid-cols-5 gap-2 text-center">
               <div className="bg-slate-700/50 p-1 rounded">
                 <div className="text-[9px] text-slate-400">מרחק</div>
                 <div className="font-bold text-sm text-white">
@@ -1597,6 +1620,12 @@ const App = () => {
               <div className="bg-slate-700/50 p-1 rounded">
                 <div className="text-[9px] text-slate-400">GSD</div>
                 <div className="font-bold text-sm text-white">{stats.gsd}</div>
+              </div>
+              <div className="bg-slate-700/50 p-1 rounded">
+                <div className="text-[9px] text-slate-400">שטח כיסוי</div>
+                <div className="font-bold text-sm text-emerald-300">
+                  {stats.coverageKm2} קמ"ר
+                </div>
               </div>
             </div>
           </div>
