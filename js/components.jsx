@@ -1,4 +1,5 @@
-"use strict";
+(function () {
+  "use strict";
 
 // Icon library for UI elements
 const Icon = ({
@@ -606,3 +607,4 @@ window.AerialPlannerComponents = {
   Icon,
   DockButton,
 };
+})();
