@@ -121,6 +121,32 @@ const buildWindTimeline = (hourlyForecast, weatherLocation) => {
   }));
 };
 
+const computeElevationStats = (grid) => {
+  if (!Array.isArray(grid) || grid.length === 0) return null;
+
+  return grid.reduce(
+    (acc, point) => {
+      const ele = point.ele;
+      if (ele < acc.min) acc.min = ele;
+      if (ele > acc.max) acc.max = ele;
+      acc.sum += ele;
+      return acc;
+    },
+    { min: Infinity, max: -Infinity, sum: 0 },
+  );
+};
+
+const buildDtmHeatPoints = (grid, stats) => {
+  if (!grid || !stats) return [];
+  const range = stats.max - stats.min || 1;
+
+  return grid.map((pt) => {
+    const normalized = (pt.ele - stats.min) / range;
+    const intensity = Math.max(0, Math.min(1, normalized));
+    return [pt.lat, pt.lng, intensity];
+  });
+};
+
 const App = () => {
   const initialIsMobile =
     typeof window !== "undefined" ? window.innerWidth < 768 : false;
@@ -505,8 +531,8 @@ const App = () => {
       ),
     ).then((results) => {
       setDocForm((prev) => ({ ...prev, images: [...prev.images, ...results] }));
-    });
-  };
+  });
+};
 
   const sampleDocumentationLocation = () => {
     if (userLocation) {
@@ -683,6 +709,11 @@ const App = () => {
     return "right-4 left-auto items-start justify-start";
   }, []);
 
+  const dtmHeatPoints = useMemo(
+    () => buildDtmHeatPoints(dtmData, dtmStats),
+    [dtmData, dtmStats],
+  );
+
   useEffect(() => {
     if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
       setMobileDayIndex(0);
@@ -715,20 +746,20 @@ const App = () => {
   const processDTM = (grid, isSim) => {
     setDtmData(grid);
     setIsSimulatedDTM(isSim);
-    const eles = grid.map((p) => p.ele);
-    setDtmStats({
-      min: Math.min(...eles),
-      max: Math.max(...eles),
-      avg: eles.reduce((a, b) => a + b, 0) / eles.length,
-    });
-    calcShadows(grid);
+    const stats = computeElevationStats(grid);
+    const summary =
+      stats && grid.length
+        ? { min: stats.min, max: stats.max, avg: stats.sum / grid.length }
+        : null;
+    setDtmStats(summary);
+    calcShadows(grid, summary?.min);
   };
 
   /**
    * Estimate terrain shadow segments for the current flight time using the SunCalc library.
    * @param {{lat: number, lng: number, ele: number}[]} grid - Elevation samples used to derive relative heights.
    */
-  const calcShadows = (grid) => {
+  const calcShadows = (grid, minEle) => {
     if (!SunCalc) return;
     const sun = SunCalc.getPosition(
       new Date(flightDate),
@@ -738,13 +769,14 @@ const App = () => {
     if (sun.altitude <= 0) return; // Night
 
     const shadows = [];
-    const minEle = dtmStats
-      ? dtmStats.min
-      : Math.min(...grid.map((p) => p.ele));
+    const referenceMin =
+      typeof minEle === "number"
+        ? minEle
+        : Math.min(...grid.map((p) => p.ele));
 
     grid.forEach((pt) => {
       // Calculate shadow based on height relative to local minimum
-      const relativeHeight = pt.ele - minEle;
+      const relativeHeight = pt.ele - referenceMin;
       if (relativeHeight <= 1) return;
 
       // Shadow Length = h / tan(alpha)
@@ -770,8 +802,8 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (dtmData) calcShadows(dtmData);
-  }, [flightDate]);
+    if (dtmData) calcShadows(dtmData, dtmStats?.min);
+  }, [flightDate, dtmData, dtmStats]);
 
   // --- Path Generation ---
   /**
@@ -951,16 +983,9 @@ const App = () => {
       ).addTo(map);
     }
 
-    if (dtmData && dtmStats && L.heatLayer) {
+    if (dtmHeatPoints.length > 0 && L.heatLayer) {
       // Draw smooth DTM heat layer
-      const heatPoints = dtmData.map((pt) => {
-        const normalized =
-          (pt.ele - dtmStats.min) / (dtmStats.max - dtmStats.min || 1);
-        const intensity = Math.max(0, Math.min(1, normalized));
-        return [pt.lat, pt.lng, intensity];
-      });
-
-      Lr.heat = L.heatLayer(heatPoints, {
+      Lr.heat = L.heatLayer(dtmHeatPoints, {
         radius: 28,
         blur: 22,
         max: 1,
@@ -1014,9 +1039,7 @@ const App = () => {
     azimuth,
     autoOrient,
     terrainShadows,
-    dtmData,
-    dtmStats,
-    speed,
+    dtmHeatPoints,
     aircraftEnabled,
     aircraftData,
   ]);
