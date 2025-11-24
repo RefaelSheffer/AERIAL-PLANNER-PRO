@@ -1858,7 +1858,11 @@ const App = () => {
               </div>
             </div>
             {!isMobile && timelineBoard && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[910] flex justify-center px-4 pb-4">
+              <div
+                className={`pointer-events-none absolute left-0 bottom-0 z-[910] flex justify-center px-4 pb-4 ${
+                  sidebarOpen ? "right-96" : "right-0"
+                }`}
+              >
                 <div className="pointer-events-auto">{timelineBoard}</div>
               </div>
             )}
