@@ -20,6 +20,107 @@ const AerialPlanner = {
   geometry: Config.geometry,
 };
 
+/**
+ * Calculate the sun altitude for the current weather location and a given timestamp.
+ * @param {[number, number]} weatherLocation - Latitude/longitude pair used for the calculation.
+ * @param {string} dateStr - ISO-like datetime string (YYYY-MM-DDTHH:mm) representing the slot time.
+ * @returns {number|null} Sun altitude in degrees above the horizon, or null when unavailable.
+ */
+const computeSunAltitudeDeg = (weatherLocation, dateStr) => {
+  if (!SunCalc || !weatherLocation) return null;
+  const [lat, lng] = weatherLocation;
+  const pos = SunCalc.getPosition(new Date(dateStr), lat, lng);
+  if (!pos || Number.isNaN(pos.altitude)) return null;
+  return pos.altitude * (180 / Math.PI);
+};
+
+/**
+ * Determine whether a forecast slot meets user-defined suitability thresholds for flight.
+ * @param {{wind:number|null, gust:number|null, clouds:number|null, rainProb:number|null, sunAlt:number|null}} slot - Normalized forecast slot values.
+ * @param {object} suitabilitySettings - User thresholds for evaluating flight suitability.
+ * @returns {boolean} True when all constraints are satisfied.
+ */
+const slotIsFlyable = (slot, suitabilitySettings) => {
+  const {
+    maxWind,
+    maxGust,
+    maxCloudCover,
+    maxRainProb,
+    minSunAltitude,
+    maxSunAltitude,
+  } = suitabilitySettings;
+  const wind =
+    typeof slot.wind === "number" && !Number.isNaN(slot.wind) ? slot.wind : null;
+  const gust =
+    typeof slot.gust === "number" && !Number.isNaN(slot.gust) ? slot.gust : null;
+  const clouds =
+    typeof slot.clouds === "number" && !Number.isNaN(slot.clouds)
+      ? slot.clouds
+      : null;
+  const rainProb =
+    typeof slot.rainProb === "number" && !Number.isNaN(slot.rainProb)
+      ? slot.rainProb
+      : null;
+
+  const safeWind = wind === null ? true : wind <= maxWind;
+  const safeGust =
+    gust === null
+      ? wind === null
+        ? true
+        : wind <= maxGust
+      : gust <= maxGust;
+  const safeCloud = clouds === null ? true : clouds <= maxCloudCover;
+  const safeRain = rainProb === null ? true : rainProb <= maxRainProb;
+
+  const sunOk =
+    slot.sunAlt === null
+      ? true
+      : slot.sunAlt >= minSunAltitude && slot.sunAlt <= maxSunAltitude;
+
+  return safeWind && safeGust && safeCloud && safeRain && sunOk;
+};
+
+/**
+ * Build a condensed wind timeline grouped by day, sampling every 6 hours with sun altitude enrichment.
+ * @param {object|null} hourlyForecast - Weather API response containing hourly arrays.
+ * @param {[number, number]|null} weatherLocation - Current location used for sun angle enrichment.
+ * @returns {{day: string, label: string, slots: object[]}[]} Timeline structure for TimelineBoard consumption.
+ */
+const buildWindTimeline = (hourlyForecast, weatherLocation) => {
+  if (!hourlyForecast?.time) return [];
+  const days = new Map();
+
+  hourlyForecast.time.forEach((t, i) => {
+    const hour = Number(t.slice(11, 13));
+    if (hour % 6 !== 0) return; // רק כל 6 שעות
+
+    const dayKey = t.slice(0, 10);
+    if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
+
+    const slotDate = `${t.slice(0, 13)}:00`;
+
+    days.get(dayKey).slots.push({
+      key: t,
+      time: t.slice(11, 16),
+      wind: hourlyForecast.wind_speed_10m?.[i],
+      gust: hourlyForecast.wind_gusts_10m?.[i],
+      clouds: hourlyForecast.cloud_cover?.[i],
+      rainProb: hourlyForecast.precipitation_probability?.[i],
+      isMajor: hour % 12 === 0,
+      sunAlt: computeSunAltitudeDeg(weatherLocation, slotDate),
+    });
+  });
+
+  return Array.from(days.values()).map((day) => ({
+    ...day,
+    label: new Date(day.day).toLocaleDateString("he-IL", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+    }),
+  }));
+};
+
 const App = () => {
   const initialIsMobile =
     typeof window !== "undefined" ? window.innerWidth < 768 : false;
@@ -344,106 +445,15 @@ const App = () => {
     };
   }, [aircraftEnabled, fetchAircraft]);
 
-  /**
-   * Calculate the sun altitude for the current weather location and a given timestamp.
-   * @param {string} dateStr - ISO-like datetime string (YYYY-MM-DDTHH:mm) representing the slot time.
-   * @returns {number|null} Sun altitude in degrees above the horizon, or null when unavailable.
-   */
-  const getSunAltitudeDeg = (dateStr) => {
-    if (!SunCalc || !weatherLocation) return null;
-    const [lat, lng] = weatherLocation;
-    const pos = SunCalc.getPosition(new Date(dateStr), lat, lng);
-    if (!pos || Number.isNaN(pos.altitude)) return null;
-    return pos.altitude * (180 / Math.PI);
-  };
+  const windTimeline = useMemo(
+    () => buildWindTimeline(hourlyForecast, weatherLocation),
+    [hourlyForecast, weatherLocation],
+  );
 
-  /**
-   * Determine whether a forecast slot meets user-defined suitability thresholds for flight.
-   * @param {{wind:number|null, gust:number|null, clouds:number|null, rainProb:number|null, sunAlt:number|null}} slot - Normalized forecast slot values.
-   * @returns {boolean} True when all constraints are satisfied.
-   */
-  const isSlotFlyable = (slot) => {
-    const {
-      maxWind,
-      maxGust,
-      maxCloudCover,
-      maxRainProb,
-      minSunAltitude,
-      maxSunAltitude,
-    } = suitabilitySettings;
-    const wind =
-      typeof slot.wind === "number" && !Number.isNaN(slot.wind)
-        ? slot.wind
-        : null;
-    const gust =
-      typeof slot.gust === "number" && !Number.isNaN(slot.gust)
-        ? slot.gust
-        : null;
-    const clouds =
-      typeof slot.clouds === "number" && !Number.isNaN(slot.clouds)
-        ? slot.clouds
-        : null;
-    const rainProb =
-      typeof slot.rainProb === "number" && !Number.isNaN(slot.rainProb)
-        ? slot.rainProb
-        : null;
-
-    const safeWind = wind === null ? true : wind <= maxWind;
-    const safeGust =
-      gust === null
-        ? wind === null
-          ? true
-          : wind <= maxGust
-        : gust <= maxGust;
-    const safeCloud = clouds === null ? true : clouds <= maxCloudCover;
-    const safeRain = rainProb === null ? true : rainProb <= maxRainProb;
-
-    const sunOk =
-      slot.sunAlt === null
-        ? true
-        : slot.sunAlt >= minSunAltitude && slot.sunAlt <= maxSunAltitude;
-
-    return safeWind && safeGust && safeCloud && safeRain && sunOk;
-  };
-
-  /**
-   * Build a condensed wind timeline grouped by day, sampling every 6 hours with sun altitude enrichment.
-   * @returns {{day: string, label: string, slots: object[]}[]} Timeline structure for TimelineBoard consumption.
-   */
-  const windTimeline = useMemo(() => {
-    if (!hourlyForecast?.time) return [];
-    const days = new Map();
-
-    hourlyForecast.time.forEach((t, i) => {
-      const hour = Number(t.slice(11, 13));
-      if (hour % 6 !== 0) return; // רק כל 6 שעות
-
-      const dayKey = t.slice(0, 10);
-      if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
-
-      const slotDate = `${t.slice(0, 13)}:00`;
-
-      days.get(dayKey).slots.push({
-        key: t,
-        time: t.slice(11, 16),
-        wind: hourlyForecast.wind_speed_10m?.[i],
-        gust: hourlyForecast.wind_gusts_10m?.[i],
-        clouds: hourlyForecast.cloud_cover?.[i],
-        rainProb: hourlyForecast.precipitation_probability?.[i],
-        isMajor: hour % 12 === 0,
-        sunAlt: getSunAltitudeDeg(slotDate),
-      });
-    });
-
-    return Array.from(days.values()).map((day) => ({
-      ...day,
-      label: new Date(day.day).toLocaleDateString("he-IL", {
-        weekday: "short",
-        day: "2-digit",
-        month: "2-digit",
-      }),
-    }));
-  }, [hourlyForecast, weatherLocation]);
+  const isSlotFlyable = useCallback(
+    (slot) => slotIsFlyable(slot, suitabilitySettings),
+    [suitabilitySettings],
+  );
 
   const visibleTimeline = useMemo(() => {
     if (!isMobile) return windTimeline;
