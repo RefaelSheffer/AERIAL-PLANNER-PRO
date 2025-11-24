@@ -430,7 +430,7 @@ const RealtimePanel = ({
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 bg-gradient-to-b from-amber-50 to-white text-slate-900 flex flex-col p-4 gap-4">
+    <div className="absolute inset-0 z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 flex flex-col p-4 gap-4">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs uppercase tracking-[0.3em] text-amber-700 font-bold">
@@ -622,7 +622,7 @@ const DocumentationPanel = ({ children }) => children;
 // Floating dock container
 const Dock = ({ children }) => (
   <div
-    className="fixed md:bottom-6 bottom-4 flex flex-col gap-3 z-[1100]"
+    className="fixed md:bottom-6 bottom-4 flex flex-col gap-3 z-[940]"
     style={{ right: "1rem" }}
   >
     {children}

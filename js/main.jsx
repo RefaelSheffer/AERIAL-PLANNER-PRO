@@ -197,6 +197,7 @@ const App = () => {
   const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
   const [isMobile, setIsMobile] = useState(initialIsMobile);
   const [mobileDayIndex, setMobileDayIndex] = useState(0);
+  const overlayExclusive = isMobile;
   const [realtimePanelOpen, setRealtimePanelOpen] = useState(false);
   const [rainRadarEnabled, setRainRadarEnabled] = useState(false);
   const [rainRadarStatus, setRainRadarStatus] = useState("idle");
@@ -240,10 +241,11 @@ const App = () => {
       const shouldOpen = !states[panel];
 
       // On mobile keep panels exclusive to avoid layout overlap.
-      if (isMobile) {
+      if (overlayExclusive) {
         setSidebarOpen(panel === "sidebar" ? shouldOpen : false);
         setRealtimePanelOpen(panel === "realtime" ? shouldOpen : false);
         setShowTimeline(panel === "timeline" ? shouldOpen : false);
+        setDocumentationOpen(false);
         return;
       }
 
@@ -263,9 +265,10 @@ const App = () => {
       if (shouldOpen) {
         setSidebarOpen(false);
         setShowTimeline(false);
+        setDocumentationOpen(false);
       }
     },
-    [sidebarOpen, realtimePanelOpen, showTimeline, isMobile],
+    [sidebarOpen, realtimePanelOpen, showTimeline, overlayExclusive],
   );
 
   const recenterOnUser = useCallback(() => {
@@ -1603,12 +1606,12 @@ const App = () => {
         <MapView className={`flex-1 relative h-full bg-black`}>
           <div id="map"></div>
           {locationMessage && (
-            <div className="absolute bottom-28 left-6 z-[1150] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
+            <div className="absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
               {locationMessage}
             </div>
           )}
           <div
-            className="absolute left-6 z-[1150] pointer-events-auto flex flex-col items-start gap-2"
+            className="absolute left-6 z-[930] pointer-events-auto flex flex-col items-start gap-2"
             style={geolocateButtonStyle}
           >
             <button
@@ -1620,13 +1623,13 @@ const App = () => {
             </button>
           </div>
           {polygon.length === 0 && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[1000]">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[900]">
               לחץ במפה לסימון
             </div>
           )}
 
           {/* Docked controls aligned to the right */}
-          <div className={`absolute top-4 z-[1100] ${dockPositionClasses}`}>
+          <div className={`absolute top-4 z-[940] ${dockPositionClasses}`}>
             <div className="flex flex-row-reverse items-start gap-3 pointer-events-none">
               <div className="flex flex-col items-start gap-2 pointer-events-auto">
                 <DockButton
@@ -1651,13 +1654,22 @@ const App = () => {
                   icon="doc"
                   label="כרטיסיית תיעוד"
                   active={documentationOpen}
-                  onClick={() => setDocumentationOpen((o) => !o)}
+                  onClick={() =>
+                    setDocumentationOpen((o) => {
+                      const next = !o;
+                      if (next && overlayExclusive) {
+                        setShowTimeline(false);
+                        setRealtimePanelOpen(false);
+                      }
+                      return next;
+                    })
+                  }
                 />
               </div>
 
               <div className="flex flex-col items-start gap-3 pointer-events-none">
                 {documentationOpen && (
-                  <div className="w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto">
+                  <div className="w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto z-[920]">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 text-sm font-black text-blue-800">
                         <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center">
@@ -1846,14 +1858,14 @@ const App = () => {
               </div>
             </div>
             {!isMobile && timelineBoard && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1075] flex justify-center px-4 pb-4">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[910] flex justify-center px-4 pb-4">
                 <div className="pointer-events-auto">{timelineBoard}</div>
               </div>
             )}
           </div>
           {/* Heatmap Legend */}
           {dtmData && (
-            <div className="absolute bottom-6 left-6 z-[1000] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
+            <div className="absolute bottom-6 left-6 z-[900] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
               <div className="font-bold mb-1">גבהים</div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div> גבוה
