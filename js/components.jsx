@@ -315,7 +315,11 @@ const TimelineBoard = ({
                         <button
                           key={slot.key}
                           onClick={() => onSlotSelect(`${day.day}T${slot.time}`)}
-                          className={`${isMobile ? "p-2 flex flex-col gap-1.5 text-[12px]" : "p-2 flex flex-col gap-2 text-[12px]"} w-full h-full min-h-[120px] rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`}
+                          className={`${
+                            isMobile
+                              ? "p-2 flex flex-col gap-1.5 text-[12px]"
+                              : "p-2 flex flex-col gap-2 text-[12px]"
+                          } w-full h-full min-h-[120px] rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative overflow-visible ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`}
                           style={{ background: "white" }}
                         >
                           {slot.isFlyable && (
@@ -358,17 +362,25 @@ const TimelineBoard = ({
                               ></div>
                             </div>
                             <div
-                              className={`${isMobile ? "text-[10px] text-slate-600 grid grid-cols-2 gap-1" : "text-[10px] text-slate-600 flex flex-wrap gap-1 justify-center"}`}
+                              className={`${
+                                isMobile
+                                  ? "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 whitespace-nowrap"
+                                  : "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 justify-center whitespace-nowrap"
+                              }`}
                             >
-                              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center">
+                              <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center whitespace-nowrap">
                                 עננות {slot.clouds ?? 0}%
                               </span>
                               <span
-                                className={`px-1.5 py-0.5 rounded-full border text-center ${slot.isFlyable ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}
+                                className={`min-w-[82px] px-1.5 py-0.5 rounded-full border text-center whitespace-nowrap ${
+                                  slot.isFlyable
+                                    ? "bg-green-50 text-green-700 border-green-200"
+                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}
                               >
                                 גשם {slot.rainProb ?? 0}%
                               </span>
-                              <span className="px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center">
+                              <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center whitespace-nowrap">
                                 משבים{" "}
                                 {slot.gust?.toFixed(1) ??
                                   slot.wind?.toFixed(1) ??
