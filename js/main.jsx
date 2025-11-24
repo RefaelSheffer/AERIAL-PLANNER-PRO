@@ -1885,8 +1885,8 @@ const App = () => {
               </div>
             </div>
             {isMobile && timelineBoard && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[910] flex justify-center px-3 pb-4">
-                <div className="pointer-events-auto w-full flex justify-center">
+              <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[910] flex justify-center px-3 pb-4">
+                <div className="pointer-events-auto w-full max-w-2xl flex justify-center">
                   {timelineBoard}
                 </div>
               </div>

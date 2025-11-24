@@ -210,7 +210,7 @@ const TimelineBoard = ({
   const timelineEmpty = preparedTimeline.length === 0;
 
   const timelineCardSizing = isMobile
-    ? "w-full max-w-xs mx-auto max-h-[55vh]"
+    ? "w-full max-w-[calc(100vw-32px)] mx-auto max-h-[50vh]"
     : "w-full max-w-5xl max-h-[55vh] mx-auto";
 
   return (
