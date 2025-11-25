@@ -565,10 +565,10 @@ const App = () => {
   }, [windTimeline, isSlotFlyable]);
 
   const visibleTimeline = useMemo(() => {
-    if (!isMobile) return windTimeline;
+    if (!isMobile || showFlyableOnly) return windTimeline;
     if (windTimeline.length === 0) return [];
     return [windTimeline[Math.min(mobileDayIndex, windTimeline.length - 1)]];
-  }, [isMobile, mobileDayIndex, windTimeline]);
+  }, [isMobile, mobileDayIndex, windTimeline, showFlyableOnly]);
 
   const scrollTimeline = (direction) => {
     const container = timelineContainerRef.current;
