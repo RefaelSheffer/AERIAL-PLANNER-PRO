@@ -1745,64 +1745,48 @@ const App = () => {
           )}
 
           {/* Docked controls aligned to the right */}
-          <div
-            className={`absolute ${isMobile ? "top-3" : "top-4"} z-[940] ${dockPositionClasses}`}
-            style={dockPositionStyle}
-          >
             <div
-              className={`${
-                isMobile
-                  ? "flex flex-row-reverse gap-2 w-full justify-end"
-                  : "flex flex-row-reverse items-start gap-3"
-              } pointer-events-auto`}
+              className={`absolute top-4 z-[940] ${dockPositionClasses}`}
+              style={dockPositionStyle}
             >
-              <div
-                className={`${
-                  isMobile
-                    ? "flex flex-row-reverse gap-2"
-                    : "flex flex-col items-start gap-2"
-                }`}
-              >
-                <DockButton
-                  icon="mission"
-                  label="תוכנית טיסה"
-                  active={sidebarOpen}
-                  onClick={() => toggleExclusivePanel("sidebar")}
-                  compact={isMobile}
-                />
-                <DockButton
-                  icon="radar"
-                  label="זמן אמת"
-                  active={realtimePanelOpen}
-                  onClick={() => toggleExclusivePanel("realtime")}
-                  compact={isMobile}
-                />
-                <DockButton
-                  icon="calendar"
-                  label="לוח מזג אוויר"
-                  active={showTimeline}
-                  onClick={() => toggleExclusivePanel("timeline")}
-                  compact={isMobile}
-                />
-                <DockButton
-                  icon="doc"
-                  label="כרטיסיית תיעוד"
-                  active={documentationOpen}
+              <div className="flex flex-row-reverse items-start gap-3 pointer-events-auto">
+                <div className="flex flex-col items-start gap-2">
+                  <DockButton
+                    icon="mission"
+                    label="תוכנית טיסה"
+                    active={sidebarOpen}
+                    onClick={() => toggleExclusivePanel("sidebar")}
+                  />
+                  <DockButton
+                    icon="radar"
+                    label="זמן אמת"
+                    active={realtimePanelOpen}
+                    onClick={() => toggleExclusivePanel("realtime")}
+                  />
+                  <DockButton
+                    icon="calendar"
+                    label="לוח מזג אוויר"
+                    active={showTimeline}
+                    onClick={() => toggleExclusivePanel("timeline")}
+                  />
+                  <DockButton
+                    icon="doc"
+                    label="כרטיסיית תיעוד"
+                    active={documentationOpen}
                   onClick={() =>
-                    setDocumentationOpen((o) => {
-                      const next = !o;
-                      if (next && overlayExclusive) {
-                        setShowTimeline(false);
-                        setRealtimePanelOpen(false);
-                      }
-                      return next;
-                    })
-                  }
-                  compact={isMobile}
-                />
-              </div>
+                      setDocumentationOpen((o) => {
+                        const next = !o;
+                        if (next && overlayExclusive) {
+                          setShowTimeline(false);
+                          setRealtimePanelOpen(false);
+                        }
+                        return next;
+                      })
+                    }
+                  />
+                </div>
 
-              <div
+                <div
                 className={`${
                   isMobile
                     ? "flex flex-row-reverse gap-2"
