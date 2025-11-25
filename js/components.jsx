@@ -302,12 +302,12 @@ const TimelineBoard = ({
           </div>
         </div>
       )}
-      {timelineEmpty && (
+      {!showStableSummary && timelineEmpty && (
         <div className="p-4 text-center text-sm text-slate-600">
           אין נתוני תחזית זמינים כרגע.
         </div>
       )}
-      {isMobile && windTimeline.length > 1 && (
+      {!showStableSummary && isMobile && windTimeline.length > 1 && (
         <div className="flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700">
           <button
             className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
@@ -328,35 +328,36 @@ const TimelineBoard = ({
           </button>
         </div>
       )}
-      <div className="relative">
-        {!isMobile && windTimeline.length > 1 && (
-          <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
-            <button
-              onClick={() => onScroll(-1)}
-              className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
-              aria-label="הזז שמאלה"
-            >
-              ‹
-            </button>
-            <button
-              onClick={() => onScroll(1)}
-              className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
-              aria-label="הזז ימינה"
-            >
-              ›
-            </button>
-          </div>
-        )}
-        <div
-          ref={timelineContainerRef}
-          className={`${
-            isMobile ? "overflow-y-auto" : "overflow-x-auto"
-          } custom-scroll snap-x snap-mandatory max-h-[55vh]`}
-        >
+      {!showStableSummary && (
+        <div className="relative">
+          {!isMobile && windTimeline.length > 1 && (
+            <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
+              <button
+                onClick={() => onScroll(-1)}
+                className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
+                aria-label="הזז שמאלה"
+              >
+                ‹
+              </button>
+              <button
+                onClick={() => onScroll(1)}
+                className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
+                aria-label="הזז ימינה"
+              >
+                ›
+              </button>
+            </div>
+          )}
           <div
-            className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
+            ref={timelineContainerRef}
+            className={`${
+              isMobile ? "overflow-y-auto" : "overflow-x-auto"
+            } custom-scroll snap-x snap-mandatory max-h-[55vh]`}
           >
-              {preparedTimeline.map((day) => (
+            <div
+              className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
+            >
+                {preparedTimeline.map((day) => (
                 <div
                   key={day.day}
                   className={`${isMobile ? "w-full" : "min-w-[300px] max-w-[340px]"} snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
@@ -483,6 +484,7 @@ const TimelineBoard = ({
                 </div>
               ))}
             </div>
+          </div>
           </div>
         )}
       </div>
