@@ -430,52 +430,59 @@ const RealtimePanel = ({
   if (!open) return null;
 
   return (
-    <div className="absolute inset-0 z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 flex flex-col p-4 gap-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="fixed inset-y-4 right-4 left-4 md:left-auto md:w-[26rem] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll">
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-amber-50 to-white px-5 pt-5 pb-3 border-b border-amber-200 flex items-start justify-between gap-3">
+        <div className="space-y-1">
           <div className="text-xs uppercase tracking-[0.3em] text-amber-700 font-bold">
             זמן אמת
           </div>
-          <h2 className="text-xl font-black text-slate-900">
+          <h2 className="text-xl font-black text-slate-900 leading-tight">
             מקם גשם ומיקומי מטוסים
           </h2>
           <p className="text-sm text-slate-600">
             הפעלת מקורות נתוני זמן אמת על שכבת המפה.
           </p>
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-slate-600">
-          {rainRadarStatus === "loading" && <span>מקם טוען...</span>}
-          {rainRadarStatus === "error" && (
-            <span className="text-red-600">מקם לא זמין</span>
-          )}
-          {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
-            <span className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-              מקור הנתונים לא זמין כרגע
-            </span>
-          )}
-          {rainRadarTimestamp && (
-            <span>
-              עודכן:{" "}
-              {new Date(rainRadarTimestamp * 1000).toLocaleTimeString("he-IL")}
-            </span>
-          )}
+        <div className="flex flex-col items-end gap-2 text-[11px] text-slate-600">
+          <div className="flex flex-wrap justify-end gap-2">
+            {rainRadarStatus === "loading" && (
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                מקם טוען...
+              </span>
+            )}
+            {rainRadarStatus === "error" && (
+              <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                מקם לא זמין
+              </span>
+            )}
+            {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
+              <span className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                מקור הנתונים לא זמין כרגע
+              </span>
+            )}
+            {rainRadarTimestamp && (
+              <span className="px-2 py-0.5 rounded-full bg-white border border-amber-200 text-amber-700">
+                עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleTimeString("he-IL")}
+              </span>
+            )}
+          </div>
           <button
             onClick={onRefreshRainRadar}
-            className="px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-semibold hover:bg-amber-500"
+            className="px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-semibold hover:bg-amber-500 shadow"
           >
             רענן שכבת גשם
           </button>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="p-5 space-y-4">
         <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
                 <Icon name="radar" size={18} />
               </span>
-              <div>
+              <div className="leading-tight">
                 <div className="font-bold text-slate-900">מקם גשם</div>
                 <div className="text-[11px] text-amber-800/80">
                   RainViewer API · מתעדכן כל 5 דק'
@@ -483,7 +490,7 @@ const RealtimePanel = ({
               </div>
             </div>
             <span
-              className={`text-[11px] font-semibold ${rainRadarEnabled ? "text-amber-700" : "text-slate-400"}`}
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${rainRadarEnabled ? "text-amber-700 bg-amber-50 border border-amber-200" : "text-slate-400 bg-slate-100"}`}
             >
               {rainRadarEnabled ? "מוצג" : "מוסתר"}
             </span>
@@ -521,12 +528,12 @@ const RealtimePanel = ({
         </div>
 
         <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
                 <Icon name="drone" size={18} />
               </span>
-              <div>
+              <div className="leading-tight">
                 <div className="font-bold text-slate-900">מטוסים בסביבה</div>
                 <div className="text-[11px] text-amber-800/80">
                   ADSBExchange · רענון כל 15 שניות
@@ -534,7 +541,7 @@ const RealtimePanel = ({
               </div>
             </div>
             <span
-              className={`text-[11px] font-semibold ${aircraftEnabled ? "text-amber-700" : "text-slate-400"}`}
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${aircraftEnabled ? "text-amber-700 bg-amber-50 border border-amber-200" : "text-slate-400 bg-slate-100"}`}
             >
               {aircraftEnabled ? "מוצג" : "מוסתר"}
             </span>
@@ -563,21 +570,21 @@ const RealtimePanel = ({
                   </span>
                 </div>
               </div>
-            <span
-              className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-amber-700"}`}
-            >
-              {aircraftEnabled ? "פעיל" : "כבוי"}
-            </span>
-          </button>
-          {(aircraftUnavailable || aircraftStatus === "error") && (
-            <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-2">
-              מקור הנתונים לא זמין כרגע
-            </div>
-          )}
-          <div className="flex items-center justify-between text-[11px] text-amber-800">
-            <div className="flex items-center gap-2">
-              <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">
-                {aircraftData.length} בטווח
+              <span
+                className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-amber-700"}`}
+              >
+                {aircraftEnabled ? "פעיל" : "כבוי"}
+              </span>
+            </button>
+            {(aircraftUnavailable || aircraftStatus === "error") && (
+              <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1">
+                מקור הנתונים לא זמין כרגע
+              </div>
+            )}
+            <div className="flex items-center justify-between text-[11px] text-amber-800">
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">
+                  {aircraftData.length} בטווח
                 </span>
                 <span className="text-[10px] text-amber-700">
                   טווח: {aircraftRangeKm} ק"מ

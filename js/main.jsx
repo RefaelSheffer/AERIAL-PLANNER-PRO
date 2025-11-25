@@ -723,12 +723,12 @@ const App = () => {
   }, []);
 
   const dockPositionStyle = useMemo(() => {
-    if (!isMobile && sidebarOpen) {
+    if (!isMobile && (sidebarOpen || realtimePanelOpen)) {
       return { right: "26rem" };
     }
 
     return { right: "1rem" };
-  }, [isMobile, sidebarOpen]);
+  }, [isMobile, sidebarOpen, realtimePanelOpen]);
 
   const dtmHeatPoints = useMemo(
     () => buildDtmHeatPoints(dtmData, dtmStats),
