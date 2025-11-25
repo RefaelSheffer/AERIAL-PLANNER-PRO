@@ -1911,39 +1911,6 @@ const App = () => {
                   </div>
                 )}
 
-                <div
-                  className={`${
-                    isMobile
-                      ? "flex flex-row-reverse gap-2 pointer-events-auto"
-                      : "flex flex-col gap-2 pointer-events-auto"
-                  }`}
-                >
-                  <button
-                    onClick={() => {
-                      setPolygon([]);
-                      setDtmData(null);
-                      setTotalDistance(0);
-                    }}
-                    className={`rounded-full bg-white/95 text-red-600 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${
-                      isMobile ? "w-10 h-10" : "w-12 h-12"
-                    }`}
-                    aria-label="איפוס כל הסימונים"
-                  >
-                    <Icon name="trash" size={isMobile ? 14 : 16} />
-                  </button>
-                  <button
-                    onClick={() => setShowFlyableOnly((prev) => !prev)}
-                    className={`rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${
-                      showFlyableOnly
-                        ? "bg-emerald-600 text-white border-emerald-600"
-                        : "bg-white/95 text-emerald-700 border-slate-200"
-                    } ${isMobile ? "w-10 h-10" : "w-12 h-12"}`}
-                    aria-label="הצג רק שעות יציבות"
-                  >
-                    <Icon name="wind" size={isMobile ? 14 : 16} />
-                  </button>
-                </div>
-
                 <RealtimePanel
                   open={realtimePanelOpen}
                   rainRadarEnabled={rainRadarEnabled}
