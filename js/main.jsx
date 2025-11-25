@@ -231,6 +231,9 @@ const App = () => {
   const userLocationInitialized = useRef(false);
   const aircraftIntervalRef = useRef(null);
   const timelineContainerRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const realtimePanelRef = useRef(null);
+  const [desktopDockOffset, setDesktopDockOffset] = useState(16);
 
   /**
    * Toggle visibility of the sidebar, realtime panel, or timeline with mobile-aware exclusivity rules.
@@ -718,6 +721,34 @@ const App = () => {
     bottom: !isMobile && showTimeline ? "calc(55vh + 1rem)" : "1.5rem",
   };
 
+  const computeDesktopDockOffset = useCallback(() => {
+    if (isMobile) return 16;
+
+    const gapPx = 16;
+    const panelWidth = (() => {
+      if (realtimePanelOpen && realtimePanelRef.current) {
+        return realtimePanelRef.current.offsetWidth;
+      }
+
+      if (sidebarOpen && sidebarRef.current) {
+        return sidebarRef.current.offsetWidth;
+      }
+
+      return 0;
+    })();
+
+    return panelWidth + gapPx;
+  }, [isMobile, realtimePanelOpen, sidebarOpen]);
+
+  useEffect(() => {
+    const updateOffset = () => setDesktopDockOffset(computeDesktopDockOffset());
+
+    updateOffset();
+    window.addEventListener("resize", updateOffset);
+
+    return () => window.removeEventListener("resize", updateOffset);
+  }, [computeDesktopDockOffset]);
+
   const dockPositionClasses = useMemo(() => {
     return isMobile
       ? "left-0 right-0 flex justify-center"
@@ -729,12 +760,8 @@ const App = () => {
       return { left: "1rem", right: "1rem" };
     }
 
-    if (sidebarOpen || realtimePanelOpen) {
-      return { right: "26rem" };
-    }
-
-    return { right: "1rem" };
-  }, [isMobile, sidebarOpen, realtimePanelOpen]);
+    return { right: `${desktopDockOffset}px` };
+  }, [desktopDockOffset, isMobile]);
 
   const dtmHeatPoints = useMemo(
     () => buildDtmHeatPoints(dtmData, dtmStats),
@@ -1383,6 +1410,7 @@ const App = () => {
         {/* Controls Sidebar */}
         <Sidebar
           open={sidebarOpen}
+          containerRef={sidebarRef}
           className="w-[70%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-[960] shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static"
         >
           <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
@@ -1927,6 +1955,7 @@ const App = () => {
                   aircraftRangeKm={aircraftRangeKm}
                   aircraftData={aircraftData}
                   onRangeChange={setAircraftRangeKm}
+                  panelRef={realtimePanelRef}
                 />
               </div>
             </div>
