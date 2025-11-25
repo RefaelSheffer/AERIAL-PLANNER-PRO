@@ -131,16 +131,16 @@ const Icon = ({
 };
 
 // Floating dock button used across panels
-const DockButton = ({ icon, label, active, onClick }) => (
+const DockButton = ({ icon, label, active, onClick, compact = false }) => (
   <button
     onClick={onClick}
     aria-label={label}
-    className={`bg-white/95 text-slate-800 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl p-1 ${active ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"}`}
+    className={`bg-white/95 text-slate-800 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl ${compact ? "p-0.5" : "p-1"} ${active ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"}`}
   >
     <span
-      className={`w-12 h-12 rounded-full flex items-center justify-center ${active ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}
+      className={`${compact ? "w-10 h-10" : "w-12 h-12"} rounded-full flex items-center justify-center ${active ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}
     >
-      <Icon name={icon} size={18} />
+      <Icon name={icon} size={compact ? 16 : 18} />
     </span>
     <span className="sr-only">{label}</span>
   </button>
