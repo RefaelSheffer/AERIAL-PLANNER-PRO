@@ -181,6 +181,7 @@ const App = () => {
     new Date().toISOString().slice(0, 16),
   );
   const [showFlyableOnly, setShowFlyableOnly] = useState(false);
+  const [showStableSummary, setShowStableSummary] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState("mission");
   const [settingsReadOnly, setSettingsReadOnly] = useState(true);
@@ -551,6 +552,17 @@ const App = () => {
     (slot) => slotIsFlyable(slot, suitabilitySettings),
     [suitabilitySettings],
   );
+
+  const stableSlotsByDay = useMemo(() => {
+    return windTimeline
+      .map((day) => {
+        const slots = day.slots
+          .map((slot) => ({ ...slot, isFlyable: isSlotFlyable(slot) }))
+          .filter((slot) => slot.isFlyable);
+        return { day: day.day, label: day.label, slots };
+      })
+      .filter((day) => day.slots.length > 0);
+  }, [windTimeline, isSlotFlyable]);
 
   const visibleTimeline = useMemo(() => {
     if (!isMobile) return windTimeline;
@@ -1241,6 +1253,11 @@ const App = () => {
       dataUnavailable={weatherUnavailable}
       showFlyableOnly={showFlyableOnly}
       onToggleFlyableFilter={() => setShowFlyableOnly((prev) => !prev)}
+      showStableSummary={showStableSummary}
+      onToggleStableSummary={() =>
+        setShowStableSummary((prev) => !prev)
+      }
+      stableSlotsByDay={stableSlotsByDay}
       selectedSlotKey={selectedSlotKey}
       onSlotSelect={setFlightDate}
       onScroll={scrollTimeline}
