@@ -217,6 +217,94 @@ const TimelineBoard = ({
 
   const hasSlots = preparedTimeline.some((day) => day.enrichedSlots.length > 0);
 
+  if (showStableSummary) {
+    return (
+      <div
+        className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
+      >
+        {dataUnavailable && (
+          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
+            מקור הנתונים לא זמין כרגע
+          </div>
+        )}
+        {hasSlots && (
+          <div
+            className={`flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700 ${
+              isMobile ? "flex-col items-start gap-2" : ""
+            }`}
+          >
+            <div
+              className={`flex items-center gap-2 ${
+                isMobile ? "flex-wrap" : "flex-wrap"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={onToggleStableSummary}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] transition ${
+                  showStableSummary
+                    ? "bg-green-600 text-white border-green-600 shadow"
+                    : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
+                }`}
+              >
+                <Icon name="clock" size={12} />
+                {showStableSummary ? "הסתר ריכוז שעות יציבות" : "ריכוז שעות יציבות"}
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="px-3 pb-2">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-56 overflow-y-auto custom-scroll">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-[12px] font-black text-blue-900">
+                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
+                  <Icon name="clock" size={13} />
+                </span>
+                שעות יציבות לכל הימים
+              </div>
+              <button
+                type="button"
+                onClick={onToggleStableSummary}
+                className="text-[11px] text-blue-700 hover:text-blue-900"
+                aria-label="סגור ריכוז שעות יציבות"
+              >
+                סגור
+              </button>
+            </div>
+
+            {stableSlotsByDay.length === 0 ? (
+              <div className="text-[11px] text-blue-900 bg-white/90 border border-blue-200 rounded-lg px-3 py-2 text-center">
+                אין כרגע שעות יציבות בתאריכים הקרובים.
+              </div>
+            ) : (
+              stableSlotsByDay.map((day) => (
+                <div
+                  key={day.day}
+                  className="bg-white/90 border border-blue-100 rounded-lg px-3 py-2 space-y-1 shadow-sm"
+                >
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-blue-900">
+                    <span>{day.label}</span>
+                    <span className="text-blue-700">{day.slots.length} שעות</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {day.slots.map((slot) => (
+                      <span
+                        key={slot.key}
+                        className="px-2 py-1 rounded-full bg-green-600 text-white text-[11px] flex items-center gap-1 shadow"
+                      >
+                        <Icon name="clock" size={11} /> {slot.time}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
