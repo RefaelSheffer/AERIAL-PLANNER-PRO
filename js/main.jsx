@@ -719,8 +719,16 @@ const App = () => {
   };
 
   const dockPositionClasses = useMemo(() => {
-    return "right-4 left-auto items-start justify-start";
+    return "left-auto items-start justify-start";
   }, []);
+
+  const dockPositionStyle = useMemo(() => {
+    if (!isMobile && sidebarOpen) {
+      return { right: "26rem" };
+    }
+
+    return { right: "1rem" };
+  }, [isMobile, sidebarOpen]);
 
   const dtmHeatPoints = useMemo(
     () => buildDtmHeatPoints(dtmData, dtmStats),
@@ -1665,7 +1673,10 @@ const App = () => {
           )}
 
           {/* Docked controls aligned to the right */}
-          <div className={`absolute top-4 z-[940] ${dockPositionClasses}`}>
+          <div
+            className={`absolute top-4 z-[940] ${dockPositionClasses}`}
+            style={dockPositionStyle}
+          >
             <div className="flex flex-row-reverse items-start gap-3 pointer-events-none">
               <div className="flex flex-col items-start gap-2 pointer-events-auto">
                 <DockButton
