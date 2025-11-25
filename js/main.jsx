@@ -800,8 +800,8 @@ const App = () => {
   }, [isMobile]);
 
   const dockPositionStyle = useMemo(() => {
-    return { right: `${desktopDockOffset}px` };
-  }, [desktopDockOffset]);
+    return { right: isMobile ? "0px" : `${desktopDockOffset}px` };
+  }, [desktopDockOffset, isMobile]);
 
   const plannerPanelWidth = useMemo(() => {
     return isMobile ? "min(50vw, 360px)" : "min(50vw, 640px)";
@@ -1791,42 +1791,6 @@ const App = () => {
               style={dockPositionStyle}
             >
               <div className="flex flex-row items-start gap-3 pointer-events-auto">
-                <div className="flex flex-col items-start gap-2">
-                  <DockButton
-                    icon="mission"
-                    label="תוכנית טיסה"
-                    active={sidebarOpen}
-                    onClick={() => toggleExclusivePanel("sidebar")}
-                  />
-                  <DockButton
-                    icon="radar"
-                    label="זמן אמת"
-                    active={realtimePanelOpen}
-                    onClick={() => toggleExclusivePanel("realtime")}
-                  />
-                  <DockButton
-                    icon="calendar"
-                    label="לוח מזג אוויר"
-                    active={showTimeline}
-                    onClick={() => toggleExclusivePanel("timeline")}
-                  />
-                  <DockButton
-                    icon="doc"
-                    label="כרטיסיית תיעוד"
-                    active={documentationOpen}
-                  onClick={() =>
-                      setDocumentationOpen((o) => {
-                        const next = !o;
-                        if (next && overlayExclusive) {
-                          setShowTimeline(false);
-                          setRealtimePanelOpen(false);
-                        }
-                        return next;
-                      })
-                    }
-                  />
-                </div>
-
                 <div
                   className={`${
                     isMobile
@@ -2023,6 +1987,43 @@ const App = () => {
                   onRangeChange={setAircraftRangeKm}
                   panelRef={realtimePanelRef}
                 />
+              </div>
+
+                <div className="flex flex-col items-start gap-2">
+                  <DockButton
+                    icon="mission"
+                    label="תוכנית טיסה"
+                    active={sidebarOpen}
+                    onClick={() => toggleExclusivePanel("sidebar")}
+                  />
+                  <DockButton
+                    icon="radar"
+                    label="זמן אמת"
+                    active={realtimePanelOpen}
+                    onClick={() => toggleExclusivePanel("realtime")}
+                  />
+                  <DockButton
+                    icon="calendar"
+                    label="לוח מזג אוויר"
+                    active={showTimeline}
+                    onClick={() => toggleExclusivePanel("timeline")}
+                  />
+                  <DockButton
+                    icon="doc"
+                    label="כרטיסיית תיעוד"
+                    active={documentationOpen}
+                    onClick={() =>
+                      setDocumentationOpen((o) => {
+                        const next = !o;
+                        if (next && overlayExclusive) {
+                          setShowTimeline(false);
+                          setRealtimePanelOpen(false);
+                        }
+                        return next;
+                      })
+                    }
+                  />
+                </div>
               </div>
             </div>
             {isMobile && timelineBoard && (
