@@ -225,6 +225,32 @@ const App = () => {
   });
   const [docEntries, setDocEntries] = useState([]);
 
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+
+    try {
+      const stored = localStorage.getItem("aerialPlannerDocEntries");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setDocEntries(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to read stored documentation entries", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+
+    try {
+      localStorage.setItem("aerialPlannerDocEntries", JSON.stringify(docEntries));
+    } catch (e) {
+      console.warn("Failed to persist documentation entries", e);
+    }
+  }, [docEntries]);
+
   const mapRef = useRef(null);
   const layersRef = useRef({});
   const radarIntervalRef = useRef(null);
