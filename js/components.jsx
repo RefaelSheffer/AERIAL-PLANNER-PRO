@@ -543,7 +543,7 @@ const RealtimePanel = ({
   return (
     <div
       ref={panelRef}
-      className="fixed top-4 right-4 left-4 md:left-auto md:w-[24rem] max-h-[82vh] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll"
+      className="fixed top-4 right-4 w-[min(26rem,calc(100%-5rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll"
     >
       <div className="sticky top-0 z-10 bg-gradient-to-b from-amber-50 to-white px-5 pt-5 pb-3 border-b border-amber-200 flex items-start justify-between gap-3">
         <div className="space-y-1">
@@ -619,14 +619,9 @@ const RealtimePanel = ({
               >
                 <Icon name="cloud" size={16} />
               </span>
-              <div className="flex flex-col text-right">
-                <span className="font-bold">
-                  {rainRadarEnabled ? "הסתר שכבת גשם" : "הצג שכבת גשם"}
-                </span>
-                <span className="text-[10px] text-amber-800/80">
-                  שמירת ההגדרה נשמרת כל עוד העמוד פתוח
-                </span>
-              </div>
+              <span className="font-bold text-right">
+                {rainRadarEnabled ? "הסתר שכבת גשם" : "הצג שכבת גשם"}
+              </span>
             </div>
             <span
               className={`text-[11px] font-semibold ${rainRadarEnabled ? "text-white" : "text-amber-700"}`}
@@ -666,28 +661,21 @@ const RealtimePanel = ({
               className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-1.5 transition ${aircraftEnabled ? "bg-amber-600 text-white border-amber-600 shadow-inner" : "bg-white text-amber-800 border-amber-200 hover:bg-amber-100/70"}`}
             >
               <div className="flex items-center gap-2">
-                <span
-                  className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? "bg-white/20" : "bg-amber-100 text-amber-700"}`}
-                >
-                  <Icon name="drone" size={16} />
-                </span>
-                <div className="flex flex-col text-right">
-                  <span className="font-bold">
-                    {aircraftEnabled
-                      ? "הסתר מיקומי מטוסים"
-                      : "הצג מיקומי מטוסים"}
-                  </span>
-                  <span className="text-[10px] text-amber-800/80">
-                    {aircraftTimestamp
-                      ? `עודכן: ${new Date(aircraftTimestamp).toLocaleTimeString("he-IL")}`
-                      : "עדכון אוטומטי כל 15 שניות"}
-                  </span>
-                </div>
-              </div>
               <span
-                className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-amber-700"}`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? "bg-white/20" : "bg-amber-100 text-amber-700"}`}
               >
-                {aircraftEnabled ? "פעיל" : "כבוי"}
+                <Icon name="drone" size={16} />
+              </span>
+              <span className="font-bold text-right">
+                {aircraftEnabled
+                  ? "הסתר מיקומי מטוסים"
+                  : "הצג מיקומי מטוסים"}
+              </span>
+            </div>
+            <span
+              className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-amber-700"}`}
+            >
+              {aircraftEnabled ? "פעיל" : "כבוי"}
               </span>
             </button>
             {(aircraftUnavailable || aircraftStatus === "error") && (
