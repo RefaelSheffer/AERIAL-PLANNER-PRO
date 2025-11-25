@@ -180,7 +180,6 @@ const App = () => {
   const [flightDate, setFlightDate] = useState(
     new Date().toISOString().slice(0, 16),
   );
-  const [showFlyableOnly, setShowFlyableOnly] = useState(false);
   const [showStableSummary, setShowStableSummary] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState("mission");
@@ -565,10 +564,10 @@ const App = () => {
   }, [windTimeline, isSlotFlyable]);
 
   const visibleTimeline = useMemo(() => {
-    if (!isMobile || showFlyableOnly) return windTimeline;
+    if (!isMobile) return windTimeline;
     if (windTimeline.length === 0) return [];
     return [windTimeline[Math.min(mobileDayIndex, windTimeline.length - 1)]];
-  }, [isMobile, mobileDayIndex, windTimeline, showFlyableOnly]);
+  }, [isMobile, mobileDayIndex, windTimeline]);
 
   const scrollTimeline = (direction) => {
     const container = timelineContainerRef.current;
@@ -1251,8 +1250,6 @@ const App = () => {
       windTimeline={windTimeline}
       visibleTimeline={visibleTimeline}
       dataUnavailable={weatherUnavailable}
-      showFlyableOnly={showFlyableOnly}
-      onToggleFlyableFilter={() => setShowFlyableOnly((prev) => !prev)}
       showStableSummary={showStableSummary}
       onToggleStableSummary={() =>
         setShowStableSummary((prev) => !prev)

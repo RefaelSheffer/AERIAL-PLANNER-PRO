@@ -168,8 +168,6 @@ const TimelineBoard = ({
   windTimeline,
   visibleTimeline,
   dataUnavailable = false,
-  showFlyableOnly,
-  onToggleFlyableFilter,
   showStableSummary,
   onToggleStableSummary,
   stableSlotsByDay = [],
@@ -189,8 +187,6 @@ const TimelineBoard = ({
     return visibleTimeline.map((day) => {
       let flyableCount = 0;
       let firstFlyable = null;
-      const displaySlots = [];
-
       const enrichedSlots = day.slots.map((slot) => {
         const slotWithFlag = { ...slot, isFlyable: isSlotFlyable(slot) };
         if (slotWithFlag.isFlyable) {
@@ -198,12 +194,10 @@ const TimelineBoard = ({
           if (!firstFlyable) firstFlyable = slotWithFlag;
         }
 
-        if (!showFlyableOnly || slotWithFlag.isFlyable) {
-          displaySlots.push(slotWithFlag);
-        }
-
         return slotWithFlag;
       });
+
+      const displaySlots = enrichedSlots;
 
       return {
         ...day,
@@ -213,7 +207,7 @@ const TimelineBoard = ({
         firstFlyable,
       };
     });
-  }, [visibleTimeline, showFlyableOnly, isSlotFlyable]);
+  }, [visibleTimeline, isSlotFlyable]);
 
   const timelineEmpty = preparedTimeline.length === 0;
 
@@ -243,21 +237,6 @@ const TimelineBoard = ({
               isMobile ? "flex-wrap" : "flex-wrap"
             }`}
           >
-            <div className="flex items-center gap-2">
-              <input
-                id="flyable-filter-toggle"
-                type="checkbox"
-                checked={showFlyableOnly}
-                onChange={onToggleFlyableFilter}
-                className="accent-blue-600 h-4 w-4"
-              />
-              <label
-                htmlFor="flyable-filter-toggle"
-                className="font-semibold cursor-pointer select-none"
-              >
-                הצג רק שעות מתאימות לטיסה
-              </label>
-            </div>
             <button
               type="button"
               onClick={onToggleStableSummary}
@@ -271,15 +250,6 @@ const TimelineBoard = ({
               {showStableSummary ? "הסתר ריכוז שעות יציבות" : "ריכוז שעות יציבות"}
             </button>
           </div>
-          <span
-            className={`px-2 py-1 rounded-full text-[11px] border ${
-              showFlyableOnly
-                ? "bg-green-50 text-green-700 border-green-200"
-              : "bg-slate-100 text-slate-700 border-slate-200"
-            }`}
-          >
-            {showFlyableOnly ? "מציג רק שעות יציבות" : "מציג את כל חלונות הזמן"}
-          </span>
         </div>
       )}
       {showStableSummary && (
@@ -337,7 +307,7 @@ const TimelineBoard = ({
           אין נתוני תחזית זמינים כרגע.
         </div>
       )}
-      {!showFlyableOnly && isMobile && windTimeline.length > 1 && (
+      {isMobile && windTimeline.length > 1 && (
         <div className="flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700">
           <button
             className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
@@ -359,7 +329,7 @@ const TimelineBoard = ({
         </div>
       )}
       <div className="relative">
-        {!showFlyableOnly && !isMobile && windTimeline.length > 1 && (
+        {!isMobile && windTimeline.length > 1 && (
           <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
             <button
               onClick={() => onScroll(-1)}
@@ -377,72 +347,15 @@ const TimelineBoard = ({
             </button>
           </div>
         )}
-        {showFlyableOnly ? (
-          <div className="p-3 md:p-4">
-            <div className="text-[11px] text-slate-600 mb-2">
-              תצוגת לוח שבועי מרכזת את כל השעות המתאימות לטיסה, ללא פירוט עננות/גשם/רוח.
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {preparedTimeline.map((day) => {
-                const hasFlyableSlots = day.displaySlots.length > 0;
-                return (
-                  <div
-                    key={day.day}
-                    className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <div className="text-sm font-black text-slate-900">{day.label}</div>
-                        <div className="text-[11px] text-slate-500">
-                          {day.flyableCount} שעות יציבות · {day.slots.length} חלונות זמן
-                        </div>
-                      </div>
-                      <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 text-[10px] text-slate-700 font-semibold">
-                        {day.day}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5">
-                      {hasFlyableSlots ? (
-                        day.displaySlots.map((slot) => {
-                          const slotKey = `${day.day}T${slot.time}`;
-                          const isActive = slotKey === selectedSlotKey;
-                          return (
-                            <button
-                              key={slot.key}
-                              onClick={() => onSlotSelect(slotKey)}
-                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[12px] font-semibold transition border shadow-sm ${
-                                isActive
-                                  ? "bg-blue-600 text-white border-blue-600"
-                                  : "bg-green-50 text-green-800 border-green-200 hover:bg-green-100"
-                              }`}
-                            >
-                              <Icon name="clock" size={12} />
-                              {slot.time}
-                            </button>
-                          );
-                        })
-                      ) : (
-                        <div className="text-[11px] text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-full px-3 py-1">
-                          אין שעות יציבות ביום זה
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
+        <div
+          ref={timelineContainerRef}
+          className={`${
+            isMobile ? "overflow-y-auto" : "overflow-x-auto"
+          } custom-scroll snap-x snap-mandatory max-h-[55vh]`}
+        >
           <div
-            ref={timelineContainerRef}
-            className={`${
-              isMobile ? "overflow-y-auto" : "overflow-x-auto"
-            } custom-scroll snap-x snap-mandatory max-h-[55vh]`}
+            className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
           >
-            <div
-              className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
-            >
               {preparedTimeline.map((day) => (
                 <div
                   key={day.day}
