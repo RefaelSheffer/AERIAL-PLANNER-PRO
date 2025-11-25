@@ -1236,6 +1236,7 @@ const App = () => {
       visibleTimeline={visibleTimeline}
       dataUnavailable={weatherUnavailable}
       showFlyableOnly={showFlyableOnly}
+      onToggleFlyableFilter={() => setShowFlyableOnly((prev) => !prev)}
       selectedSlotKey={selectedSlotKey}
       onSlotSelect={setFlightDate}
       onScroll={scrollTimeline}
