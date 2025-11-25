@@ -785,13 +785,13 @@ const App = () => {
 
   const dockPositionClasses = useMemo(() => {
     return isMobile
-      ? "left-0 right-0 flex justify-center"
-      : "left-auto items-start justify-start";
+      ? "flex justify-end"
+      : "flex left-auto items-start justify-start";
   }, [isMobile]);
 
   const dockPositionStyle = useMemo(() => {
     if (isMobile) {
-      return { left: "1rem", right: "1rem" };
+      return { right: "1rem" };
     }
 
     return { right: `${desktopDockOffset}px` };
