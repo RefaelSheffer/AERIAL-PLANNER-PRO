@@ -147,9 +147,13 @@ const DockButton = ({ icon, label, active, onClick, compact = false }) => (
 );
 
 // Planning sidebar wrapper
-const Sidebar = ({ open, className = "", children }) => {
+const Sidebar = ({ open, className = "", children, containerRef }) => {
   if (!open) return null;
-  return <aside className={className}>{children}</aside>;
+  return (
+    <aside className={className} ref={containerRef}>
+      {children}
+    </aside>
+  );
 };
 
 // Map view container
@@ -426,11 +430,15 @@ const RealtimePanel = ({
   aircraftRangeKm,
   aircraftData,
   onRangeChange,
+  panelRef,
 }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed top-4 right-4 left-4 md:left-auto md:w-[24rem] max-h-[82vh] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll">
+    <div
+      ref={panelRef}
+      className="fixed top-4 right-4 left-4 md:left-auto md:w-[24rem] max-h-[82vh] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll"
+    >
       <div className="sticky top-0 z-10 bg-gradient-to-b from-amber-50 to-white px-5 pt-5 pb-3 border-b border-amber-200 flex items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="text-xs uppercase tracking-[0.3em] text-amber-700 font-bold">
