@@ -719,11 +719,17 @@ const App = () => {
   };
 
   const dockPositionClasses = useMemo(() => {
-    return "left-auto items-start justify-start";
-  }, []);
+    return isMobile
+      ? "left-0 right-0 flex justify-center"
+      : "left-auto items-start justify-start";
+  }, [isMobile]);
 
   const dockPositionStyle = useMemo(() => {
-    if (!isMobile && (sidebarOpen || realtimePanelOpen)) {
+    if (isMobile) {
+      return { left: "1rem", right: "1rem" };
+    }
+
+    if (sidebarOpen || realtimePanelOpen) {
       return { right: "26rem" };
     }
 
@@ -1674,28 +1680,43 @@ const App = () => {
 
           {/* Docked controls aligned to the right */}
           <div
-            className={`absolute top-4 z-[940] ${dockPositionClasses}`}
+            className={`absolute ${isMobile ? "top-3" : "top-4"} z-[940] ${dockPositionClasses}`}
             style={dockPositionStyle}
           >
-            <div className="flex flex-row-reverse items-start gap-3 pointer-events-none">
-              <div className="flex flex-col items-start gap-2 pointer-events-auto">
+            <div
+              className={`${
+                isMobile
+                  ? "flex flex-row-reverse gap-2 w-full justify-end"
+                  : "flex flex-row-reverse items-start gap-3"
+              } pointer-events-auto`}
+            >
+              <div
+                className={`${
+                  isMobile
+                    ? "flex flex-row-reverse gap-2"
+                    : "flex flex-col items-start gap-2"
+                }`}
+              >
                 <DockButton
                   icon="mission"
                   label="תוכנית טיסה"
                   active={sidebarOpen}
                   onClick={() => toggleExclusivePanel("sidebar")}
+                  compact={isMobile}
                 />
                 <DockButton
                   icon="radar"
                   label="זמן אמת"
                   active={realtimePanelOpen}
                   onClick={() => toggleExclusivePanel("realtime")}
+                  compact={isMobile}
                 />
                 <DockButton
                   icon="calendar"
                   label="לוח מזג אוויר"
                   active={showTimeline}
                   onClick={() => toggleExclusivePanel("timeline")}
+                  compact={isMobile}
                 />
                 <DockButton
                   icon="doc"
@@ -1711,10 +1732,17 @@ const App = () => {
                       return next;
                     })
                   }
+                  compact={isMobile}
                 />
               </div>
 
-              <div className="flex flex-col items-start gap-3 pointer-events-none">
+              <div
+                className={`${
+                  isMobile
+                    ? "flex flex-row-reverse gap-2"
+                    : "flex flex-col items-start gap-3"
+                }`}
+              >
                 {documentationOpen && (
                   <div className="w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto z-[920]">
                     <div className="flex items-center justify-between gap-3">
@@ -1882,6 +1910,39 @@ const App = () => {
                     </div>
                   </div>
                 )}
+
+                <div
+                  className={`${
+                    isMobile
+                      ? "flex flex-row-reverse gap-2 pointer-events-auto"
+                      : "flex flex-col gap-2 pointer-events-auto"
+                  }`}
+                >
+                  <button
+                    onClick={() => {
+                      setPolygon([]);
+                      setDtmData(null);
+                      setTotalDistance(0);
+                    }}
+                    className={`rounded-full bg-white/95 text-red-600 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${
+                      isMobile ? "w-10 h-10" : "w-12 h-12"
+                    }`}
+                    aria-label="איפוס כל הסימונים"
+                  >
+                    <Icon name="trash" size={isMobile ? 14 : 16} />
+                  </button>
+                  <button
+                    onClick={() => setShowFlyableOnly((prev) => !prev)}
+                    className={`rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${
+                      showFlyableOnly
+                        ? "bg-emerald-600 text-white border-emerald-600"
+                        : "bg-white/95 text-emerald-700 border-slate-200"
+                    } ${isMobile ? "w-10 h-10" : "w-12 h-12"}`}
+                    aria-label="הצג רק שעות יציבות"
+                  >
+                    <Icon name="wind" size={isMobile ? 14 : 16} />
+                  </button>
+                </div>
 
                 <RealtimePanel
                   open={realtimePanelOpen}
