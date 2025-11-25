@@ -792,6 +792,10 @@ const App = () => {
     return { right: `${desktopDockOffset}px` };
   }, [desktopDockOffset]);
 
+  const plannerPanelWidth = useMemo(() => {
+    return isMobile ? "min(50vw, 360px)" : "min(50vw, 640px)";
+  }, [isMobile]);
+
   const dtmHeatPoints = useMemo(
     () => buildDtmHeatPoints(dtmData, dtmStats),
     [dtmData, dtmStats],
@@ -1441,7 +1445,8 @@ const App = () => {
         <Sidebar
           open={sidebarOpen}
           containerRef={sidebarRef}
-          className="w-[70%] max-w-sm md:max-w-none md:w-96 bg-slate-900 text-white flex flex-col z-[960] shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static"
+          className="bg-slate-900 text-white flex flex-col z-[960] shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static"
+          style={{ width: plannerPanelWidth }}
         >
           <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
             <h1 className="font-black text-lg tracking-wider text-blue-400">
@@ -1771,7 +1776,7 @@ const App = () => {
               className={`absolute top-4 z-[940] ${dockPositionClasses}`}
               style={dockPositionStyle}
             >
-              <div className="flex flex-row-reverse items-start gap-3 pointer-events-auto">
+              <div className="flex flex-row items-start gap-3 pointer-events-auto">
                 <div className="flex flex-col items-start gap-2">
                   <DockButton
                     icon="mission"
@@ -1809,14 +1814,17 @@ const App = () => {
                 </div>
 
                 <div
-                className={`${
-                  isMobile
-                    ? "flex flex-row-reverse gap-2"
-                    : "flex flex-col items-start gap-3"
-                }`}
-              >
-                {documentationOpen && (
-                  <div className="w-80 bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto z-[920]">
+                  className={`${
+                    isMobile
+                      ? "flex flex-row-reverse gap-2"
+                      : "flex flex-col items-start gap-3"
+                  }`}
+                >
+                  {documentationOpen && (
+                  <div
+                    className="bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto z-[920]"
+                    style={{ width: plannerPanelWidth }}
+                  >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 text-sm font-black text-blue-800">
                         <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center">
@@ -2013,9 +2021,8 @@ const App = () => {
 
             {!isMobile && timelineBoard && (
               <div
-                className={`pointer-events-none fixed left-0 bottom-0 z-[910] flex justify-center px-4 pb-4 ${
-                  sidebarOpen ? "right-96" : "right-0"
-                }`}
+                className="pointer-events-none fixed left-0 bottom-0 z-[910] flex justify-center px-4 pb-4"
+                style={{ right: sidebarOpen ? plannerPanelWidth : "0" }}
               >
                 <div className="pointer-events-auto">{timelineBoard}</div>
               </div>
