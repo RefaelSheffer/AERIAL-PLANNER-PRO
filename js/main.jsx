@@ -756,23 +756,22 @@ const App = () => {
   };
 
   const computeDesktopDockOffset = useCallback(() => {
-    if (isMobile) return 16;
-
     const gapPx = 16;
-    const panelWidth = (() => {
-      if (realtimePanelOpen && realtimePanelRef.current) {
-        return realtimePanelRef.current.offsetWidth;
-      }
 
-      if (sidebarOpen && sidebarRef.current) {
-        return sidebarRef.current.offsetWidth;
-      }
+    const widths = [];
 
-      return 0;
-    })();
+    if (realtimePanelOpen && realtimePanelRef.current) {
+      widths.push(realtimePanelRef.current.offsetWidth);
+    }
 
-    return panelWidth + gapPx;
-  }, [isMobile, realtimePanelOpen, sidebarOpen]);
+    if (sidebarOpen && sidebarRef.current) {
+      widths.push(sidebarRef.current.offsetWidth);
+    }
+
+    const maxWidth = widths.length ? Math.max(...widths) : 0;
+
+    return maxWidth + gapPx;
+  }, [realtimePanelOpen, sidebarOpen]);
 
   useEffect(() => {
     const updateOffset = () => setDesktopDockOffset(computeDesktopDockOffset());
@@ -790,12 +789,8 @@ const App = () => {
   }, [isMobile]);
 
   const dockPositionStyle = useMemo(() => {
-    if (isMobile) {
-      return { right: "1rem" };
-    }
-
     return { right: `${desktopDockOffset}px` };
-  }, [desktopDockOffset, isMobile]);
+  }, [desktopDockOffset]);
 
   const dtmHeatPoints = useMemo(
     () => buildDtmHeatPoints(dtmData, dtmStats),
