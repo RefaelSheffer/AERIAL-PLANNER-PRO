@@ -182,6 +182,7 @@ const App = () => {
   );
   const [showFlyableOnly, setShowFlyableOnly] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [activeSidebarTab, setActiveSidebarTab] = useState("mission");
   const [settingsReadOnly, setSettingsReadOnly] = useState(true);
   const [suitabilitySettings, setSuitabilitySettings] = useState(
     Config.DEFAULT_SUITABILITY,
@@ -353,6 +354,13 @@ const App = () => {
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
+
+  // Keep the mission tab highlighted once settings modal is closed
+  useEffect(() => {
+    if (!showSettings && activeSidebarTab === "settings") {
+      setActiveSidebarTab("mission");
+    }
+  }, [showSettings, activeSidebarTab]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -1418,14 +1426,44 @@ const App = () => {
               SMART PLANNER
             </h1>
             <div className="flex items-center gap-2">
+              <div
+                role="tablist"
+                aria-label="ניווט פאנל תכנון"
+                className="flex items-center rounded-xl border border-slate-700 overflow-hidden bg-slate-900/60"
+              >
+                <button
+                  role="tab"
+                  aria-selected={activeSidebarTab === "mission"}
+                  className={`px-3 py-2 text-xs font-semibold transition focus:outline-none ${
+                    activeSidebarTab === "mission"
+                      ? "bg-blue-600 text-white shadow-inner"
+                      : "text-slate-200 hover:bg-slate-700/80"
+                  }`}
+                  onClick={() => {
+                    setActiveSidebarTab("mission");
+                    setShowSettings(false);
+                  }}
+                >
+                  תכנון משימות
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={activeSidebarTab === "settings"}
+                  className={`px-3 py-2 text-xs font-semibold transition focus:outline-none border-r border-slate-700 last:border-r-0 ${
+                    activeSidebarTab === "settings"
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-200 hover:bg-slate-700/80"
+                  }`}
+                  onClick={() => {
+                    setActiveSidebarTab("settings");
+                    setShowSettings(true);
+                  }}
+                >
+                  הגדרות
+                </button>
+              </div>
               <button className="bg-slate-700 p-2 rounded hover:bg-slate-600">
                 <Icon name="gps" />
-              </button>
-              <button
-                className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-blue-500"
-                onClick={() => setShowSettings(true)}
-              >
-                הגדרות
               </button>
               <button
                 onClick={() => setSidebarOpen(false)}
