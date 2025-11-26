@@ -1846,7 +1846,7 @@ const App = () => {
                 איפוס
               </button>
             </div>
-            <div className="grid grid-cols-5 gap-2 text-center">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
               <div className="bg-slate-700/50 p-1 rounded">
                 <div className="text-[9px] text-slate-400">מרחק</div>
                 <div className="font-bold text-sm text-white">
