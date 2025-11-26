@@ -1810,7 +1810,13 @@ const App = () => {
             className={`absolute top-4 z-[940] ${dockPositionClasses}`}
             style={dockPositionStyle}
           >
-            <div className="flex flex-row items-start gap-3 pointer-events-auto">
+            <div
+              className={`pointer-events-auto ${
+                isMobile
+                  ? "flex flex-row-reverse items-start gap-3 w-full"
+                  : "flex flex-row items-start gap-3"
+              }`}
+            >
               <div
                 className={`${
                   isMobile
