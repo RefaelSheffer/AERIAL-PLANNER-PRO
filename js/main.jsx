@@ -84,7 +84,7 @@ const slotIsFlyable = (slot, suitabilitySettings) => {
 };
 
 /**
- * Build a condensed wind timeline grouped by day, sampling every 6 hours with sun altitude enrichment.
+ * Build a condensed wind timeline grouped by day, sampling every 3 hours with sun altitude enrichment.
  * @param {object|null} hourlyForecast - Weather API response containing hourly arrays.
  * @param {[number, number]|null} weatherLocation - Current location used for sun angle enrichment.
  * @returns {{day: string, label: string, slots: object[]}[]} Timeline structure for TimelineBoard consumption.
@@ -95,7 +95,7 @@ const buildWindTimeline = (hourlyForecast, weatherLocation) => {
 
   hourlyForecast.time.forEach((t, i) => {
     const hour = Number(t.slice(11, 13));
-    if (hour % 6 !== 0) return; // רק כל 6 שעות
+    if (hour % 3 !== 0) return; // כל 3 שעות
 
     const dayKey = t.slice(0, 10);
     if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
@@ -109,7 +109,7 @@ const buildWindTimeline = (hourlyForecast, weatherLocation) => {
       gust: hourlyForecast.wind_gusts_10m?.[i],
       clouds: hourlyForecast.cloud_cover?.[i],
       rainProb: hourlyForecast.precipitation_probability?.[i],
-      isMajor: hour % 12 === 0,
+      isMajor: hour % 6 === 0,
       sunAlt: computeSunAltitudeDeg(weatherLocation, slotDate),
     });
   });
@@ -1806,114 +1806,114 @@ const App = () => {
           )}
 
           {/* Docked controls aligned to the right */}
-            <div
-              className={`absolute top-4 z-[940] ${dockPositionClasses}`}
-              style={dockPositionStyle}
-            >
-              <div className="flex flex-row items-start gap-3 pointer-events-auto">
+          <div
+            className={`absolute top-4 z-[940] ${dockPositionClasses}`}
+            style={dockPositionStyle}
+          >
+            <div className="flex flex-row items-start gap-3 pointer-events-auto">
+              <div
+                className={`${
+                  isMobile
+                    ? "flex flex-col-reverse gap-2 items-stretch w-full"
+                    : "flex flex-col items-start gap-3"
+                }`}
+              >
+                {documentationOpen && (
                 <div
-                  className={`${
-                    isMobile
-                      ? "flex flex-row-reverse gap-2"
-                      : "flex flex-col items-start gap-3"
-                  }`}
+                  className="bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto z-[920]"
+                  style={{ width: plannerPanelWidth }}
                 >
-                  {documentationOpen && (
-                  <div
-                    className="bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto z-[920]"
-                    style={{ width: plannerPanelWidth }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 text-sm font-black text-blue-800">
-                        <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center">
-                          <Icon name="doc" size={16} />
-                        </span>
-                        כרטיסיית תיעוד
-                      </div>
-                      <button
-                        onClick={() => setDocumentationOpen(false)}
-                        className="text-blue-700 hover:text-blue-900"
-                        aria-label="סגור כרטיסיית תיעוד"
-                      >
-                        <Icon name="close" size={16} />
-                      </button>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-sm font-black text-blue-800">
+                      <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center">
+                        <Icon name="doc" size={16} />
+                      </span>
+                      כרטיסיית תיעוד
+                    </div>
+                    <button
+                      onClick={() => setDocumentationOpen(false)}
+                      className="text-blue-700 hover:text-blue-900"
+                      aria-label="סגור כרטיסיית תיעוד"
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                    <div className="grid grid-cols-1 gap-2">
+                      <input
+                        type="text"
+                        value={docForm.title}
+                        onChange={(e) =>
+                          setDocForm((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
+                        placeholder="שם האובייקט"
+                        className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <textarea
+                        rows="3"
+                        value={docForm.notes}
+                        onChange={(e) =>
+                          setDocForm((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
+                        placeholder="מלל חופשי, הערות ודגשים"
+                        className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
-                      <div className="grid grid-cols-1 gap-2">
-                        <input
-                          type="text"
-                          value={docForm.title}
-                          onChange={(e) =>
-                            setDocForm((prev) => ({
-                              ...prev,
-                              title: e.target.value,
-                            }))
-                          }
-                          placeholder="שם האובייקט"
-                          className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <textarea
-                          rows="3"
-                          value={docForm.notes}
-                          onChange={(e) =>
-                            setDocForm((prev) => ({
-                              ...prev,
-                              notes: e.target.value,
-                            }))
-                          }
-                          placeholder="מלל חופשי, הערות ודגשים"
-                          className="w-full rounded-lg border border-blue-200 bg-white/80 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2 text-[12px] text-blue-900">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 flex items-center gap-1">
-                              <Icon name="gps" size={12} /> מיקום
+                    <div className="flex flex-col gap-2 text-[12px] text-blue-900">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 flex items-center gap-1">
+                            <Icon name="gps" size={12} /> מיקום
+                          </span>
+                          {docForm.location ? (
+                            <span className="text-[11px] text-blue-700">
+                              {docForm.location.lat.toFixed(5)},{" "}
+                              {docForm.location.lng.toFixed(5)} (
+                              {docForm.location.accuracy
+                                ? `±${Math.round(docForm.location.accuracy)}מ'`
+                                : "ללא דיוק"}
+                              )
                             </span>
-                            {docForm.location ? (
-                              <span className="text-[11px] text-blue-700">
-                                {docForm.location.lat.toFixed(5)},{" "}
-                                {docForm.location.lng.toFixed(5)} (
-                                {docForm.location.accuracy
-                                  ? `±${Math.round(docForm.location.accuracy)}מ'`
-                                  : "ללא דיוק"}
-                                )
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-blue-700">
-                                לא דגמת מיקום
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            onClick={sampleDocumentationLocation}
-                            className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1"
-                          >
-                            <Icon name="gps" size={12} /> דגום
-                          </button>
+                          ) : (
+                            <span className="text-[11px] text-blue-700">
+                              לא דגמת מיקום
+                            </span>
+                          )}
                         </div>
-
-                        <label className="flex items-center justify-between gap-2 cursor-pointer text-[11px] text-blue-800 bg-white rounded-lg border border-blue-200 px-3 py-2 hover:border-blue-400">
-                          <span className="flex items-center gap-2 font-semibold">
-                            <Icon name="upload" size={14} /> העלאת תמונות
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={handleDocFileChange}
-                          />
-                          <span className="text-[10px] text-blue-700">
-                            {docForm.images.length} נבחרו
-                          </span>
-                        </label>
+                        <button
+                          onClick={sampleDocumentationLocation}
+                          className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1"
+                        >
+                          <Icon name="gps" size={12} /> דגום
+                        </button>
                       </div>
 
-                      <button
+                      <label className="flex items-center justify-between gap-2 cursor-pointer text-[11px] text-blue-800 bg-white rounded-lg border border-blue-200 px-3 py-2 hover:border-blue-400">
+                        <span className="flex items-center gap-2 font-semibold">
+                          <Icon name="upload" size={14} /> העלאת תמונות
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={handleDocFileChange}
+                        />
+                        <span className="text-[10px] text-blue-700">
+                          {docForm.images.length} נבחרו
+                        </span>
+                      </label>
+                    </div>
+
+                    <button
                         onClick={addDocumentationEntry}
                         className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-semibold hover:bg-blue-500 flex items-center justify-center gap-2"
                       >
@@ -2007,6 +2007,8 @@ const App = () => {
                   onRangeChange={setAircraftRangeKm}
                   panelRef={realtimePanelRef}
                 />
+
+                {timelineBoard}
               </div>
 
                 <div className="flex flex-col items-start gap-2">
@@ -2046,22 +2048,7 @@ const App = () => {
                 </div>
               </div>
             </div>
-            {isMobile && timelineBoard && (
-              <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[910] flex justify-center px-3 pb-4">
-                <div className="pointer-events-auto w-full max-w-2xl flex justify-center">
-                  {timelineBoard}
-                </div>
-              </div>
-            )}
-
-          {!isMobile && timelineBoard && (
-            <div
-              className="pointer-events-none fixed left-0 bottom-0 z-[910] flex justify-center px-4 pb-4"
-              style={{ right: sidebarOpen ? plannerPanelWidth : "0" }}
-            >
-              <div className="pointer-events-auto">{timelineBoard}</div>
-            </div>
-          )}
+            
         {/* Heatmap Legend */}
         {dtmData && (
           <div className="absolute bottom-6 left-6 z-[900] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">

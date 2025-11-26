@@ -212,8 +212,8 @@ const TimelineBoard = ({
   const timelineEmpty = preparedTimeline.length === 0;
 
   const timelineCardSizing = isMobile
-    ? "w-full max-w-[calc(100vw-32px)] mx-auto max-h-[50vh]"
-    : "w-full max-w-5xl max-h-[55vh] mx-auto";
+    ? "w-full max-w-[calc(100vw-32px)] mx-auto max-h-[65vh]"
+    : "w-[22rem] max-h-[75vh]";
 
   const hasSlots = preparedTimeline.some((day) => day.enrichedSlots.length > 0);
 
@@ -418,37 +418,21 @@ const TimelineBoard = ({
       )}
       {!showStableSummary && (
         <div className="relative">
-          {!isMobile && windTimeline.length > 1 && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center justify-between px-2">
-              <button
-                onClick={() => onScroll(-1)}
-                className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
-                aria-label="הזז שמאלה"
-              >
-                ‹
-              </button>
-              <button
-                onClick={() => onScroll(1)}
-                className="pointer-events-auto rounded-full bg-white/90 border border-slate-200 shadow-lg p-2 text-slate-700 hover:bg-slate-50"
-                aria-label="הזז ימינה"
-              >
-                ›
-              </button>
-            </div>
-          )}
           <div
             ref={timelineContainerRef}
-            className={`${
-              isMobile ? "overflow-y-auto" : "overflow-x-auto"
-            } custom-scroll snap-x snap-mandatory max-h-[55vh]`}
+            className={`custom-scroll ${
+              isMobile ? "overflow-y-auto max-h-[65vh]" : "overflow-y-auto max-h-[72vh]"
+            }`}
           >
             <div
-                className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
+                className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex flex-col gap-3 p-3"}`}
               >
                 {preparedTimeline.map((day) => (
                   <div
                     key={day.day}
-                    className={`${isMobile ? "w-full" : "min-w-[300px] max-w-[340px]"} snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
+                    className={`${
+                      isMobile ? "w-full" : "w-full"
+                    } snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -471,12 +455,12 @@ const TimelineBoard = ({
                           {day.day}
                         </span>
                         <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                          מרווח 6 שעות
+                          מרווח 3 שעות
                         </span>
                       </div>
                     </div>
                     <div
-                      className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-3 gap-2"}`}
+                      className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-1 gap-2"}`}
                     >
                       {!timelineEmpty && day.displaySlots.length > 0 ? (
                         day.displaySlots.map((slot) => {
@@ -517,7 +501,7 @@ const TimelineBoard = ({
                                 {slot.wind?.toFixed(1) ?? "-"} מ"ש
                                 {!isMobile && slot.isMajor && (
                                   <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">
-                                    מרווח 12ש'
+                                    מרווח 6ש'
                                   </span>
                                 )}
                               </div>
