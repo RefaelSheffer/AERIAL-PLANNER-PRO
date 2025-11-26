@@ -153,7 +153,10 @@ const buildDtmHeatPoints = (grid, stats) => {
 const computeIsMobile = () => {
   if (typeof window === "undefined") return false;
 
-  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const coarsePointer =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(pointer: coarse)").matches
+      : false;
   return window.innerWidth < 900 || coarsePointer;
 };
 
