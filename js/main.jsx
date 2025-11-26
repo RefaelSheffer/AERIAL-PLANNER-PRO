@@ -1813,14 +1813,14 @@ const App = () => {
             <div
               className={`pointer-events-auto ${
                 isMobile
-                  ? "flex flex-row-reverse items-start gap-3 w-full"
+                  ? "flex flex-row items-start gap-3 w-full"
                   : "flex flex-row items-start gap-3"
               }`}
             >
               <div
                 className={`${
                   isMobile
-                    ? "flex flex-col-reverse gap-2 items-stretch w-full"
+                    ? "flex flex-col-reverse gap-2 items-end w-full"
                     : "flex flex-col items-start gap-3"
                 }`}
               >

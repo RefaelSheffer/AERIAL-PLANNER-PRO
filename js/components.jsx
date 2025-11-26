@@ -212,7 +212,7 @@ const TimelineBoard = ({
   const timelineEmpty = preparedTimeline.length === 0;
 
   const timelineCardSizing = isMobile
-    ? "w-full max-w-[calc(100vw-32px)] mx-auto max-h-[65vh]"
+    ? "w-full max-w-[calc(100vw-32px)] ml-auto max-h-[65vh]"
     : "w-[22rem] max-h-[75vh]";
 
   const hasSlots = preparedTimeline.some((day) => day.enrichedSlots.length > 0);
