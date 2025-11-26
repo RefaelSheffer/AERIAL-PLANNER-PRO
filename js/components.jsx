@@ -212,8 +212,8 @@ const TimelineBoard = ({
   const timelineEmpty = preparedTimeline.length === 0;
 
   const timelineCardSizing = isMobile
-    ? "w-full max-w-[calc(100vw-32px)] ml-auto max-h-[65vh]"
-    : "w-[22rem] max-h-[75vh]";
+    ? "w-full max-w-[calc(100vw-32px)] ml-auto max-h-[78vh]"
+    : "w-[22rem] max-h-[82vh]";
 
   const hasSlots = preparedTimeline.some((day) => day.enrichedSlots.length > 0);
 
@@ -254,7 +254,7 @@ const TimelineBoard = ({
           </div>
         )}
         <div className="px-3 pb-2">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-56 overflow-y-auto custom-scroll">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-[70vh] overflow-y-auto custom-scroll">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-[12px] font-black text-blue-900">
                 <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
@@ -342,7 +342,7 @@ const TimelineBoard = ({
       )}
       {showStableSummary && (
         <div className="px-3 pb-2">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-56 overflow-y-auto custom-scroll">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-[70vh] overflow-y-auto custom-scroll">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-[12px] font-black text-blue-900">
                 <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
@@ -421,7 +421,7 @@ const TimelineBoard = ({
           <div
             ref={timelineContainerRef}
             className={`custom-scroll ${
-              isMobile ? "overflow-y-auto max-h-[65vh]" : "overflow-y-auto max-h-[72vh]"
+              isMobile ? "overflow-y-auto max-h-[74vh]" : "overflow-y-auto max-h-[80vh]"
             }`}
           >
             <div
