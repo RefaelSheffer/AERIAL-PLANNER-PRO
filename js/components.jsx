@@ -443,139 +443,139 @@ const TimelineBoard = ({
             } custom-scroll snap-x snap-mandatory max-h-[55vh]`}
           >
             <div
-              className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
-            >
+                className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex gap-3 p-4 min-w-max"}`}
+              >
                 {preparedTimeline.map((day) => (
-                <div
-                  key={day.day}
-                  className={`${isMobile ? "w-full" : "min-w-[300px] max-w-[340px]"} snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-extrabold text-slate-900">
-                        {day.label}
+                  <div
+                    key={day.day}
+                    className={`${isMobile ? "w-full" : "min-w-[300px] max-w-[340px]"} snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-extrabold text-slate-900">
+                          {day.label}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {day.slots.length} חלונות זמן · {day.flyableCount} שעות
+                          יציבות
+                        </div>
+                        {day.firstFlyable && (
+                          <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 inline-flex items-center gap-1 mt-1">
+                            <Icon name="clock" size={11} /> החל מ-
+                            {day.firstFlyable.time}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-[10px] text-slate-500">
-                        {day.slots.length} חלונות זמן · {day.flyableCount} שעות
-                        יציבות
+                      <div className="flex flex-col items-end text-[10px] text-slate-600">
+                        <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 font-semibold">
+                          {day.day}
+                        </span>
+                        <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                          מרווח 6 שעות
+                        </span>
                       </div>
-                      {day.firstFlyable && (
-                        <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 inline-flex items-center gap-1 mt-1">
-                          <Icon name="clock" size={11} /> החל מ-
-                          {day.firstFlyable.time}
+                    </div>
+                    <div
+                      className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-3 gap-2"}`}
+                    >
+                      {!timelineEmpty && day.displaySlots.length > 0 ? (
+                        day.displaySlots.map((slot) => {
+                          const slotKey = `${day.day}T${slot.time}`;
+                          const isActive = slotKey === selectedSlotKey;
+                          return (
+                            <button
+                              key={slot.key}
+                              onClick={() => onSlotSelect(`${day.day}T${slot.time}`)}
+                              className={`${
+                                isMobile
+                                  ? "p-2 flex flex-col gap-1.5 text-[12px]"
+                                  : "p-2 flex flex-col gap-2 text-[12px]"
+                              } w-full h-full min-h-[120px] rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative overflow-visible ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`}
+                              style={{ background: "white" }}
+                            >
+                              {slot.isFlyable && (
+                                <div className="absolute top-1 left-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
+                                  שעה יציבה
+                                </div>
+                              )}
+                              <div
+                                className={`${isMobile ? "flex items-center justify-between w-full text-[12px]" : "items-center justify-between text-xs"} text-slate-600`}
+                              >
+                                <span className="font-semibold">{slot.time}</span>
+                                {!isMobile && (
+                                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                                    <Icon name="clock" size={12} /> {day.label}
+                                  </span>
+                                )}
+                              </div>
+                              <div
+                                className={`${isMobile ? "h-9 w-full text-[13px]" : "h-9 w-full text-[12px]"} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
+                                style={{
+                                  background: windSpeedToColor(slot.wind),
+                                }}
+                              >
+                                {slot.wind?.toFixed(1) ?? "-"} מ"ש
+                                {!isMobile && slot.isMajor && (
+                                  <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">
+                                    מרווח 12ש'
+                                  </span>
+                                )}
+                              </div>
+                              <div
+                                className={`${isMobile ? "w-full space-y-0.5" : "w-full px-1.5 pb-1 space-y-1"}`}
+                              >
+                                <div
+                                  className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? "bg-green-100" : "bg-slate-200"}`}
+                                >
+                                  <div
+                                    className="h-full bg-blue-500"
+                                    style={{ width: `${slot.clouds ?? 0}%` }}
+                                  ></div>
+                                </div>
+                                <div
+                                  className={`${
+                                    isMobile
+                                      ? "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 whitespace-nowrap"
+                                      : "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 justify-center whitespace-nowrap"
+                                  }`}
+                                >
+                                  <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center whitespace-nowrap">
+                                    עננות {slot.clouds ?? 0}%
+                                  </span>
+                                  <span
+                                    className={`min-w-[82px] px-1.5 py-0.5 rounded-full border text-center whitespace-nowrap ${
+                                      slot.isFlyable
+                                        ? "bg-green-50 text-green-700 border-green-200"
+                                        : "bg-blue-50 text-blue-700 border-blue-200"
+                                    }`}
+                                  >
+                                    גשם {slot.rainProb ?? 0}%
+                                  </span>
+                                  <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center whitespace-nowrap">
+                                    משבים{" "}
+                                    {slot.gust?.toFixed(1) ??
+                                      slot.wind?.toFixed(1) ??
+                                      "-"}{" "}
+                                    מ"ש
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="text-[11px] text-slate-500 p-2 border border-dashed border-slate-300 rounded w-full text-center col-span-full">
+                          אין שעות מתאימות לטיסה ביום זה
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col items-end text-[10px] text-slate-600">
-                      <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 font-semibold">
-                        {day.day}
-                      </span>
-                      <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        מרווח 6 שעות
-                      </span>
-                    </div>
                   </div>
-                  <div
-                    className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-3 gap-2"}`}
-                  >
-                    {!timelineEmpty && day.displaySlots.length > 0 ? (
-                      day.displaySlots.map((slot) => {
-                        const slotKey = `${day.day}T${slot.time}`;
-                        const isActive = slotKey === selectedSlotKey;
-                        return (
-                          <button
-                            key={slot.key}
-                            onClick={() => onSlotSelect(`${day.day}T${slot.time}`)}
-                            className={`${
-                              isMobile
-                                ? "p-2 flex flex-col gap-1.5 text-[12px]"
-                                : "p-2 flex flex-col gap-2 text-[12px]"
-                            } w-full h-full min-h-[120px] rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative overflow-visible ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`}
-                            style={{ background: "white" }}
-                          >
-                            {slot.isFlyable && (
-                              <div className="absolute top-1 left-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
-                                שעה יציבה
-                              </div>
-                            )}
-                            <div
-                              className={`${isMobile ? "flex items-center justify-between w-full text-[12px]" : "items-center justify-between text-xs"} text-slate-600`}
-                            >
-                              <span className="font-semibold">{slot.time}</span>
-                              {!isMobile && (
-                                <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                                  <Icon name="clock" size={12} /> {day.label}
-                                </span>
-                              )}
-                            </div>
-                            <div
-                              className={`${isMobile ? "h-9 w-full text-[13px]" : "h-9 w-full text-[12px]"} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
-                              style={{
-                                background: windSpeedToColor(slot.wind),
-                              }}
-                            >
-                              {slot.wind?.toFixed(1) ?? "-"} מ"ש
-                              {!isMobile && slot.isMajor && (
-                                <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">
-                                  מרווח 12ש'
-                                </span>
-                              )}
-                            </div>
-                            <div
-                              className={`${isMobile ? "w-full space-y-0.5" : "w-full px-1.5 pb-1 space-y-1"}`}
-                            >
-                              <div
-                                className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? "bg-green-100" : "bg-slate-200"}`}
-                              >
-                                <div
-                                  className="h-full bg-blue-500"
-                                  style={{ width: `${slot.clouds ?? 0}%` }}
-                                ></div>
-                              </div>
-                              <div
-                                className={`${
-                                  isMobile
-                                    ? "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 whitespace-nowrap"
-                                    : "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 justify-center whitespace-nowrap"
-                                }`}
-                              >
-                                <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center whitespace-nowrap">
-                                  עננות {slot.clouds ?? 0}%
-                                </span>
-                                <span
-                                  className={`min-w-[82px] px-1.5 py-0.5 rounded-full border text-center whitespace-nowrap ${
-                                    slot.isFlyable
-                                      ? "bg-green-50 text-green-700 border-green-200"
-                                      : "bg-blue-50 text-blue-700 border-blue-200"
-                                  }`}
-                                >
-                                  גשם {slot.rainProb ?? 0}%
-                                </span>
-                                <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center whitespace-nowrap">
-                                  משבים{" "}
-                                  {slot.gust?.toFixed(1) ??
-                                    slot.wind?.toFixed(1) ??
-                                    "-"}{" "}
-                                  מ"ש
-                                </span>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <div className="text-[11px] text-slate-500 p-2 border border-dashed border-slate-300 rounded w-full text-center col-span-full">
-                        אין שעות מתאימות לטיסה ביום זה
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

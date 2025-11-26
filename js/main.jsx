@@ -2037,19 +2037,18 @@ const App = () => {
               </div>
             )}
 
-            {!isMobile && timelineBoard && (
-              <div
-                className="pointer-events-none fixed left-0 bottom-0 z-[910] flex justify-center px-4 pb-4"
-                style={{ right: sidebarOpen ? plannerPanelWidth : "0" }}
-              >
-                <div className="pointer-events-auto">{timelineBoard}</div>
-              </div>
-            )}
-          </div>
-          {/* Heatmap Legend */}
-          {dtmData && (
-            <div className="absolute bottom-6 left-6 z-[900] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
-              <div className="font-bold mb-1">גבהים</div>
+          {!isMobile && timelineBoard && (
+            <div
+              className="pointer-events-none fixed left-0 bottom-0 z-[910] flex justify-center px-4 pb-4"
+              style={{ right: sidebarOpen ? plannerPanelWidth : "0" }}
+            >
+              <div className="pointer-events-auto">{timelineBoard}</div>
+            </div>
+          )}
+        {/* Heatmap Legend */}
+        {dtmData && (
+          <div className="absolute bottom-6 left-6 z-[900] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900">
+            <div className="font-bold mb-1">גבהים</div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div> גבוה
               </div>
