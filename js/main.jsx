@@ -180,6 +180,7 @@ const App = () => {
   const [speed, setSpeed] = useState(10); // m/s
   const [azimuth, setAzimuth] = useState(0);
   const [autoOrient, setAutoOrient] = useState(true);
+  const [opticalZoomIndex, setOpticalZoomIndex] = useState(0);
   const [flightDate, setFlightDate] = useState(
     new Date().toISOString().slice(0, 16),
   );
@@ -227,6 +228,43 @@ const App = () => {
     location: null,
   });
   const [docEntries, setDocEntries] = useState([]);
+
+  const activeDrone = useMemo(
+    () => AerialPlanner.config.DRONE_PRESETS[selectedDrone] || null,
+    [selectedDrone],
+  );
+
+  const opticalZoomLevels = useMemo(() => {
+    if (!activeDrone?.opticalZoomLevels) return null;
+    return activeDrone.opticalZoomLevels.length > 0
+      ? activeDrone.opticalZoomLevels
+      : null;
+  }, [activeDrone]);
+
+  const clampedOpticalZoomIndex = useMemo(() => {
+    if (!opticalZoomLevels) return 0;
+    return Math.min(opticalZoomIndex, opticalZoomLevels.length - 1);
+  }, [opticalZoomIndex, opticalZoomLevels]);
+
+  const currentOpticalZoom = useMemo(
+    () => (opticalZoomLevels ? opticalZoomLevels[clampedOpticalZoomIndex] : 1),
+    [clampedOpticalZoomIndex, opticalZoomLevels],
+  );
+
+  const activeFocalLength = useMemo(() => {
+    if (!activeDrone?.focalLength) return 0;
+    return activeDrone.focalLength * currentOpticalZoom;
+  }, [activeDrone, currentOpticalZoom]);
+
+  const hasOpticalZoom = Boolean(opticalZoomLevels?.length);
+
+  useEffect(() => {
+    if (!opticalZoomLevels) {
+      setOpticalZoomIndex(0);
+      return;
+    }
+    setOpticalZoomIndex(0);
+  }, [selectedDrone, opticalZoomLevels ? opticalZoomLevels.length : 0]);
 
   useEffect(() => {
     if (typeof localStorage === "undefined") return;
@@ -934,8 +972,13 @@ const App = () => {
       return [];
     }
 
-    const drone = AerialPlanner.config.DRONE_PRESETS[selectedDrone];
-    const footprintW = (drone.sensorWidth * altitude) / drone.focalLength;
+    const drone = activeDrone;
+    if (!drone || !activeFocalLength) {
+      setTotalDistance(0);
+      return [];
+    }
+
+    const footprintW = (drone.sensorWidth * altitude) / activeFocalLength;
     const spacingMeters = footprintW * (1 - overlapSide / 100);
 
     let angle = azimuth;
@@ -1156,6 +1199,7 @@ const App = () => {
     overlapSide,
     azimuth,
     autoOrient,
+    activeFocalLength,
     terrainShadows,
     dtmHeatPoints,
     aircraftEnabled,
@@ -1217,12 +1261,22 @@ const App = () => {
 
   // Stats Calc
   const stats = useMemo(() => {
-    const d = AerialPlanner.config.DRONE_PRESETS[selectedDrone];
+    const d = activeDrone;
+    if (!d || !activeFocalLength) {
+      return {
+        gsd: "0.00",
+        time: 0,
+        images: 0,
+        dist: Math.round(totalDistance),
+        coverageKm2: "0",
+      };
+    }
+
     const gsd =
-      (d.sensorWidth * altitude * 100) / (d.focalLength * d.imageWidth);
+      (d.sensorWidth * altitude * 100) / (activeFocalLength * d.imageWidth);
     const timeMin =
       totalDistance > 0 ? Math.ceil(totalDistance / speed / 60) : 0;
-    const footprintH = (d.sensorHeight * altitude) / d.focalLength;
+    const footprintH = (d.sensorHeight * altitude) / activeFocalLength;
     const triggerDist = footprintH * (1 - overlapFront / 100);
     const imgCount =
       totalDistance > 0 ? Math.ceil(totalDistance / triggerDist) : 0;
@@ -1256,7 +1310,15 @@ const App = () => {
       dist: Math.round(totalDistance),
       coverageKm2,
     };
-  }, [selectedDrone, altitude, totalDistance, speed, overlapFront, polygon]);
+  }, [
+    activeDrone,
+    activeFocalLength,
+    altitude,
+    totalDistance,
+    speed,
+    overlapFront,
+    polygon,
+  ]);
 
   const selectedSlotKey = useMemo(
     () => `${flightDate.slice(0, 13)}:00`,
@@ -1585,6 +1647,11 @@ const App = () => {
                               חיישן {v.sensorWidth}x{v.sensorHeight} מ"מ · מוקד{" "}
                               {v.focalLength} מ"מ
                             </div>
+                            {v.opticalZoomLevels?.length ? (
+                              <div className="text-[10px] text-blue-300 mt-1">
+                                זום אופטי עד {Math.max(...v.opticalZoomLevels)}x
+                              </div>
+                            ) : null}
                           </button>
                         ),
                       )}
@@ -1613,6 +1680,41 @@ const App = () => {
               </div>
 
               {/* Sliders */}
+              {hasOpticalZoom && opticalZoomLevels && (
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 mb-2">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>זום אופטי</span>
+                    <span className="text-blue-400">
+                      {currentOpticalZoom}x · {activeFocalLength.toFixed(1)} מ"מ
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max={opticalZoomLevels.length - 1}
+                    step="1"
+                    value={clampedOpticalZoomIndex}
+                    onChange={(e) =>
+                      setOpticalZoomIndex(Number(e.target.value))
+                    }
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                    {opticalZoomLevels.map((level, idx) => (
+                      <span
+                        key={`${level}-${idx}`}
+                        className={
+                          idx === clampedOpticalZoomIndex
+                            ? "text-blue-300 font-semibold"
+                            : ""
+                        }
+                      >
+                        {level}x
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span>גובה (AGL)</span>

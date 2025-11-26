@@ -13,6 +13,7 @@ window.DRONE_PRESETS = {
     focalLength: 9.1,
     imageWidth: 4000,
     type: 'תרמ"י',
+    opticalZoomLevels: [1, 2, 4, 8, 16],
   },
   mavic_3_e: {
     name: "DJI Mavic 3 Enterprise",
@@ -21,6 +22,7 @@ window.DRONE_PRESETS = {
     focalLength: 12.29,
     imageWidth: 5280,
     type: "מיפוי",
+    opticalZoomLevels: [1, 2, 4, 7],
   },
   evo_ii_dual_640t: {
     name: "Autel Evo II Dual 640T",
@@ -29,6 +31,7 @@ window.DRONE_PRESETS = {
     focalLength: 6,
     imageWidth: 4000,
     type: "תרמי",
+    opticalZoomLevels: [1, 2, 4],
   },
   evo_4t_vis: {
     name: "EVO4T VIS",
