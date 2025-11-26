@@ -803,8 +803,25 @@ const App = () => {
   }, [isMobile]);
 
   const dockPositionStyle = useMemo(() => {
-    return { right: isMobile ? "0px" : `${desktopDockOffset}px` };
-  }, [desktopDockOffset, isMobile]);
+    if (isMobile) {
+      const mobileGapPx = 12;
+      const mobileOffset = sidebarOpen || realtimePanelOpen || documentationOpen;
+
+      return {
+        right: mobileOffset
+          ? `calc(var(--mobile-sidebar-width, 70%) + ${mobileGapPx}px)`
+          : `${mobileGapPx}px`,
+      };
+    }
+
+    return { right: `${desktopDockOffset}px` };
+  }, [
+    desktopDockOffset,
+    documentationOpen,
+    isMobile,
+    realtimePanelOpen,
+    sidebarOpen,
+  ]);
 
   const plannerPanelWidth = useMemo(() => {
     return isMobile ? "min(50vw, 360px)" : "min(50vw, 640px)";
