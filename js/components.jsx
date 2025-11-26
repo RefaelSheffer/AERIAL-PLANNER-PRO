@@ -638,7 +638,7 @@ const RealtimePanel = ({
         <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+              <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                 <Icon name="radar" size={18} />
               </span>
               <div className="leading-tight">
@@ -684,7 +684,7 @@ const RealtimePanel = ({
         <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+              <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                 <Icon name="drone" size={18} />
               </span>
               <div className="leading-tight">
