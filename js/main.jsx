@@ -1474,7 +1474,7 @@ const App = () => {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row h-full relative">
+      <div className="flex flex-col md:flex-row h-full relative overflow-x-hidden">
         {/* Controls Sidebar */}
         <Sidebar
           open={sidebarOpen}

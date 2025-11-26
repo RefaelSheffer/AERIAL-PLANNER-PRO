@@ -33,7 +33,7 @@
         .custom-scroll::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 10px; }
 
         @media (max-width: 768px) {
-            :root { --mobile-sidebar-width: 70%; }
+            :root { --mobile-sidebar-width: 62%; }
 
             .mobile-panel {
                 width: var(--mobile-sidebar-width);
@@ -41,6 +41,7 @@
                 height: 100dvh;
                 max-height: 100dvh;
                 padding-bottom: env(safe-area-inset-bottom, 16px);
+                overflow-x: hidden;
             }
         }
     </style>
