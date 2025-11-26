@@ -588,7 +588,7 @@ const RealtimePanel = ({
   return (
     <div
       ref={panelRef}
-      className="fixed top-4 right-4 w-[min(26rem,calc(100%-5rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll"
+      className="fixed top-4 right-4 w-[min(22rem,calc(100%-7rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll"
     >
       <div className="sticky top-0 z-10 bg-gradient-to-b from-amber-50 to-white px-5 pt-5 pb-3 border-b border-amber-200 flex items-start justify-between gap-3">
         <div className="space-y-1">
