@@ -218,6 +218,7 @@ const App = () => {
   const [aircraftStatus, setAircraftStatus] = useState("idle");
   const [aircraftTimestamp, setAircraftTimestamp] = useState(null);
   const [aircraftRangeKm, setAircraftRangeKm] = useState(80);
+  const [realtimePanelWidth, setRealtimePanelWidth] = useState(0);
   const [aircraftData, setAircraftData] = useState([]);
   const [aircraftUnavailable, setAircraftUnavailable] = useState(false);
   const [documentationOpen, setDocumentationOpen] = useState(false);
@@ -807,6 +808,31 @@ const App = () => {
     bottom: !isMobile && showTimeline ? "calc(55vh + 1rem)" : "1.5rem",
   };
 
+  const computeSidebarWidthPx = useCallback(() => {
+    if (typeof window === "undefined") return 0;
+
+    const raw =
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--mobile-sidebar-width",
+      ) || "70%";
+
+    const trimmed = raw.trim();
+
+    if (trimmed.endsWith("%")) {
+      const percent = Number.parseFloat(trimmed.replace("%", ""));
+      return Number.isFinite(percent)
+        ? (percent / 100) * window.innerWidth
+        : 0;
+    }
+
+    if (trimmed.endsWith("px")) {
+      const pixels = Number.parseFloat(trimmed.replace("px", ""));
+      return Number.isFinite(pixels) ? pixels : 0;
+    }
+
+    return 0;
+  }, []);
+
   const computeDesktopDockOffset = useCallback(() => {
     const gapPx = 16;
 
@@ -827,6 +853,23 @@ const App = () => {
     return () => window.removeEventListener("resize", updateOffset);
   }, [computeDesktopDockOffset]);
 
+  useEffect(() => {
+    if (!realtimePanelOpen) {
+      setRealtimePanelWidth(0);
+      return;
+    }
+
+    const updateRealtimeWidth = () => {
+      const width = realtimePanelRef.current?.offsetWidth || 0;
+      setRealtimePanelWidth(width);
+    };
+
+    updateRealtimeWidth();
+    window.addEventListener("resize", updateRealtimeWidth);
+
+    return () => window.removeEventListener("resize", updateRealtimeWidth);
+  }, [realtimePanelOpen]);
+
   const dockPositionClasses = useMemo(() => {
     return isMobile
       ? "flex justify-end"
@@ -836,20 +879,30 @@ const App = () => {
   const dockPositionStyle = useMemo(() => {
     if (isMobile) {
       const mobileGapPx = 12;
-      const mobileOffset = sidebarOpen || realtimePanelOpen;
+      const sidebarWidthPx = computeSidebarWidthPx();
+      const sidebarOffsetPx =
+        sidebarWidthPx > 0 ? sidebarWidthPx + mobileGapPx : mobileGapPx;
+      const realtimeOffsetPx =
+        realtimePanelOpen && realtimePanelWidth > 0
+          ? realtimePanelWidth + mobileGapPx
+          : 0;
 
-      return {
-        right: mobileOffset
-          ? `calc(var(--mobile-sidebar-width, 70%) + ${mobileGapPx}px)`
-          : `${mobileGapPx}px`,
-      };
+      const offsetPx = realtimeOffsetPx
+        ? Math.max(realtimeOffsetPx, sidebarOpen ? sidebarOffsetPx : mobileGapPx)
+        : sidebarOpen
+          ? sidebarOffsetPx
+          : mobileGapPx;
+
+      return { right: `${offsetPx}px` };
     }
 
     return { right: `${desktopDockOffset}px` };
   }, [
     desktopDockOffset,
+    computeSidebarWidthPx,
     isMobile,
     realtimePanelOpen,
+    realtimePanelWidth,
     sidebarOpen,
   ]);
 
