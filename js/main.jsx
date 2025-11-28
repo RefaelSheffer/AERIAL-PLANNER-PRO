@@ -330,6 +330,7 @@ const App = () => {
       // Desktop: allow the planning sidebar and weather board together.
       if (panel === "sidebar") {
         setSidebarOpen(shouldOpen);
+        if (shouldOpen) setDocumentationOpen(false);
         return;
       }
 
@@ -348,6 +349,22 @@ const App = () => {
     },
     [sidebarOpen, realtimePanelOpen, showTimeline, overlayExclusive],
   );
+
+  /**
+   * Toggle the documentation drawer. Keeps it exclusive from the planning sidebar
+   * and other overlays to prevent simultaneous open states (especially on mobile).
+   */
+  const toggleDocumentation = useCallback(() => {
+    setDocumentationOpen((isOpen) => {
+      const next = !isOpen;
+      if (next) {
+        setShowTimeline(false);
+        setRealtimePanelOpen(false);
+        setSidebarOpen(false);
+      }
+      return next;
+    });
+  }, []);
 
   const recenterOnUser = useCallback(() => {
     if (!mapRef.current) return;
@@ -2187,16 +2204,7 @@ const App = () => {
                     icon="doc"
                     label="כרטיסיית תיעוד"
                     active={documentationOpen}
-                    onClick={() =>
-                      setDocumentationOpen((o) => {
-                        const next = !o;
-                        if (next && overlayExclusive) {
-                          setShowTimeline(false);
-                          setRealtimePanelOpen(false);
-                        }
-                        return next;
-                      })
-                    }
+                    onClick={toggleDocumentation}
                   />
                 </div>
               </div>
