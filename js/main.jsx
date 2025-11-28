@@ -1103,11 +1103,15 @@ const App = () => {
     const footprintW = (drone.sensorWidth * altitude) / activeFocalLength;
     const spacingMeters = footprintW * (1 - overlapSide / 100);
 
-    let angle = azimuth;
+    // "azimuth" represents the intended direction of flight lines. Internally we
+    // rotate the polygon so we can draw horizontal sweeps, so offset by -90° to
+    // keep the visible flight lines aligned with the requested azimuth instead
+    // of perpendicular to it.
+    let angle = azimuth - 90;
     const polyPoints = polygon.map((p) => ({ lat: p.lat, lng: p.lng }));
 
     if (autoOrient) {
-      angle = AerialPlanner.geometry.getAutoAzimuth(polyPoints);
+      angle = AerialPlanner.geometry.getAutoAzimuth(polyPoints) - 90;
     }
 
     const center = polyPoints[0];
