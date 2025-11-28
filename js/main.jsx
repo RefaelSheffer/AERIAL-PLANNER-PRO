@@ -1473,6 +1473,7 @@ const App = () => {
       isSlotFlyable={isSlotFlyable}
       windTextColor={AerialPlanner.helpers.windTextColor}
       windSpeedToColor={AerialPlanner.helpers.windSpeedToColor}
+      panelWidth={plannerPanelWidth}
     />
   );
 
@@ -2316,6 +2317,7 @@ const App = () => {
                   aircraftData={aircraftData}
                   onRangeChange={setAircraftRangeKm}
                   panelRef={realtimePanelRef}
+                  panelWidth={plannerPanelWidth}
                 />
 
                 {timelineBoard}

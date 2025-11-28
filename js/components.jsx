@@ -183,6 +183,7 @@ const TimelineBoard = ({
   isSlotFlyable,
   windTextColor,
   windSpeedToColor,
+  panelWidth,
 }) => {
   if (!show) return null;
 
@@ -213,10 +214,18 @@ const TimelineBoard = ({
   }, [visibleTimeline, isSlotFlyable]);
 
   const timelineEmpty = preparedTimeline.length === 0;
+  const timelineCardSizing = isMobile ? "max-h-[78vh]" : "max-h-[82vh]";
 
-  const timelineCardSizing = isMobile
-    ? "w-full max-w-[calc(100vw-32px)] ml-auto max-h-[78vh]"
-    : "w-[22rem] max-h-[82vh]";
+  const timelineCardStyle = React.useMemo(() => {
+    const fallbackWidth = isMobile ? "calc(100vw - 32px)" : "22rem";
+    const width = panelWidth || fallbackWidth;
+
+    return {
+      width,
+      maxWidth: width,
+      marginLeft: isMobile ? "auto" : undefined,
+    };
+  }, [isMobile, panelWidth]);
 
   const hasSlots = preparedTimeline.some((day) => day.enrichedSlots.length > 0);
 
@@ -224,6 +233,7 @@ const TimelineBoard = ({
     return (
       <div
         className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
+        style={timelineCardStyle}
       >
         {dataUnavailable && (
           <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
@@ -311,6 +321,7 @@ const TimelineBoard = ({
   return (
     <div
       className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
+      style={timelineCardStyle}
     >
       {dataUnavailable && (
         <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
@@ -585,14 +596,21 @@ const RealtimePanel = ({
   aircraftData,
   onRangeChange,
   panelRef,
+  panelWidth,
 }) => {
   if (!open) return null;
+
+  const panelStyle = {
+    top: "calc(env(safe-area-inset-top, 0px) + 1rem)",
+    width: panelWidth || "min(22rem, calc(100% - 6rem))",
+    maxWidth: panelWidth || "22rem",
+  };
 
   return (
     <div
       ref={panelRef}
-      className="fixed right-3 sm:right-4 w-[min(22rem,calc(100%-6rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll"
-      style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+      className="fixed right-3 sm:right-4 max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll"
+      style={panelStyle}
     >
       <div className="sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200 flex items-start justify-between gap-3">
         <div className="space-y-1">
