@@ -588,11 +588,11 @@ const RealtimePanel = ({
   return (
     <div
       ref={panelRef}
-      className="fixed top-4 right-4 w-[min(22rem,calc(100%-7rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-amber-50 to-white text-slate-900 shadow-2xl border border-amber-200 rounded-3xl overflow-y-auto custom-scroll"
+      className="fixed right-4 w-[min(22rem,calc(100%-7rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll top-[5.5rem] sm:top-6 md:top-4"
     >
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-amber-50 to-white px-5 pt-5 pb-3 border-b border-amber-200 flex items-start justify-between gap-3">
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200 flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <div className="text-xs uppercase tracking-[0.3em] text-amber-700 font-bold">
+          <div className="text-xs uppercase tracking-[0.3em] text-blue-700 font-bold">
             זמן אמת
           </div>
           <h2 className="text-xl font-black text-slate-900 leading-tight">
@@ -605,7 +605,7 @@ const RealtimePanel = ({
         <div className="flex flex-col items-end gap-2 text-[11px] text-slate-600">
           <div className="flex flex-wrap justify-end gap-2">
             {rainRadarStatus === "loading" && (
-              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                 מקם טוען...
               </span>
             )}
@@ -615,19 +615,19 @@ const RealtimePanel = ({
               </span>
             )}
             {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
-              <span className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+              <span className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
                 מקור הנתונים לא זמין כרגע
               </span>
             )}
             {rainRadarTimestamp && (
-              <span className="px-2 py-0.5 rounded-full bg-white border border-amber-200 text-amber-700">
+              <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700">
                 עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleTimeString("he-IL")}
               </span>
             )}
           </div>
           <button
             onClick={onRefreshRainRadar}
-            className="px-3 py-1 bg-amber-600 text-white rounded-full text-xs font-semibold hover:bg-amber-500 shadow"
+            className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-semibold hover:bg-blue-500 shadow"
           >
             רענן שכבת גשם
           </button>
@@ -635,32 +635,32 @@ const RealtimePanel = ({
       </div>
 
       <div className="p-5 space-y-4">
-        <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
+        <div className="border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                 <Icon name="radar" size={18} />
               </span>
               <div className="leading-tight">
                 <div className="font-bold text-slate-900">מקם גשם</div>
-                <div className="text-[11px] text-amber-800/80">
+                <div className="text-[11px] text-blue-800/80">
                   RainViewer API · מתעדכן כל 5 דק'
                 </div>
               </div>
             </div>
             <span
-              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${rainRadarEnabled ? "text-amber-700 bg-amber-50 border border-amber-200" : "text-slate-400 bg-slate-100"}`}
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${rainRadarEnabled ? "text-blue-700 bg-blue-50 border border-blue-200" : "text-slate-400 bg-slate-100"}`}
             >
               {rainRadarEnabled ? "מוצג" : "מוסתר"}
             </span>
           </div>
           <button
             onClick={onToggleRainRadar}
-            className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-2 transition ${rainRadarEnabled ? "bg-amber-600 text-white border-amber-600 shadow-inner" : "bg-white text-amber-800 border-amber-200 hover:bg-amber-50/80"}`}
+            className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-2 transition ${rainRadarEnabled ? "bg-blue-600 text-white border-blue-600 shadow-inner" : "bg-white text-blue-800 border-blue-200 hover:bg-blue-50/80"}`}
           >
             <div className="flex items-center gap-2">
               <span
-                className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? "bg-white/20" : "bg-amber-100 text-amber-700"}`}
+                className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? "bg-white/20" : "bg-blue-100 text-blue-700"}`}
               >
                 <Icon name="cloud" size={16} />
               </span>
@@ -669,75 +669,75 @@ const RealtimePanel = ({
               </span>
             </div>
             <span
-              className={`text-[11px] font-semibold ${rainRadarEnabled ? "text-white" : "text-amber-700"}`}
+              className={`text-[11px] font-semibold ${rainRadarEnabled ? "text-white" : "text-blue-700"}`}
             >
               {rainRadarEnabled ? "פעיל" : "כבוי"}
             </span>
           </button>
           {rainRadarUnavailable && (
-            <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-2">
+            <div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1 mt-2">
               מקור הנתונים לא זמין כרגע
             </div>
           )}
         </div>
 
-        <div className="border border-amber-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
+        <div className="border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                 <Icon name="drone" size={18} />
               </span>
               <div className="leading-tight">
                 <div className="font-bold text-slate-900">מטוסים בסביבה</div>
-                <div className="text-[11px] text-amber-800/80">
+                <div className="text-[11px] text-blue-800/80">
                   ADSBExchange · רענון כל 15 שניות
                 </div>
               </div>
             </div>
             <span
-              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${aircraftEnabled ? "text-amber-700 bg-amber-50 border border-amber-200" : "text-slate-400 bg-slate-100"}`}
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${aircraftEnabled ? "text-blue-700 bg-blue-50 border border-blue-200" : "text-slate-400 bg-slate-100"}`}
             >
               {aircraftEnabled ? "מוצג" : "מוסתר"}
             </span>
           </div>
-          <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+          <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
             <button
               onClick={onToggleAircraft}
-              className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-1.5 transition ${aircraftEnabled ? "bg-amber-600 text-white border-amber-600 shadow-inner" : "bg-white text-amber-800 border-amber-200 hover:bg-amber-100/70"}`}
+              className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-1.5 transition ${aircraftEnabled ? "bg-blue-600 text-white border-blue-600 shadow-inner" : "bg-white text-blue-800 border-blue-200 hover:bg-blue-100/70"}`}
             >
               <div className="flex items-center gap-2">
+                <span
+                  className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? "bg-white/20" : "bg-blue-100 text-blue-700"}`}
+                >
+                  <Icon name="drone" size={16} />
+                </span>
+                <span className="font-bold text-right">
+                  {aircraftEnabled
+                    ? "הסתר מיקומי מטוסים"
+                    : "הצג מיקומי מטוסים"}
+                </span>
+              </div>
               <span
-                className={`w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? "bg-white/20" : "bg-amber-100 text-amber-700"}`}
+                className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-blue-700"}`}
               >
-                <Icon name="drone" size={16} />
-              </span>
-              <span className="font-bold text-right">
-                {aircraftEnabled
-                  ? "הסתר מיקומי מטוסים"
-                  : "הצג מיקומי מטוסים"}
-              </span>
-            </div>
-            <span
-              className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-amber-700"}`}
-            >
-              {aircraftEnabled ? "פעיל" : "כבוי"}
+                {aircraftEnabled ? "פעיל" : "כבוי"}
               </span>
             </button>
             {(aircraftUnavailable || aircraftStatus === "error") && (
-              <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1">
+              <div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1 mt-1">
                 מקור הנתונים לא זמין כרגע
               </div>
             )}
-            <div className="flex items-center justify-between text-[11px] text-amber-800">
+            <div className="flex items-center justify-between text-[11px] text-blue-800">
               <div className="flex items-center gap-2">
-                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-1 text-[10px]">
+                <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 text-[10px]">
                   {aircraftData.length} בטווח
                 </span>
-                <span className="text-[10px] text-amber-700">
+                <span className="text-[10px] text-blue-700">
                   טווח: {aircraftRangeKm} ק"מ
                 </span>
               </div>
-              <div className="flex gap-1 text-[10px] text-amber-700">
+              <div className="flex gap-1 text-[10px] text-blue-700">
                 {aircraftStatus === "loading" && <span>מתחבר...</span>}
                 {aircraftStatus === "updating" && <span>מרענן...</span>}
                 {aircraftStatus === "error" && (
@@ -748,7 +748,7 @@ const RealtimePanel = ({
                   aircraftStatus === "ready" && <span>אין מטוסים בטווח</span>}
               </div>
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-amber-800">
+            <div className="flex items-center gap-2 text-[11px] text-blue-800">
               <input
                 type="range"
                 min="20"
@@ -756,10 +756,10 @@ const RealtimePanel = ({
                 step="5"
                 value={aircraftRangeKm}
                 onChange={(e) => onRangeChange(Number(e.target.value))}
-                className="flex-1 accent-amber-600"
+                className="flex-1 accent-blue-600"
                 disabled={!aircraftEnabled}
               />
-              <span className="text-[10px] text-amber-700">
+              <span className="text-[10px] text-blue-700">
                 חיפוש סביב מרכז המפה
               </span>
             </div>
