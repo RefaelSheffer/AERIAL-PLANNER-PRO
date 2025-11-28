@@ -828,26 +828,32 @@ const App = () => {
   const computeSidebarWidthPx = useCallback(() => {
     if (typeof window === "undefined") return 0;
 
+    // Prefer the rendered sidebar width when available to avoid over-estimating
+    // offsets on larger tablets that still report a coarse pointer (and are
+    // therefore treated as mobile).
+    const measuredWidth = sidebarRef.current?.offsetWidth;
+    if (measuredWidth) return measuredWidth;
+
     const raw =
       getComputedStyle(document.documentElement).getPropertyValue(
         "--mobile-sidebar-width",
-      ) || "70%";
+      ) || "62%";
 
     const trimmed = raw.trim();
 
     if (trimmed.endsWith("%")) {
       const percent = Number.parseFloat(trimmed.replace("%", ""));
       return Number.isFinite(percent)
-        ? (percent / 100) * window.innerWidth
+        ? Math.min((percent / 100) * window.innerWidth, 420)
         : 0;
     }
 
     if (trimmed.endsWith("px")) {
       const pixels = Number.parseFloat(trimmed.replace("px", ""));
-      return Number.isFinite(pixels) ? pixels : 0;
+      return Number.isFinite(pixels) ? Math.min(pixels, 420) : 0;
     }
 
-    return 0;
+    return Math.min(window.innerWidth * 0.62, 420);
   }, []);
 
   const computeDesktopDockOffset = useCallback(() => {
