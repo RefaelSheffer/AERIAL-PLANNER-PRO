@@ -180,8 +180,12 @@ const TimelineBoard = ({
   isSlotFlyable,
   windTextColor,
   windSpeedToColor,
+  cardWidth,
 }) => {
   if (!show) return null;
+
+  const timelineWidth =
+    cardWidth ?? (isMobile ? "min(90vw, 420px)" : "22rem");
 
   const preparedTimeline = React.useMemo(() => {
     return visibleTimeline.map((day) => {
@@ -212,8 +216,8 @@ const TimelineBoard = ({
   const timelineEmpty = preparedTimeline.length === 0;
 
   const timelineCardSizing = isMobile
-    ? "w-full max-w-[calc(100vw-32px)] ml-auto max-h-[78vh]"
-    : "w-[22rem] max-h-[82vh]";
+    ? "ml-auto max-h-[78vh]"
+    : "max-h-[82vh]";
 
   const hasSlots = preparedTimeline.some((day) => day.enrichedSlots.length > 0);
 
@@ -221,6 +225,7 @@ const TimelineBoard = ({
     return (
       <div
         className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
+        style={{ width: timelineWidth }}
       >
         {dataUnavailable && (
           <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
@@ -308,6 +313,7 @@ const TimelineBoard = ({
   return (
     <div
       className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
+      style={{ width: timelineWidth }}
     >
       {dataUnavailable && (
         <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
@@ -582,13 +588,17 @@ const RealtimePanel = ({
   aircraftData,
   onRangeChange,
   panelRef,
+  panelWidth,
 }) => {
   if (!open) return null;
+
+  const resolvedWidth = panelWidth || "22rem";
 
   return (
     <div
       ref={panelRef}
-      className="fixed right-4 w-[min(22rem,calc(100%-7rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll top-[5.5rem] sm:top-6 md:top-4"
+      className="fixed right-4 max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll top-[5.5rem] sm:top-6 md:top-4"
+      style={{ width: resolvedWidth }}
     >
       <div className="sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200 flex items-start justify-between gap-3">
         <div className="space-y-1">

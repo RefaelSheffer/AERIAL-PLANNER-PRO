@@ -980,9 +980,14 @@ const App = () => {
     sidebarOpen,
   ]);
 
+  const overlayCardWidth = useMemo(
+    () => (isMobile ? "min(90vw, 420px)" : "22rem"),
+    [isMobile],
+  );
+
   const plannerPanelWidth = useMemo(() => {
-    return isMobile ? "min(50vw, 360px)" : "min(50vw, 640px)";
-  }, [isMobile]);
+    return isMobile ? overlayCardWidth : "min(50vw, 640px)";
+  }, [isMobile, overlayCardWidth]);
 
   const dtmHeatPoints = useMemo(
     () => buildDtmHeatPoints(dtmData, dtmStats),
@@ -1452,6 +1457,7 @@ const App = () => {
     <TimelineBoard
       show={showTimeline}
       isMobile={isMobile}
+      cardWidth={overlayCardWidth}
       windTimeline={windTimeline}
       visibleTimeline={visibleTimeline}
       dataUnavailable={weatherUnavailable}
@@ -2316,6 +2322,7 @@ const App = () => {
                   aircraftData={aircraftData}
                   onRangeChange={setAircraftRangeKm}
                   panelRef={realtimePanelRef}
+                  panelWidth={overlayCardWidth}
                 />
 
                 {timelineBoard}
