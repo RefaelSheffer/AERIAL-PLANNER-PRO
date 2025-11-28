@@ -188,6 +188,10 @@ const App = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState("mission");
   const [settingsReadOnly, setSettingsReadOnly] = useState(true);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    return window.localStorage.getItem("plannerTheme") || "light";
+  });
   const [suitabilitySettings, setSuitabilitySettings] = useState(
     Config.DEFAULT_SUITABILITY,
   );
@@ -292,6 +296,56 @@ const App = () => {
       console.warn("Failed to persist documentation entries", e);
     }
   }, [docEntries]);
+
+  const themeStyles = useMemo(() => {
+    const isDark = theme === "dark";
+    return {
+      panel: isDark
+        ? "bg-slate-900 text-white"
+        : "bg-white text-slate-900 border-l border-slate-200",
+      header: isDark
+        ? "bg-slate-800 border-b border-slate-700"
+        : "bg-slate-50 border-b border-slate-200",
+      tabList: isDark
+        ? "bg-slate-900/60 border border-slate-700"
+        : "bg-white border border-slate-200 shadow-sm",
+      tabActive: "bg-blue-600 text-white",
+      tabInactive: isDark
+        ? "text-slate-200 hover:bg-slate-700/80"
+        : "text-slate-700 hover:bg-blue-50",
+      iconButton: isDark
+        ? "bg-slate-700 p-2 rounded hover:bg-slate-600 text-white"
+        : "bg-white p-2 rounded border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm",
+      closeButton: isDark
+        ? "bg-slate-700 p-2 rounded-full hover:bg-slate-600"
+        : "bg-white p-2 rounded-full border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm",
+      card: isDark
+        ? "bg-slate-800 border border-slate-700"
+        : "bg-white border border-slate-200 shadow-sm",
+      subtleText: isDark ? "text-slate-400" : "text-slate-600",
+      select:
+        "w-full p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
+      selectTone: isDark
+        ? "bg-slate-900 border border-slate-700 text-white"
+        : "bg-white border border-slate-300 text-slate-900",
+      chip: isDark ? "bg-slate-700 text-slate-200" : "bg-slate-100 text-slate-700",
+      accent: isDark ? "text-blue-300" : "text-blue-600",
+      subtlePanel: isDark ? "bg-slate-700/50" : "bg-slate-100",
+    };
+  }, [theme]);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.body.dataset.theme = theme;
+    }
+    if (typeof localStorage !== "undefined") {
+      try {
+        localStorage.setItem("plannerTheme", theme);
+      } catch (e) {
+        console.warn("Failed to persist theme", e);
+      }
+    }
+  }, [theme]);
 
   const mapRef = useRef(null);
   const layersRef = useRef({});
@@ -1440,7 +1494,20 @@ const App = () => {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 justify-end"></div>
+              <div className="flex flex-wrap items-center gap-2 justify-end">
+                <div className="text-sm text-slate-700 flex items-center gap-2">
+                  מצב תצוגה:
+                  <span className="font-semibold">
+                    {theme === "dark" ? "כהה" : "בהיר"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 text-sm font-semibold hover:bg-blue-100"
+                >
+                  החלף למצב {theme === "dark" ? "בהיר" : "כהה"}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1588,7 +1655,13 @@ const App = () => {
               </div>
             </div>
 
-            <div className="flex justify-between items-center text-sm text-slate-600 bg-slate-100 border border-slate-200 rounded-lg p-3">
+            <div
+              className={`flex justify-between items-center text-sm rounded-lg p-3 ${
+                theme === "dark"
+                  ? "text-slate-200 bg-slate-800 border border-slate-700"
+                  : "text-slate-600 bg-slate-100 border border-slate-200"
+              }`}
+            >
               <span>
                 ההגדרות נשמרות למצב הנוכחי בלבד. שינוי הערכים משפיע על סימון
                 השעות היציבות בלוח הרוח/עננות/גשם.
@@ -1609,10 +1682,10 @@ const App = () => {
         <Sidebar
           open={sidebarOpen}
           containerRef={sidebarRef}
-          className="bg-slate-900 text-white flex flex-col z-[960] shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static"
+          className={`${themeStyles.panel} flex flex-col z-[960] shadow-2xl mobile-panel overflow-y-auto custom-scroll fixed inset-y-0 right-0 md:static`}
           style={{ width: plannerPanelWidth }}
         >
-          <div className="p-4 bg-slate-800 border-b border-slate-700 sticky top-0 z-30 flex justify-between items-center gap-2">
+          <div className={`${themeStyles.header} p-4 sticky top-0 z-30 flex justify-between items-center gap-2`}>
             <h1 className="font-black text-lg tracking-wider text-blue-400">
               SMART PLANNER
             </h1>
@@ -1620,15 +1693,15 @@ const App = () => {
               <div
                 role="tablist"
                 aria-label="ניווט פאנל תכנון"
-                className="flex items-center rounded-xl border border-slate-700 overflow-hidden bg-slate-900/60"
+                className={`flex items-center rounded-xl overflow-hidden ${themeStyles.tabList}`}
               >
                 <button
                   role="tab"
                   aria-selected={activeSidebarTab === "mission"}
                   className={`px-3 py-2 text-xs font-semibold transition focus:outline-none ${
                     activeSidebarTab === "mission"
-                      ? "bg-blue-600 text-white shadow-inner"
-                      : "text-slate-200 hover:bg-slate-700/80"
+                      ? themeStyles.tabActive
+                      : themeStyles.tabInactive
                   }`}
                   onClick={() => {
                     setActiveSidebarTab("mission");
@@ -1640,11 +1713,11 @@ const App = () => {
                 <button
                   role="tab"
                   aria-selected={activeSidebarTab === "settings"}
-                  className={`px-3 py-2 text-xs font-semibold transition focus:outline-none border-r border-slate-700 last:border-r-0 ${
+                  className={`px-3 py-2 text-xs font-semibold transition focus:outline-none border-r last:border-r-0 ${
                     activeSidebarTab === "settings"
-                      ? "bg-slate-700 text-white"
-                      : "text-slate-200 hover:bg-slate-700/80"
-                  }`}
+                      ? themeStyles.tabActive
+                      : themeStyles.tabInactive
+                  } ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}
                   onClick={() => {
                     setActiveSidebarTab("settings");
                     setShowSettings(true);
@@ -1653,12 +1726,12 @@ const App = () => {
                   הגדרות
                 </button>
               </div>
-              <button className="bg-slate-700 p-2 rounded hover:bg-slate-600">
+              <button className={themeStyles.iconButton}>
                 <Icon name="gps" />
               </button>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="bg-slate-700 p-2 rounded-full hover:bg-slate-600"
+                className={themeStyles.closeButton}
                 aria-label="סגור את לוח התכנון"
               >
                 <Icon name="close" size={14} />
@@ -1669,18 +1742,22 @@ const App = () => {
           <div className="p-4 space-y-6 flex-1 pb-24 md:pb-6">
             {/* Flight Params */}
             <div className="space-y-4">
-              <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 space-y-2">
+              <div className={`${themeStyles.card} rounded-lg p-3 space-y-2`}>
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-300">
+                  <div className={`flex items-center gap-2 text-sm font-semibold ${themeStyles.accent}`}>
                     <Icon name="drone" size={18} /> בחר רחפן מבצעי
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                  <div className={`flex items-center gap-2 text-[11px] ${themeStyles.subtleText}`}>
                     <span>
                       {Object.keys(AerialPlanner.config.DRONE_PRESETS).length}{" "}
                       דגמים זמינים
                     </span>
                     <button
-                      className="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
+                      className={`px-2 py-1 rounded ${
+                        theme === "dark"
+                          ? "bg-slate-700 hover:bg-slate-600 text-slate-200"
+                          : "bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+                      }`}
                       onClick={() => setDronePanelOpen((o) => !o)}
                     >
                       {dronePanelOpen ? "הסתר" : "הצג"}
@@ -1689,7 +1766,7 @@ const App = () => {
                 </div>
                 {dronePanelOpen ? (
                   <>
-                    <p className="text-xs text-slate-400">
+                    <p className={`text-xs ${themeStyles.subtleText}`}>
                       בחר דגם כדי לראות חיישן, סוג משימה ולקבל חישובי טיסה
                       מדויקים.
                     </p>
@@ -1699,24 +1776,34 @@ const App = () => {
                           <button
                             key={k}
                             onClick={() => setSelectedDrone(k)}
-                            className={`w-full text-right border rounded-lg px-3 py-2 transition shadow-sm hover:border-blue-400 hover:shadow-lg focus:outline-none ${selectedDrone === k ? "border-blue-500 bg-blue-500/10 text-white" : "border-slate-700 bg-slate-900 text-slate-100"}`}
+                            className={`w-full text-right border rounded-lg px-3 py-2 transition shadow-sm hover:border-blue-400 hover:shadow-lg focus:outline-none ${
+                              selectedDrone === k
+                                ? "border-blue-500 bg-blue-500/10 text-blue-900"
+                                : theme === "dark"
+                                  ? "border-slate-700 bg-slate-900 text-slate-100"
+                                  : "border-slate-200 bg-white text-slate-900"
+                            }`}
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-semibold text-sm">
                                 {v.name}
                               </span>
                               <span
-                                className={`text-[11px] px-2 py-1 rounded-full ${selectedDrone === k ? "bg-blue-600/40 text-white" : "bg-slate-700 text-slate-200"}`}
+                                className={`text-[11px] px-2 py-1 rounded-full ${
+                                  selectedDrone === k
+                                    ? "bg-blue-600/20 text-blue-800"
+                                    : themeStyles.chip
+                                }`}
                               >
                                 {v.type}
                               </span>
                             </div>
-                            <div className="text-[11px] text-slate-300 mt-1">
+                            <div className={`text-[11px] ${themeStyles.subtleText} mt-1`}>
                               חיישן {v.sensorWidth}x{v.sensorHeight} מ"מ · מוקד{" "}
                               {v.focalLength} מ"מ
                             </div>
                             {v.opticalZoomLevels?.length ? (
-                              <div className="text-[10px] text-blue-300 mt-1">
+                              <div className={`text-[10px] ${themeStyles.accent} mt-1`}>
                                 זום אופטי עד {Math.max(...v.opticalZoomLevels)}x
                               </div>
                             ) : null}
@@ -1727,13 +1814,13 @@ const App = () => {
                   </>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-xs text-slate-400">
+                    <p className={`text-xs ${themeStyles.subtleText}`}>
                       פתיחה מלאה מציגה את כל הדגמים; ניתן לבחור מהרשימה המהירה.
                     </p>
                     <select
                       value={selectedDrone}
                       onChange={(e) => setSelectedDrone(e.target.value)}
-                      className="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`${themeStyles.select} ${themeStyles.selectTone}`}
                     >
                       {Object.entries(AerialPlanner.config.DRONE_PRESETS).map(
                         ([k, v]) => (
@@ -1749,10 +1836,10 @@ const App = () => {
 
               {/* Sliders */}
               {hasOpticalZoom && opticalZoomLevels && (
-                <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 mb-2">
+                <div className={`${themeStyles.card} rounded-lg p-3 mb-2`}>
                   <div className="flex justify-between text-xs mb-1">
                     <span>זום אופטי</span>
-                    <span className="text-blue-400">
+                    <span className={themeStyles.accent}>
                       {currentOpticalZoom}x · {activeFocalLength.toFixed(1)} מ"מ
                     </span>
                   </div>
@@ -1767,7 +1854,7 @@ const App = () => {
                     }
                     className="w-full"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                  <div className={`flex justify-between text-[10px] ${themeStyles.subtleText} mt-1`}>
                     {opticalZoomLevels.map((level, idx) => (
                       <span
                         key={`${level}-${idx}`}
@@ -1841,12 +1928,12 @@ const App = () => {
               </div>
 
               {/* Azimuth Control */}
-              <div className="bg-slate-800 p-2 rounded border border-slate-700">
+              <div className={`${themeStyles.card} p-2 rounded`}>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                  <span className={`text-xs font-bold flex items-center gap-1 ${themeStyles.subtleText}`}>
                     <Icon name="rotate" /> כיוון טיסה
                   </span>
-                  <label className="text-[10px] flex items-center gap-1 cursor-pointer">
+                  <label className={`text-[10px] flex items-center gap-1 cursor-pointer ${themeStyles.subtleText}`}>
                     <input
                       type="checkbox"
                       checked={autoOrient}
@@ -1871,8 +1958,8 @@ const App = () => {
             </div>
 
             {/* DTM */}
-            <div className="pt-4 border-t border-slate-700">
-              <div className="text-[11px] text-slate-300 bg-slate-800 border border-slate-700 rounded p-2 mb-2">
+            <div className={`pt-4 border-t ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}>
+              <div className={`${themeStyles.card} text-[11px] ${themeStyles.subtleText} rounded p-2 mb-2`}>
                 בחירת המועד נעשית מלוח מזג האוויר בתחתית. בחר שעה רצויה בלוח כדי
                 לחשב צל בהתאם.
               </div>
@@ -1899,7 +1986,13 @@ const App = () => {
           </div>
 
           {/* BOTTOM STATS BAR */}
-          <div className="p-3 bg-slate-800 border-t border-slate-700 flex flex-col gap-2">
+          <div
+            className={`p-3 flex flex-col gap-2 ${
+              theme === "dark"
+                ? "bg-slate-800 border-t border-slate-700"
+                : "bg-slate-50 border-t border-slate-200"
+            }`}
+          >
             <div className="flex justify-end">
               <button
                 onClick={() => {
@@ -1915,33 +2008,31 @@ const App = () => {
               </button>
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
-              <div className="bg-slate-700/50 p-1 rounded">
-                <div className="text-[9px] text-slate-400">מרחק</div>
-                <div className="font-bold text-sm text-white">
-                  {stats.dist}m
-                </div>
+              <div className={`${themeStyles.subtlePanel} p-1 rounded border ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}>
+                <div className={`text-[9px] ${themeStyles.subtleText}`}>מרחק</div>
+                <div className="font-bold text-sm">{stats.dist}m</div>
               </div>
-              <div className="bg-slate-700/50 p-1 rounded">
-                <div className="text-[9px] text-slate-400">זמן (דק')</div>
-                <div className="font-bold text-sm text-blue-400">
+              <div className={`${themeStyles.subtlePanel} p-1 rounded border ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}>
+                <div className={`text-[9px] ${themeStyles.subtleText}`}>זמן (דק')</div>
+                <div className={`font-bold text-sm ${themeStyles.accent}`}>
                   <Icon name="clock" size={10} className="inline mr-1" />
                   {stats.time}
                 </div>
               </div>
-              <div className="bg-slate-700/50 p-1 rounded">
-                <div className="text-[9px] text-slate-400">תמונות</div>
-                <div className="font-bold text-sm text-purple-400">
+              <div className={`${themeStyles.subtlePanel} p-1 rounded border ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}>
+                <div className={`text-[9px] ${themeStyles.subtleText}`}>תמונות</div>
+                <div className={`font-bold text-sm ${themeStyles.accent}`}>
                   <Icon name="camera" size={10} className="inline mr-1" />
                   {stats.images}
                 </div>
               </div>
-              <div className="bg-slate-700/50 p-1 rounded">
-                <div className="text-[9px] text-slate-400">GSD</div>
-                <div className="font-bold text-sm text-white">{stats.gsd}</div>
+              <div className={`${themeStyles.subtlePanel} p-1 rounded border ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}>
+                <div className={`text-[9px] ${themeStyles.subtleText}`}>GSD</div>
+                <div className="font-bold text-sm">{stats.gsd}</div>
               </div>
-              <div className="bg-slate-700/50 p-1 rounded">
-                <div className="text-[9px] text-slate-400">שטח כיסוי</div>
-                <div className="font-bold text-sm text-emerald-300">
+              <div className={`${themeStyles.subtlePanel} p-1 rounded border ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}>
+                <div className={`text-[9px] ${themeStyles.subtleText}`}>שטח כיסוי</div>
+                <div className={`font-bold text-sm ${themeStyles.accent}`}>
                   {stats.coverageKm2} קמ"ר
                 </div>
               </div>
@@ -2072,7 +2163,13 @@ const App = () => {
                         </button>
                       </div>
 
-                      <label className="flex items-center justify-between gap-2 cursor-pointer text-[11px] text-blue-800 bg-white rounded-lg border border-blue-200 px-3 py-2 hover:border-blue-400">
+                      <label
+                        className={`flex items-center justify-between gap-2 cursor-pointer text-[11px] rounded-lg px-3 py-2 border hover:border-blue-400 ${
+                          theme === "dark"
+                            ? "text-blue-100 bg-slate-900 border-slate-700"
+                            : "text-blue-800 bg-white border-blue-200"
+                        }`}
+                      >
                         <span className="flex items-center gap-2 font-semibold">
                           <Icon name="upload" size={14} /> העלאת תמונות
                         </span>
@@ -2100,13 +2197,21 @@ const App = () => {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={exportDocumentationPDF}
-                        className="flex-1 bg-slate-900 text-white rounded-lg py-2 text-sm font-semibold hover:bg-slate-800 flex items-center justify-center gap-2"
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold flex items-center justify-center gap-2 ${
+                          theme === "dark"
+                            ? "bg-slate-900 text-white hover:bg-slate-800"
+                            : "bg-blue-600 text-white hover:bg-blue-500"
+                        }`}
                       >
                         <Icon name="export" size={16} /> PDF
                       </button>
                       <button
                         onClick={exportDocumentationShapefile}
-                        className="flex-1 bg-slate-100 text-slate-800 border border-slate-300 rounded-lg py-2 text-sm font-semibold hover:bg-slate-200 flex items-center justify-center gap-2"
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold flex items-center justify-center gap-2 ${
+                          theme === "dark"
+                            ? "bg-slate-800 text-white border border-slate-600 hover:bg-slate-700"
+                            : "bg-slate-100 text-slate-800 border border-slate-300 hover:bg-slate-200"
+                        }`}
                       >
                         <Icon name="map" size={16} /> Shapefile
                       </button>
@@ -2114,35 +2219,63 @@ const App = () => {
 
                     <div className="space-y-2 max-h-72 overflow-y-auto custom-scroll">
                       {docEntries.length === 0 ? (
-                        <div className="text-[11px] text-slate-500 border border-dashed border-slate-300 rounded-lg p-3 text-center">
+                        <div
+                          className={`text-[11px] border border-dashed rounded-lg p-3 text-center ${
+                            theme === "dark"
+                              ? "text-slate-300 border-slate-600"
+                              : "text-slate-500 border-slate-300"
+                          }`}
+                        >
                           אין אובייקטים מתועדים עדיין. שמור אובייקט כדי להתחיל.
                         </div>
                       ) : (
                         docEntries.map((entry) => (
                           <div
                             key={entry.id}
-                            className="border border-slate-200 rounded-lg p-3 bg-white/80 space-y-1"
+                            className={`rounded-lg p-3 space-y-1 border ${
+                              theme === "dark"
+                                ? "border-slate-700 bg-slate-800"
+                                : "border-slate-200 bg-white/80"
+                            }`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div>
-                                <div className="font-bold text-slate-900 text-sm">
+                                <div
+                                  className={`font-bold text-sm ${
+                                    theme === "dark" ? "text-white" : "text-slate-900"
+                                  }`}
+                                >
                                   {entry.title || "ללא כותרת"}
                                 </div>
-                                <div className="text-[10px] text-slate-500">
+                                <div
+                                  className={`text-[10px] ${
+                                    theme === "dark" ? "text-slate-300" : "text-slate-500"
+                                  }`}
+                                >
                                   {new Date(entry.timestamp).toLocaleString(
                                     "he-IL",
                                   )}
                                 </div>
                               </div>
                               {entry.location && (
-                                <div className="text-[10px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                                <div
+                                  className={`text-[10px] rounded px-2 py-1 ${
+                                    theme === "dark"
+                                      ? "text-blue-200 bg-blue-900/30 border border-blue-700"
+                                      : "text-blue-800 bg-blue-50 border border-blue-200"
+                                  }`}
+                                >
                                   {entry.location.lat.toFixed(4)},{" "}
                                   {entry.location.lng.toFixed(4)}
                                 </div>
                               )}
                             </div>
                             {entry.notes && (
-                              <p className="text-[12px] text-slate-700 leading-relaxed">
+                              <p
+                                className={`text-[12px] leading-relaxed ${
+                                  theme === "dark" ? "text-slate-200" : "text-slate-700"
+                                }`}
+                              >
                                 {entry.notes}
                               </p>
                             )}
