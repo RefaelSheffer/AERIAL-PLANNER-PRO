@@ -810,20 +810,13 @@ const App = () => {
   const computeDesktopDockOffset = useCallback(() => {
     const gapPx = 16;
 
-    const widths = [];
+    const realtimeWidth =
+      realtimePanelOpen && realtimePanelRef.current
+        ? realtimePanelRef.current.offsetWidth
+        : 0;
 
-    if (realtimePanelOpen && realtimePanelRef.current) {
-      widths.push(realtimePanelRef.current.offsetWidth);
-    }
-
-    if (sidebarOpen && sidebarRef.current) {
-      widths.push(sidebarRef.current.offsetWidth);
-    }
-
-    const maxWidth = widths.length ? Math.max(...widths) : 0;
-
-    return maxWidth + gapPx;
-  }, [realtimePanelOpen, sidebarOpen]);
+    return gapPx + realtimeWidth;
+  }, [realtimePanelOpen]);
 
   useEffect(() => {
     const updateOffset = () => setDesktopDockOffset(computeDesktopDockOffset());
