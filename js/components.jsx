@@ -7,7 +7,7 @@
 // Icon library for UI elements
 const Icon = ({
   name,
-  size = 16,
+  size = 18,
   className = "",
   strokeWidth = 2,
   color = "currentColor",
@@ -16,12 +16,15 @@ const Icon = ({
     width: size,
     height: size,
     viewBox: "0 0 24 24",
+    xmlns: "http://www.w3.org/2000/svg",
     fill: "none",
     stroke: color,
     strokeWidth,
     strokeLinecap: "round",
     strokeLinejoin: "round",
     className,
+    focusable: "false",
+    "aria-hidden": true,
   };
 
   const icons = {
@@ -588,7 +591,8 @@ const RealtimePanel = ({
   return (
     <div
       ref={panelRef}
-      className="fixed right-4 w-[min(22rem,calc(100%-7rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll top-[5.5rem] sm:top-6 md:top-4"
+      className="fixed right-3 sm:right-4 w-[min(22rem,calc(100%-6rem))] md:w-[22rem] max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll"
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
     >
       <div className="sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200 flex items-start justify-between gap-3">
         <div className="space-y-1">
