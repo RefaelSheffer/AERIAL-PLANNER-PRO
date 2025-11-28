@@ -7,6 +7,7 @@
 window.AerialPlannerConfig = {
   DRONE_PRESETS: window.DRONE_PRESETS || {},
   DEFAULT_MAP_CENTER: [32.0853, 34.7818],
+  OPENAIP_API_TOKEN: "",
   DEFAULT_SUITABILITY: {
     maxWind: 12,
     maxGust: 18,

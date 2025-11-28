@@ -221,6 +221,11 @@ const App = () => {
   const [realtimePanelWidth, setRealtimePanelWidth] = useState(0);
   const [aircraftData, setAircraftData] = useState([]);
   const [aircraftUnavailable, setAircraftUnavailable] = useState(false);
+  const [openAipEnabled, setOpenAipEnabled] = useState(false);
+  const [openAipStatus, setOpenAipStatus] = useState("idle");
+  const [openAipFeatures, setOpenAipFeatures] = useState([]);
+  const [openAipUpdatedAt, setOpenAipUpdatedAt] = useState(null);
+  const [openAipUnavailable, setOpenAipUnavailable] = useState(false);
   const [documentationOpen, setDocumentationOpen] = useState(false);
   const [docForm, setDocForm] = useState({
     title: "",
@@ -556,6 +561,38 @@ const App = () => {
     }
   }, [aircraftEnabled, mapCenter, aircraftRangeKm]);
 
+  const fetchOpenAip = useCallback(async () => {
+    if (!openAipEnabled || !mapRef.current) return;
+    setOpenAipStatus((prev) => (prev === "ready" ? "updating" : "loading"));
+    setOpenAipUnavailable(false);
+
+    try {
+      const bounds = mapRef.current.getBounds();
+      const bbox = [
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth(),
+      ];
+      const result = await Services.fetchOpenAipAirspaces(
+        bbox,
+        Config.OPENAIP_API_TOKEN,
+      );
+      if (result?.features) {
+        setOpenAipFeatures(result.features);
+        setOpenAipStatus("ready");
+        setOpenAipUpdatedAt(new Date());
+      } else {
+        setOpenAipStatus("error");
+        setOpenAipUnavailable(true);
+      }
+    } catch (e) {
+      console.error("OpenAIP error", e);
+      setOpenAipStatus("error");
+      setOpenAipUnavailable(true);
+    }
+  }, [openAipEnabled]);
+
   useEffect(() => {
     if (!aircraftEnabled) {
       if (aircraftIntervalRef.current) {
@@ -583,6 +620,31 @@ const App = () => {
       }
     };
   }, [aircraftEnabled, fetchAircraft]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    if (!openAipEnabled) {
+      map.off("moveend", fetchOpenAip);
+      setOpenAipFeatures([]);
+      setOpenAipStatus("idle");
+      setOpenAipUnavailable(false);
+      const Lr = layersRef.current;
+      if (Lr.openAip) {
+        map.removeLayer(Lr.openAip);
+        Lr.openAip = null;
+      }
+      return;
+    }
+
+    fetchOpenAip();
+    map.on("moveend", fetchOpenAip);
+
+    return () => {
+      map.off("moveend", fetchOpenAip);
+    };
+  }, [openAipEnabled, fetchOpenAip]);
 
   const windTimeline = useMemo(
     () => buildWindTimeline(hourlyForecast, weatherLocation),
@@ -1199,9 +1261,46 @@ const App = () => {
           0.0: "#2563eb", // נמוך
           0.4: "#22c55e",
           0.7: "#f59e0b",
-          1.0: "#ef4444", // גבוה
+        1.0: "#ef4444", // גבוה
         },
       }).addTo(map);
+    }
+
+    if (Lr.openAip) {
+      map.removeLayer(Lr.openAip);
+      Lr.openAip = null;
+    }
+
+    if (openAipEnabled && openAipFeatures.length > 0) {
+      const layer = L.geoJSON(openAipFeatures, {
+        style: {
+          color: "#a855f7",
+          weight: 2,
+          fillOpacity: 0.08,
+        },
+        onEachFeature: (feature, layer) => {
+          const name = feature?.properties?.name || "אזור אווירי";
+          const type = feature?.properties?.type || feature?.properties?.category;
+          const floor = feature?.properties?.lower_limit || feature?.properties?.floor;
+          const ceiling = feature?.properties?.upper_limit || feature?.properties?.ceiling;
+          const info = [
+            type ? `<div class="text-slate-700">סוג: ${type}</div>` : "",
+            floor ? `<div class="text-slate-700">תחתון: ${floor}</div>` : "",
+            ceiling ? `<div class="text-slate-700">עליון: ${ceiling}</div>` : "",
+          ]
+            .filter(Boolean)
+            .join("");
+
+          layer.bindPopup(`
+            <div class="text-[12px]">
+              <div class="font-bold text-slate-900">${name}</div>
+              ${info || "<div class='text-slate-600'>נתוני גובה לא זמינים</div>"}
+              <div class="text-[10px] text-purple-700">OpenAIP</div>
+            </div>
+          `);
+        },
+      });
+      Lr.openAip = layer.addTo(map);
     }
 
     if (Lr.aircraft) {
@@ -1247,6 +1346,8 @@ const App = () => {
     activeFocalLength,
     terrainShadows,
     dtmHeatPoints,
+    openAipEnabled,
+    openAipFeatures,
     aircraftEnabled,
     aircraftData,
   ]);
@@ -1845,12 +1946,72 @@ const App = () => {
                   className={`w-full ${autoOrient ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
               </div>
-            </div>
+              </div>
 
-            {/* DTM */}
-            <div className="pt-4 border-t border-slate-700">
-              <div className="text-[11px] text-slate-300 bg-slate-800 border border-slate-700 rounded p-2 mb-2">
-                בחירת המועד נעשית מלוח מזג האוויר בתחתית. בחר שעה רצויה בלוח כדי
+              {/* Airspace overlay */}
+              <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-purple-200">
+                    <Icon name="map" size={16} /> אזורי טיסה (OpenAIP)
+                  </div>
+                  <span
+                    className={`text-[10px] px-2 py-1 rounded-full border ${
+                      openAipEnabled
+                        ? "bg-purple-500/20 text-purple-100 border-purple-400"
+                        : "bg-slate-700 text-slate-300 border-slate-600"
+                    }`}
+                  >
+                    {openAipEnabled ? "מוצג" : "מוסתר"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300">
+                  שליפת שכבות אזורים מוגבלים, CTR, ושטחי אוויר קרובים לבאונטינג
+                  של המפה הנוכחית. גורר פאן/זום יטען גבולות חדשים.
+                </p>
+                <button
+                  onClick={() => setOpenAipEnabled((v) => !v)}
+                  className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-2 transition ${
+                    openAipEnabled
+                      ? "bg-purple-600 text-white border-purple-500 shadow-inner"
+                      : "bg-slate-700 text-purple-100 border-slate-600 hover:bg-slate-700/80"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        openAipEnabled ? "bg-white/10" : "bg-slate-600"
+                      }`}
+                    >
+                      <Icon name="map" size={16} />
+                    </span>
+                    <span className="font-bold text-right">
+                      {openAipEnabled ? "הסתר שכבת OpenAIP" : "הצג שכבת OpenAIP"}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-semibold">
+                    {openAipStatus === "loading" && "טוען..."}
+                    {openAipStatus === "updating" && "מרענן..."}
+                    {openAipStatus === "ready" && "פעיל"}
+                    {openAipStatus === "error" && "שגיאה"}
+                  </span>
+                </button>
+                {(openAipUnavailable || openAipStatus === "error") && (
+                  <div className="text-[11px] text-amber-300 bg-amber-900/30 border border-amber-600 rounded px-2 py-1">
+                    מקור הנתונים לא זמין כרגע או נדרשת הזנת מפתח API.
+                  </div>
+                )}
+                {openAipUpdatedAt && openAipStatus === "ready" && (
+                  <div className="text-[10px] text-slate-300 flex justify-between items-center">
+                    <span>עודכן: {openAipUpdatedAt.toLocaleTimeString("he-IL")}</span>
+                    <span className="text-purple-300">{openAipFeatures.length} שכבות</span>
+                  </div>
+                )}
+              </div>
+
+              {/* DTM */}
+              <div className="pt-4 border-t border-slate-700">
+                <div className="text-[11px] text-slate-300 bg-slate-800 border border-slate-700 rounded p-2 mb-2">
+                  בחירת המועד נעשית מלוח מזג האוויר בתחתית. בחר שעה רצויה בלוח כדי
                 לחשב צל בהתאם.
               </div>
               <button

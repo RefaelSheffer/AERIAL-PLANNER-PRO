@@ -170,10 +170,57 @@
     }
   };
 
+  /**
+   * Fetch OpenAIP airspace polygons inside a bounding box.
+   * @param {[number, number, number, number]} bbox - [west, south, east, north] degrees.
+   * @param {string} apiToken - Optional Bearer token for authenticated requests.
+   * @returns {Promise<{features: object[]}|null>} GeoJSON features or null when unavailable.
+   */
+  const fetchOpenAipAirspaces = async (bbox, apiToken) => {
+    try {
+      if (!bbox || bbox.length !== 4) return null;
+      const [west, south, east, north] = bbox.map((v) => Number(v.toFixed(5)));
+      const url = new URL("https://api.core.openaip.net/api/airspaces");
+      url.searchParams.set("bbox", `${west},${south},${east},${north}`);
+
+      const res = await fetch(url.toString(), {
+        headers: {
+          Accept: "application/json",
+          ...(apiToken ? { Authorization: `Bearer ${apiToken}` } : {}),
+        },
+      });
+
+      if (!res.ok) throw new Error(`OpenAIP ${res.status}`);
+
+      const data = await res.json();
+      const features = data?.items || data?.airspaces || data?.features || [];
+
+      if (!Array.isArray(features) || features.length === 0) {
+        return { features: [] };
+      }
+
+      // Normalize entries to GeoJSON Features when needed
+      const normalized = features.map((f) => {
+        if (f?.type === "Feature" && f.geometry) return f;
+        return {
+          type: "Feature",
+          geometry: f?.geometry || f?.geojson || null,
+          properties: f?.properties || f,
+        };
+      });
+
+      return { features: normalized.filter((f) => f.geometry) };
+    } catch (e) {
+      console.warn("OpenAIP API unavailable", e);
+      return null;
+    }
+  };
+
   window.AerialPlannerServices = {
     fetchWeather,
     fetchRainRadar,
     fetchAircraft,
     fetchDTM,
+    fetchOpenAipAirspaces,
   };
 })();
