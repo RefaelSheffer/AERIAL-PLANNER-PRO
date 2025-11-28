@@ -913,13 +913,10 @@ const App = () => {
   const computeDesktopDockOffset = useCallback(() => {
     const gapPx = 16;
 
-    const realtimeWidth =
-      realtimePanelOpen && realtimePanelRef.current
-        ? realtimePanelRef.current.offsetWidth
-        : 0;
+    const realtimeWidth = realtimePanelOpen ? realtimePanelWidth : 0;
 
     return gapPx + realtimeWidth;
-  }, [realtimePanelOpen]);
+  }, [realtimePanelOpen, realtimePanelWidth]);
 
   useEffect(() => {
     const updateOffset = () => setDesktopDockOffset(computeDesktopDockOffset());
