@@ -843,7 +843,7 @@ const App = () => {
   const dockPositionStyle = useMemo(() => {
     if (isMobile) {
       const mobileGapPx = 12;
-      const mobileOffset = sidebarOpen || realtimePanelOpen || documentationOpen;
+      const mobileOffset = sidebarOpen || realtimePanelOpen;
 
       return {
         right: mobileOffset
@@ -855,7 +855,6 @@ const App = () => {
     return { right: `${desktopDockOffset}px` };
   }, [
     desktopDockOffset,
-    documentationOpen,
     isMobile,
     realtimePanelOpen,
     sidebarOpen,
