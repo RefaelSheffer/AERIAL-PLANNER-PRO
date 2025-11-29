@@ -612,8 +612,8 @@ const RealtimePanel = ({
       className="fixed right-3 sm:right-4 max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll"
       style={panelStyle}
     >
-      <div className="sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200 flex items-start justify-between gap-3">
-        <div className="space-y-1">
+      <div className="sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200">
+        <div className="space-y-1 text-right">
           <div className="text-xs uppercase tracking-[0.3em] text-blue-700 font-bold">
             זמן אמת
           </div>
@@ -621,52 +621,22 @@ const RealtimePanel = ({
             מקם גשם ומיקומי מטוסים
           </h2>
           <p className="text-sm text-slate-600">
-            הפעלת מקורות נתוני זמן אמת על שכבת המפה.
+            הפעלת שכבות מפה מתעדכנות ללא טקסט כפול או עומס מיותר.
           </p>
-        </div>
-        <div className="flex flex-col items-end gap-2 text-[11px] text-slate-600">
-          <div className="flex flex-wrap justify-end gap-2">
-            {rainRadarStatus === "loading" && (
-              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                מקם טוען...
-              </span>
-            )}
-            {rainRadarStatus === "error" && (
-              <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
-                מקם לא זמין
-              </span>
-            )}
-            {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
-              <span className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
-                מקור הנתונים לא זמין כרגע
-              </span>
-            )}
-            {rainRadarTimestamp && (
-              <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700">
-                עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleTimeString("he-IL")}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={onRefreshRainRadar}
-            className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-semibold hover:bg-blue-500 shadow"
-          >
-            רענן שכבת גשם
-          </button>
         </div>
       </div>
 
-      <div className="p-5 space-y-4">
+      <div className="p-5 space-y-4 text-right">
         <div className="border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                 <Icon name="radar" size={18} />
               </span>
-              <div className="leading-tight">
+              <div className="leading-tight text-right">
                 <div className="font-bold text-slate-900">מקם גשם</div>
                 <div className="text-[11px] text-blue-800/80">
-                  RainViewer API · מתעדכן כל 5 דק'
+                  RainViewer · מתעדכן כל 5 דק'
                 </div>
               </div>
             </div>
@@ -676,31 +646,60 @@ const RealtimePanel = ({
               {rainRadarEnabled ? "מוצג" : "מוסתר"}
             </span>
           </div>
-          <button
-            onClick={onToggleRainRadar}
-            className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-2 transition ${rainRadarEnabled ? "bg-blue-600 text-white border-blue-600 shadow-inner" : "bg-white text-blue-800 border-blue-200 hover:bg-blue-50/80"}`}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? "bg-white/20" : "bg-blue-100 text-blue-700"}`}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-800">
+              <div className="flex flex-wrap gap-2 items-center">
+                {rainRadarStatus === "loading" && (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                    מקם טוען...
+                  </span>
+                )}
+                {rainRadarStatus === "error" && (
+                  <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                    מקם לא זמין
+                  </span>
+                )}
+                {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800">
+                    מקור הנתונים לא זמין כרגע
+                  </span>
+                )}
+              </div>
+              {rainRadarTimestamp && (
+                <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700">
+                  עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleTimeString("he-IL")}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={onToggleRainRadar}
+                className={`flex items-center justify-between text-sm rounded-xl border px-3 py-2 transition ${rainRadarEnabled ? "bg-blue-600 text-white border-blue-600 shadow-inner" : "bg-white text-blue-800 border-blue-200 hover:bg-blue-50/80"}`}
               >
-                <Icon name="cloud" size={16} />
-              </span>
-              <span className="font-bold text-right">
-                {rainRadarEnabled ? "הסתר שכבת גשם" : "הצג שכבת גשם"}
-              </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? "bg-white/20" : "bg-blue-100 text-blue-700"}`}
+                  >
+                    <Icon name="cloud" size={16} />
+                  </span>
+                  <span className="font-bold text-right">
+                    {rainRadarEnabled ? "הסתר שכבת גשם" : "הצג שכבת גשם"}
+                  </span>
+                </div>
+                <span
+                  className={`text-[11px] font-semibold ${rainRadarEnabled ? "text-white" : "text-blue-700"}`}
+                >
+                  {rainRadarEnabled ? "פעיל" : "כבוי"}
+                </span>
+              </button>
+              <button
+                onClick={onRefreshRainRadar}
+                className="flex items-center justify-center rounded-xl border border-blue-200 bg-white text-sm font-semibold text-blue-700 hover:bg-blue-50/80"
+              >
+                רענון מקם
+              </button>
             </div>
-            <span
-              className={`text-[11px] font-semibold ${rainRadarEnabled ? "text-white" : "text-blue-700"}`}
-            >
-              {rainRadarEnabled ? "פעיל" : "כבוי"}
-            </span>
-          </button>
-          {rainRadarUnavailable && (
-            <div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1 mt-2">
-              מקור הנתונים לא זמין כרגע
-            </div>
-          )}
+          </div>
         </div>
 
         <div className="border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
@@ -709,8 +708,8 @@ const RealtimePanel = ({
               <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                 <Icon name="drone" size={18} />
               </span>
-              <div className="leading-tight">
-                <div className="font-bold text-slate-900">מטוסים בסביבה</div>
+              <div className="leading-tight text-right">
+                <div className="font-bold text-slate-900">מיקומי מטוסים</div>
                 <div className="text-[11px] text-blue-800/80">
                   ADSBExchange · רענון כל 15 שניות
                 </div>
@@ -722,7 +721,22 @@ const RealtimePanel = ({
               {aircraftEnabled ? "מוצג" : "מוסתר"}
             </span>
           </div>
-          <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
+          <div className="space-y-2 bg-blue-50/60 border border-blue-200 rounded-xl px-3 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-800">
+              <div className="flex gap-2 items-center">
+                {aircraftStatus === "loading" && <span className="px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200">מתחבר...</span>}
+                {aircraftStatus === "updating" && <span className="px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200">מרענן...</span>}
+                {aircraftStatus === "error" && (
+                  <span className="px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-600">שגיאה</span>
+                )}
+                {(aircraftUnavailable || aircraftStatus === "error") && (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">מקור הנתונים לא זמין כרגע</span>
+                )}
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700 text-[10px]">
+                טווח: {aircraftRangeKm} ק"מ · {aircraftData.length} בטווח
+              </span>
+            </div>
             <button
               onClick={onToggleAircraft}
               className={`w-full flex items-center justify-between text-sm rounded-xl border px-3 py-1.5 transition ${aircraftEnabled ? "bg-blue-600 text-white border-blue-600 shadow-inner" : "bg-white text-blue-800 border-blue-200 hover:bg-blue-100/70"}`}
@@ -734,9 +748,7 @@ const RealtimePanel = ({
                   <Icon name="drone" size={16} />
                 </span>
                 <span className="font-bold text-right">
-                  {aircraftEnabled
-                    ? "הסתר מיקומי מטוסים"
-                    : "הצג מיקומי מטוסים"}
+                  {aircraftEnabled ? "הסתר מיקומי מטוסים" : "הצג מיקומי מטוסים"}
                 </span>
               </div>
               <span
@@ -745,31 +757,6 @@ const RealtimePanel = ({
                 {aircraftEnabled ? "פעיל" : "כבוי"}
               </span>
             </button>
-            {(aircraftUnavailable || aircraftStatus === "error") && (
-              <div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-1 mt-1">
-                מקור הנתונים לא זמין כרגע
-              </div>
-            )}
-            <div className="flex items-center justify-between text-[11px] text-blue-800">
-              <div className="flex items-center gap-2">
-                <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 text-[10px]">
-                  {aircraftData.length} בטווח
-                </span>
-                <span className="text-[10px] text-blue-700">
-                  טווח: {aircraftRangeKm} ק"מ
-                </span>
-              </div>
-              <div className="flex gap-1 text-[10px] text-blue-700">
-                {aircraftStatus === "loading" && <span>מתחבר...</span>}
-                {aircraftStatus === "updating" && <span>מרענן...</span>}
-                {aircraftStatus === "error" && (
-                  <span className="text-red-600">שגיאה</span>
-                )}
-                {aircraftEnabled &&
-                  aircraftData.length === 0 &&
-                  aircraftStatus === "ready" && <span>אין מטוסים בטווח</span>}
-              </div>
-            </div>
             <div className="flex items-center gap-2 text-[11px] text-blue-800">
               <input
                 type="range"
