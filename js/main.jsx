@@ -234,6 +234,13 @@ const App = () => {
   });
   const [docEntries, setDocEntries] = useState([]);
 
+  const ALLOWED_DOC_IMAGE_TYPES = useMemo(
+    () => new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]),
+    [],
+  );
+  const MAX_DOC_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB per image cap
+  const MAX_DOC_IMAGES = 10; // Avoid excessive payload persistence
+
   const activeDrone = useMemo(
     () => AerialPlanner.config.DRONE_PRESETS[selectedDrone] || null,
     [selectedDrone],
@@ -689,24 +696,91 @@ const App = () => {
     container.scrollBy({ left: delta, behavior: "smooth" });
   };
 
+  const sanitizeDataUrl = (dataUrl, mimeType) => {
+    if (typeof dataUrl !== "string") return null;
+    const expectedPrefix = `data:${mimeType}`;
+    if (!dataUrl.startsWith(expectedPrefix)) return null;
+
+    const commaIndex = dataUrl.indexOf(",");
+    if (commaIndex === -1) return null;
+
+    try {
+      const sample = atob(dataUrl.slice(commaIndex + 1, commaIndex + 256));
+      if (/<svg/i.test(sample) || /<script/i.test(sample)) return null;
+    } catch (err) {
+      console.warn("Failed to inspect uploaded image payload", err);
+      return null;
+    }
+
+    return dataUrl;
+  };
+
   const handleDocFileChange = (event) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
+    const errors = [];
+    const safeFiles = [];
+    const currentCount = docForm.images.length;
+
+    files.forEach((file) => {
+      if (!ALLOWED_DOC_IMAGE_TYPES.has(file.type)) {
+        errors.push(`${file.name} לא אושרה (סוג קובץ לא נתמך)`);
+        return;
+      }
+
+      if (file.size > MAX_DOC_IMAGE_BYTES) {
+        errors.push(`${file.name} חורגת מהמגבלה (עד 5MB לקובץ)`);
+        return;
+      }
+
+      if (currentCount + safeFiles.length >= MAX_DOC_IMAGES) {
+        errors.push("חריגה ממספר התמונות המרבי (10)");
+        return;
+      }
+
+      safeFiles.push(file);
+    });
+
+    if (errors.length > 0) {
+      alert(errors.join("\n"));
+    }
+
+    if (safeFiles.length === 0) {
+      event.target.value = "";
+      return;
+    }
+
     Promise.all(
-      files.map(
+      safeFiles.map(
         (file) =>
-          new Promise((resolve) => {
+          new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () =>
-              resolve({ name: file.name, dataUrl: reader.result });
+            reader.onerror = () => reject(new Error("קובץ לא נקרא"));
+            reader.onload = () => {
+              const dataUrl = sanitizeDataUrl(reader.result, file.type);
+              if (!dataUrl) {
+                reject(new Error(`${file.name} נפסל בשל תוכן לא בטוח`));
+                return;
+              }
+
+              resolve({ name: file.name, dataUrl });
+            };
             reader.readAsDataURL(file);
           }),
       ),
-    ).then((results) => {
-      setDocForm((prev) => ({ ...prev, images: [...prev.images, ...results] }));
-  });
-};
+    )
+      .then((results) => {
+        setDocForm((prev) => ({
+          ...prev,
+          images: [...prev.images, ...results],
+        }));
+      })
+      .catch((err) => alert(err.message))
+      .finally(() => {
+        event.target.value = "";
+      });
+  };
 
   const sampleDocumentationLocation = () => {
     if (userLocation) {
