@@ -160,6 +160,23 @@ const computeIsMobile = () => {
   return window.innerWidth < 900 || coarsePointer;
 };
 
+const PDF_FONT_NAME = "DejaVuSans";
+const PDF_FONT_FILENAME = "DejaVuSans.ttf";
+
+const applyPdfFont = (doc) => {
+  const fontData = window.AerialPlannerFonts?.dejaVuSans;
+  if (!fontData) return false;
+
+  const alreadyLoaded = doc.getFontList?.()[PDF_FONT_NAME];
+  if (!alreadyLoaded) {
+    doc.addFileToVFS(PDF_FONT_FILENAME, fontData);
+    doc.addFont(PDF_FONT_FILENAME, PDF_FONT_NAME, "normal");
+  }
+
+  doc.setFont(PDF_FONT_NAME, "normal");
+  return true;
+};
+
 const App = () => {
   const initialIsMobile = computeIsMobile();
 
@@ -872,6 +889,10 @@ const App = () => {
     }
 
     const doc = new window.jspdf.jsPDF({ unit: "mm" });
+    if (!applyPdfFont(doc)) {
+      alert("גופן PDF עם תמיכה בעברית לא נטען.");
+      return;
+    }
     let y = 15;
     doc.setFontSize(16);
     doc.text("כרטיסיית תיעוד", 10, y);
