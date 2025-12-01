@@ -233,6 +233,7 @@ const App = () => {
     location: null,
   });
   const [docEntries, setDocEntries] = useState([]);
+  const [docLocationAllowed, setDocLocationAllowed] = useState(false);
 
   const ALLOWED_DOC_IMAGE_TYPES = useMemo(
     () => new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]),
@@ -240,6 +241,8 @@ const App = () => {
   );
   const MAX_DOC_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB per image cap
   const MAX_DOC_IMAGES = 10; // Avoid excessive payload persistence
+  const MAX_DOC_ENTRIES = 50; // Retention limit to avoid unbounded persistence
+  const DOC_STORAGE_KEY = "aerialPlannerDocEntriesSession";
 
   const activeDrone = useMemo(
     () => AerialPlanner.config.DRONE_PRESETS[selectedDrone] || null,
@@ -279,14 +282,18 @@ const App = () => {
   }, [selectedDrone, opticalZoomLevels ? opticalZoomLevels.length : 0]);
 
   useEffect(() => {
-    if (typeof localStorage === "undefined") return;
+    if (typeof sessionStorage === "undefined") return;
 
     try {
-      const stored = localStorage.getItem("aerialPlannerDocEntries");
+      const stored = sessionStorage.getItem(DOC_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          setDocEntries(parsed);
+          const trimmed = parsed.slice(0, MAX_DOC_ENTRIES).map((entry) => ({
+            ...entry,
+            location: entry.location ?? null,
+          }));
+          setDocEntries(trimmed);
         }
       }
     } catch (e) {
@@ -295,10 +302,13 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (typeof localStorage === "undefined") return;
+    if (typeof sessionStorage === "undefined") return;
 
     try {
-      localStorage.setItem("aerialPlannerDocEntries", JSON.stringify(docEntries));
+      sessionStorage.setItem(
+        DOC_STORAGE_KEY,
+        JSON.stringify(docEntries.slice(0, MAX_DOC_ENTRIES)),
+      );
     } catch (e) {
       console.warn("Failed to persist documentation entries", e);
     }
@@ -783,6 +793,11 @@ const App = () => {
   };
 
   const sampleDocumentationLocation = () => {
+    if (!docLocationAllowed) {
+      alert("הפעל שמירת מיקום לפני דגימת קואורדינטות לאובייקט.");
+      return;
+    }
+
     if (userLocation) {
       setDocForm((prev) => ({
         ...prev,
@@ -827,19 +842,21 @@ const App = () => {
       return;
     }
 
+    const locationPayload = docLocationAllowed ? docForm.location : null;
     const entry = {
       ...docForm,
+      location: locationPayload,
       id: Date.now(),
       timestamp: new Date().toISOString(),
     };
 
-    setDocEntries((prev) => [entry, ...prev]);
+    setDocEntries((prev) => [entry, ...prev].slice(0, MAX_DOC_ENTRIES));
     setDocForm((prev) => ({
       ...prev,
       title: "",
       notes: "",
       images: [],
-      location: prev.location,
+      location: locationPayload,
     }));
   };
 
@@ -947,6 +964,18 @@ const App = () => {
       { type: "FeatureCollection", features },
       { folder: "documentation", types: { point: "docs" } },
     );
+  };
+
+  const clearDocumentationEntries = () => {
+    setDocEntries([]);
+    setDocForm((prev) => ({ ...prev, location: null }));
+    if (typeof sessionStorage !== "undefined") {
+      try {
+        sessionStorage.removeItem(DOC_STORAGE_KEY);
+      } catch (e) {
+        console.warn("Failed to clear stored documentation entries", e);
+      }
+    }
   };
 
   const geolocateButtonStyle = {
@@ -2212,31 +2241,56 @@ const App = () => {
 
                     <div className="flex flex-col gap-2 text-[12px] text-blue-900">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 flex items-center gap-1">
-                            <Icon name="gps" size={12} /> מיקום
-                          </span>
-                          {docForm.location ? (
-                            <span className="text-[11px] text-blue-700">
-                              {docForm.location.lat.toFixed(5)},{" "}
-                              {docForm.location.lng.toFixed(5)} (
-                              {docForm.location.accuracy
-                                ? `±${Math.round(docForm.location.accuracy)}מ'`
-                                : "ללא דיוק"}
-                              )
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-blue-700">
-                              לא דגמת מיקום
-                            </span>
-                          )}
-                        </div>
+                        <label
+                          className={`flex items-center gap-2 text-[11px] font-semibold px-2 py-1 rounded ${
+                            theme === "dark"
+                              ? "bg-slate-900 text-blue-100 border border-slate-700"
+                              : "bg-white text-blue-800 border border-blue-200"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={docLocationAllowed}
+                            onChange={(e) => {
+                              const nextValue = e.target.checked;
+                              setDocLocationAllowed(nextValue);
+                              if (!nextValue) {
+                                setDocForm((prev) => ({ ...prev, location: null }));
+                              }
+                            }}
+                          />
+                          שמור מיקום באובייקט
+                        </label>
                         <button
                           onClick={sampleDocumentationLocation}
-                          className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white hover:bg-blue-500 flex items-center gap-1"
+                          disabled={!docLocationAllowed}
+                          className={`px-2 py-1 text-[11px] rounded flex items-center gap-1 ${
+                            docLocationAllowed
+                              ? "bg-blue-600 text-white hover:bg-blue-500"
+                              : "bg-blue-100 text-blue-500 cursor-not-allowed"
+                          }`}
                         >
                           <Icon name="gps" size={12} /> דגום
                         </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-blue-100 text-blue-700 rounded-full px-2 py-1 flex items-center gap-1">
+                          <Icon name="gps" size={12} /> מיקום
+                        </span>
+                        {docForm.location ? (
+                          <span className="text-[11px] text-blue-700">
+                            {docForm.location.lat.toFixed(5)},{" "}
+                            {docForm.location.lng.toFixed(5)} (
+                            {docForm.location.accuracy
+                              ? `±${Math.round(docForm.location.accuracy)}מ'`
+                              : "ללא דיוק"}
+                            )
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-blue-700">
+                            שמירת מיקום כבויה, נתונים לא יאוחסנו
+                          </span>
+                        )}
                       </div>
 
                       <label
@@ -2291,6 +2345,27 @@ const App = () => {
                       >
                         <Icon name="map" size={16} /> Shapefile
                       </button>
+                      <button
+                        onClick={clearDocumentationEntries}
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold flex items-center justify-center gap-2 ${
+                          theme === "dark"
+                            ? "bg-slate-800 text-red-200 border border-slate-600 hover:bg-slate-700"
+                            : "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                        }`}
+                      >
+                        <Icon name="trash" size={16} /> נקה תיעוד מקומי
+                      </button>
+                    </div>
+
+                    <div
+                      className={`text-[11px] rounded-lg border p-2 ${
+                        theme === "dark"
+                          ? "bg-slate-900/60 text-slate-200 border-slate-700"
+                          : "bg-white text-slate-700 border-blue-200"
+                      }`}
+                    >
+                      נתוני התיעוד נשמרים למשך הסשן בלבד וניתנים לניקוי בכל עת. בטל שמירת מיקום כדי לא לאחסן קואורדינטות שאינן
+                      חיוניות.
                     </div>
 
                     <div className="space-y-2 max-h-72 overflow-y-auto custom-scroll">
