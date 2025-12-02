@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מתכנן משימה - DTM יציב</title>
     
-    <!-- Tailwind CSS (version pinned for integrity) -->
-    <script src="https://cdn.tailwindcss.com/3.4.11" crossorigin="anonymous"></script>
+    <!-- Tailwind CSS (stable CDN endpoint) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
+
+    <link rel="icon" href="data:image/x-icon;,">
 
     <style>
         html, body, #root { height: 100%; margin: 0; overflow: hidden; }
@@ -90,7 +92,7 @@
 
     <!-- Exports -->
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/shp-write@0.3.3/shpwrite.bundle.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/shp-write@0.3.3/shpwrite.js" crossorigin="anonymous"></script>
 
     <!-- React + ReactDOM CDNs -->
     <script src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin="anonymous"></script>
@@ -107,23 +109,13 @@
       // Load Leaflet (CSS + JS) with a CDN fallback before executing the JSX bundles.
       (() => {
         const leafletCss = [
-          {
-            href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
-            integrity: "sha256-o9N1j7kPheG3eRqtHxM5pI64y1bRcicqz1jN8Q64L6k=",
-          },
-          {
-            href: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css",
-          },
+          { href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" },
+          { href: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" },
         ];
 
         const leafletScripts = [
-          {
-            src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
-            integrity: "sha256-o9N1j7kPheG3eRqtHxM5pI64y1bRcicqz1jN8Q64L6k=",
-          },
-          {
-            src: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js",
-          },
+          { src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" },
+          { src: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" },
         ];
 
         const heatScripts = [
@@ -144,7 +136,6 @@
           link.id = "leaflet-css";
           link.rel = "stylesheet";
           link.href = options[index].href;
-          if (options[index].integrity) link.integrity = options[index].integrity;
           link.crossOrigin = "anonymous";
           link.onerror = () => loadStylesheet(options, index + 1);
           document.head.appendChild(link);
@@ -160,7 +151,6 @@
 
               const script = document.createElement("script");
               script.src = sources[idx].src;
-              if (sources[idx].integrity) script.integrity = sources[idx].integrity;
               script.crossOrigin = "anonymous";
               script.onload = () => resolve();
               script.onerror = () => {
