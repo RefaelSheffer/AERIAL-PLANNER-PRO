@@ -234,6 +234,7 @@ const App = () => {
   });
   const [docEntries, setDocEntries] = useState([]);
   const [docLocationAllowed, setDocLocationAllowed] = useState(false);
+  const [docStorageMode, setDocStorageMode] = useState("session");
 
   const ALLOWED_DOC_IMAGE_TYPES = useMemo(
     () => new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]),
@@ -243,6 +244,7 @@ const App = () => {
   const MAX_DOC_IMAGES = 10; // Avoid excessive payload persistence
   const MAX_DOC_ENTRIES = 50; // Retention limit to avoid unbounded persistence
   const DOC_STORAGE_KEY = "aerialPlannerDocEntriesSession";
+  const DOC_LOCAL_STORAGE_KEY = "aerialPlannerDocEntriesLocal";
 
   const activeDrone = useMemo(
     () => AerialPlanner.config.DRONE_PRESETS[selectedDrone] || null,
@@ -282,37 +284,72 @@ const App = () => {
   }, [selectedDrone, opticalZoomLevels ? opticalZoomLevels.length : 0]);
 
   useEffect(() => {
-    if (typeof sessionStorage === "undefined") return;
+    if (typeof window === "undefined") return;
 
-    try {
-      const stored = sessionStorage.getItem(DOC_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          const trimmed = parsed.slice(0, MAX_DOC_ENTRIES).map((entry) => ({
-            ...entry,
-            location: entry.location ?? null,
-          }));
-          setDocEntries(trimmed);
+    const loadEntriesFromStorage = (storage, key) => {
+      try {
+        const stored = storage?.getItem(key);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            return parsed.slice(0, MAX_DOC_ENTRIES).map((entry) => ({
+              ...entry,
+              location: entry.location ?? null,
+            }));
+          }
         }
+      } catch (e) {
+        console.warn("Failed to read stored documentation entries", e);
       }
-    } catch (e) {
-      console.warn("Failed to read stored documentation entries", e);
+      return null;
+    };
+
+    const localEntries =
+      typeof localStorage !== "undefined"
+        ? loadEntriesFromStorage(localStorage, DOC_LOCAL_STORAGE_KEY)
+        : null;
+    if (localEntries?.length) {
+      setDocEntries(localEntries);
+      setDocStorageMode("local");
+      return;
+    }
+
+    const sessionEntries =
+      typeof sessionStorage !== "undefined"
+        ? loadEntriesFromStorage(sessionStorage, DOC_STORAGE_KEY)
+        : null;
+    if (sessionEntries?.length) {
+      setDocEntries(sessionEntries);
     }
   }, []);
 
   useEffect(() => {
-    if (typeof sessionStorage === "undefined") return;
+    if (typeof window === "undefined") return;
+
+    const targetKey =
+      docStorageMode === "local" ? DOC_LOCAL_STORAGE_KEY : DOC_STORAGE_KEY;
+    const targetStorage =
+      docStorageMode === "local" ? localStorage : sessionStorage;
 
     try {
-      sessionStorage.setItem(
-        DOC_STORAGE_KEY,
+      targetStorage?.setItem(
+        targetKey,
         JSON.stringify(docEntries.slice(0, MAX_DOC_ENTRIES)),
       );
     } catch (e) {
       console.warn("Failed to persist documentation entries", e);
     }
-  }, [docEntries]);
+
+    const staleKey =
+      docStorageMode === "local" ? DOC_STORAGE_KEY : DOC_LOCAL_STORAGE_KEY;
+    const staleStorage =
+      docStorageMode === "local" ? sessionStorage : localStorage;
+    try {
+      staleStorage?.removeItem(staleKey);
+    } catch (e) {
+      console.warn("Failed to clean stale documentation entries", e);
+    }
+  }, [docEntries, docStorageMode]);
 
   const themeStyles = useMemo(() => {
     const isDark = theme === "dark";
@@ -933,6 +970,74 @@ const App = () => {
     doc.save("documentation.pdf");
   };
 
+  const serializeDocumentation = () => ({
+    version: "1.0",
+    generatedAt: new Date().toISOString(),
+    entries: docEntries.slice(0, MAX_DOC_ENTRIES).map((entry) => ({
+      ...entry,
+      location: entry.location ?? null,
+    })),
+  });
+
+  const downloadDocumentationProject = () => {
+    if (docEntries.length === 0) {
+      alert("אין אובייקטים לייצוא.");
+      return;
+    }
+
+    const blob = new Blob([JSON.stringify(serializeDocumentation(), null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "aerial-planner-documentation.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const shareDocumentationProject = async () => {
+    if (docEntries.length === 0) {
+      alert("אין אובייקטים לשיתוף.");
+      return;
+    }
+
+    const payload = serializeDocumentation();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const filename = "aerial-planner-documentation.json";
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.canShare) {
+        const file = new File([blob], filename, { type: "application/json" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "כרטיסיית תיעוד",
+            text: "קובץ תיעוד לשיתוף מהאפליקציה",
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Native share failed, falling back to WhatsApp link", e);
+    }
+
+    const summaryText = [
+      "שיתוף תיעוד משימה:",
+      ...docEntries.slice(0, 5).map((entry, idx) =>
+        `${idx + 1}. ${entry.title || "ללא כותרת"}${
+          entry.notes ? ` – ${entry.notes.slice(0, 80)}` : ""
+        }`,
+      ),
+      "נוצר מ- Aerial Planner",
+    ].join("\n");
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(summaryText)}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
   const exportDocumentationShapefile = () => {
     if (!window.shpwrite) {
       alert("ספריית Shapefile לא נטענה.");
@@ -969,13 +1074,17 @@ const App = () => {
   const clearDocumentationEntries = () => {
     setDocEntries([]);
     setDocForm((prev) => ({ ...prev, location: null }));
-    if (typeof sessionStorage !== "undefined") {
+    [
+      [sessionStorage, DOC_STORAGE_KEY],
+      [localStorage, DOC_LOCAL_STORAGE_KEY],
+    ].forEach(([storage, key]) => {
+      if (typeof storage === "undefined") return;
       try {
-        sessionStorage.removeItem(DOC_STORAGE_KEY);
+        storage.removeItem(key);
       } catch (e) {
         console.warn("Failed to clear stored documentation entries", e);
       }
-    }
+    });
   };
 
   const geolocateButtonStyle = {
@@ -2210,6 +2319,49 @@ const App = () => {
                       <Icon name="close" size={16} />
                     </button>
                   </div>
+                  <div
+                    className={`flex flex-col gap-2 rounded-lg border px-3 py-2 text-[11px] ${
+                      theme === "dark"
+                        ? "bg-slate-900 text-blue-100 border-slate-700"
+                        : "bg-blue-50 text-blue-800 border-blue-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">מצב שמירת התיעוד</span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] ${
+                          docStorageMode === "local"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {docStorageMode === "local" ? "שמירה מקומית" : "סשן בלבד"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="leading-relaxed">
+                        {docStorageMode === "local"
+                          ? "האובייקטים נשמרים במכשיר וממשיכים להיות זמינים גם אחרי רענון."
+                          : "האובייקטים נשמרים בסשן הנוכחי בלבד ויימחקו בעת סגירת הטאב."}
+                      </p>
+                      <label
+                        className={`flex items-center gap-2 text-[11px] font-semibold px-2 py-1 rounded cursor-pointer ${
+                          theme === "dark"
+                            ? "bg-slate-800 text-blue-100 border border-slate-700"
+                            : "bg-white text-blue-800 border border-blue-200"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={docStorageMode === "local"}
+                          onChange={(e) =>
+                            setDocStorageMode(e.target.checked ? "local" : "session")
+                          }
+                        />
+                        שמור מקומית במכשיר
+                      </label>
+                    </div>
+                  </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
                     <div className="grid grid-cols-1 gap-2">
@@ -2357,6 +2509,29 @@ const App = () => {
                       </button>
                     </div>
 
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={downloadDocumentationProject}
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold flex items-center justify-center gap-2 ${
+                          theme === "dark"
+                            ? "bg-slate-900 text-white border border-slate-700 hover:bg-slate-800"
+                            : "bg-white text-blue-800 border border-blue-200 hover:bg-blue-50"
+                        }`}
+                      >
+                        <Icon name="export" size={16} /> הורד קובץ פרויקט
+                      </button>
+                      <button
+                        onClick={shareDocumentationProject}
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold flex items-center justify-center gap-2 ${
+                          theme === "dark"
+                            ? "bg-blue-800 text-white hover:bg-blue-700"
+                            : "bg-green-100 text-green-800 border border-green-200 hover:bg-green-50"
+                        }`}
+                      >
+                        <Icon name="upload" size={16} /> שיתוף וואטסאפ/שיתוף מכשיר
+                      </button>
+                    </div>
+
                     <div
                       className={`text-[11px] rounded-lg border p-2 ${
                         theme === "dark"
@@ -2364,8 +2539,8 @@ const App = () => {
                           : "bg-white text-slate-700 border-blue-200"
                       }`}
                     >
-                      נתוני התיעוד נשמרים למשך הסשן בלבד וניתנים לניקוי בכל עת. בטל שמירת מיקום כדי לא לאחסן קואורדינטות שאינן
-                      חיוניות.
+                      נתוני התיעוד נשמרים אוטומטית בהתאם למצב שנבחר למעלה. שמירת מיקום נשמרת רק אם הפיצ'ר פעיל וניתן לניקוי בכל
+                      עת. ניתן גם להוריד קובץ פרויקט או לשתף מידית בוואטסאפ.
                     </div>
 
                     <div className="space-y-2 max-h-72 overflow-y-auto custom-scroll">
