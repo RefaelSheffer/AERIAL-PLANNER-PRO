@@ -3,6 +3,38 @@
 // Uses global AerialPlannerConfig, DRONE_PRESETS, AerialPlannerServices, and AerialPlannerComponents to render the experience.
 "use strict";
 
+const renderDependencyError =
+  window.renderPlannerDependencyError ||
+  ((missingDeps) => {
+    const root = document.getElementById("root");
+    if (!root) return;
+
+    root.innerHTML = `
+      <div style="font-family: 'Heebo', sans-serif; padding: 24px; max-width: 720px; margin: 0 auto; text-align: right;">
+        <h1 style="font-size: 24px; margin-bottom: 12px;">האתר לא נטען</h1>
+        <p style="margin-bottom: 8px;">לא הצלחנו לטעון את הספריות החיצוניות הנדרשות להפעלת האפליקציה.</p>
+        <p style="margin-bottom: 16px;">אנא ודאו שיש גישה לאינטרנט או שה-CDN לא חסום.</p>
+        <div style="background: #f1f5f9; padding: 12px 16px; border-radius: 12px; color: #0f172a;">
+          <strong>תלויות חסרות:</strong>
+          <ul style="margin-top: 8px; padding-inline-start: 20px;">
+            ${missingDeps.map((name) => `<li>${name}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+    `;
+  });
+
+const missingDeps = [];
+if (typeof React === "undefined") missingDeps.push("React");
+if (typeof ReactDOM === "undefined") missingDeps.push("ReactDOM");
+if (typeof Babel === "undefined") missingDeps.push("Babel");
+if (typeof L === "undefined") missingDeps.push("Leaflet");
+
+if (missingDeps.length) {
+  renderDependencyError(missingDeps);
+  throw new Error(`Missing client dependencies: ${missingDeps.join(", ")}`);
+}
+
 // Main application setup
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const Config = window.AerialPlannerConfig;
