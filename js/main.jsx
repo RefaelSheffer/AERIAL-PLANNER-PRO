@@ -30,7 +30,7 @@ const AerialPlanner = {
  * @returns {number|null} Sun altitude in degrees above the horizon, or null when unavailable.
  */
 const computeSunAltitudeDeg = (weatherLocation, dateStr) => {
-  if (!SunCalc || !weatherLocation) return null;
+  if (typeof SunCalc === "undefined" || !weatherLocation) return null;
   const [lat, lng] = weatherLocation;
   const pos = SunCalc.getPosition(new Date(dateStr), lat, lng);
   if (!pos || Number.isNaN(pos.altitude)) return null;
@@ -1247,7 +1247,7 @@ const App = () => {
    * @param {{lat: number, lng: number, ele: number}[]} grid - Elevation samples used to derive relative heights.
    */
   const calcShadows = (grid, minEle) => {
-    if (!SunCalc) return;
+    if (typeof SunCalc === "undefined") return;
     const sun = SunCalc.getPosition(
       new Date(flightDate),
       mapCenter[0],
