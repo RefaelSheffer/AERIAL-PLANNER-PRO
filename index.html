@@ -88,18 +88,18 @@
     <script src="./drone-data.js"></script>
 
     <!-- SunCalc -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
 
     <!-- Exports -->
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/shp-write@0.3.3/shpwrite.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/shp-write@0.3.3/shpwrite.js"></script>
 
     <!-- React + ReactDOM CDNs -->
-    <script src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
 
     <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone@7.25.5/babel.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.25.5/babel.min.js"></script>
 
     <!-- Non-JSX scripts -->
     <script src="js/config.js"></script>
@@ -136,7 +136,6 @@
           link.id = "leaflet-css";
           link.rel = "stylesheet";
           link.href = options[index].href;
-          link.crossOrigin = "anonymous";
           link.onerror = () => loadStylesheet(options, index + 1);
           document.head.appendChild(link);
         };
@@ -151,7 +150,6 @@
 
               const script = document.createElement("script");
               script.src = sources[idx].src;
-              script.crossOrigin = "anonymous";
               script.onload = () => resolve();
               script.onerror = () => {
                 script.remove();
