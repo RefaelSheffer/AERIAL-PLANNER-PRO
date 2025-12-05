@@ -4,24 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>מתכנן משימה - DTM יציב</title>
-    
+
     <!-- Tailwind CSS (stable CDN endpoint) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
 
     <link rel="icon" href="data:image/x-icon;,">
 
+    <!-- Local vendor styles -->
+    <link rel="stylesheet" href="./lib/leaflet.css" />
+
     <style>
         html, body, #root { height: 100%; margin: 0; overflow: hidden; }
         body { font-family: 'Heebo', sans-serif; background-color: #f8fafc; color: #0f172a; }
         body[data-theme="dark"] { background-color: #0f172a; color: #e2e8f0; }
-        
+
         #map { height: 100%; width: 100%; z-index: 0; }
-        
+
         .input-field { @apply w-full p-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none bg-white text-slate-800; }
-        
+
         /* Slider styling */
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #2563eb; cursor: pointer; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
@@ -58,7 +61,7 @@
           <div style="font-family: 'Heebo', sans-serif; padding: 24px; max-width: 720px; margin: 0 auto; text-align: right;">
             <h1 style="font-size: 24px; margin-bottom: 12px;">האתר לא נטען</h1>
             <p style="margin-bottom: 8px;">לא הצלחנו לטעון את הספריות החיצוניות הנדרשות להפעלת האפליקציה.</p>
-            <p style="margin-bottom: 16px;">אנא ודאו שיש גישה לאינטרנט או שה-CDN לא חסום.</p>
+            <p style="margin-bottom: 16px;">אנא ודאו שהקבצים קיימים בתיקיית <code>lib</code> (או שיש גישה לאינטרנט עבור CDN אם משתמשים בהם).</p>
             <div style="background: #f1f5f9; padding: 12px 16px; border-radius: 12px; color: #0f172a;">
               <strong>תלויות חסרות:</strong>
               <ul style="margin-top: 8px; padding-inline-start: 20px;">
@@ -87,111 +90,22 @@
     <!-- Drone Data -->
     <script src="./drone-data.js"></script>
 
-    <!-- SunCalc -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
-
-    <!-- Exports -->
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/shp-write@0.3.3/shpwrite.js"></script>
-
-    <!-- React + ReactDOM CDNs -->
-    <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
-
-    <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone@7.25.5/babel.min.js"></script>
+    <!-- Local vendor bundles -->
+    <script src="./lib/suncalc.min.js"></script>
+    <script src="./lib/jspdf.umd.min.js"></script>
+    <script src="./lib/shp-write.js"></script>
+    <script src="./lib/react.production.min.js"></script>
+    <script src="./lib/react-dom.production.min.js"></script>
+    <script src="./lib/babel.min.js"></script>
+    <script src="./lib/leaflet.js"></script>
+    <script src="./lib/leaflet-heat.js"></script>
 
     <!-- Non-JSX scripts -->
     <script src="js/config.js"></script>
     <script src="js/services.js"></script>
 
-    <script>
-      // Load Leaflet (CSS + JS) with a CDN fallback before executing the JSX bundles.
-      (() => {
-        const leafletCss = [
-          { href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" },
-          { href: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" },
-        ];
-
-        const leafletScripts = [
-          { src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" },
-          { src: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" },
-        ];
-
-        const heatScripts = [
-          {
-            src: "https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js",
-          },
-          {
-            src: "https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js",
-          },
-        ];
-
-        const loadStylesheet = (options, index = 0) => {
-          if (index >= options.length) return;
-          const existing = document.getElementById("leaflet-css");
-          if (existing) existing.remove();
-
-          const link = document.createElement("link");
-          link.id = "leaflet-css";
-          link.rel = "stylesheet";
-          link.href = options[index].href;
-          link.onerror = () => loadStylesheet(options, index + 1);
-          document.head.appendChild(link);
-        };
-
-        const loadScriptSequentially = (sources) =>
-          new Promise((resolve, reject) => {
-            const tryLoad = (idx = 0) => {
-              if (idx >= sources.length) {
-                reject(new Error("Unable to load script"));
-                return;
-              }
-
-              const script = document.createElement("script");
-              script.src = sources[idx].src;
-              script.onload = () => resolve();
-              script.onerror = () => {
-                script.remove();
-                tryLoad(idx + 1);
-              };
-              document.head.appendChild(script);
-            };
-
-            tryLoad();
-          });
-
-        const loadJsxBundles = () => {
-          const queue = [
-            { src: "js/components.jsx", type: "text/babel" },
-            { src: "js/main.jsx", type: "text/babel" },
-          ];
-
-          const appendNext = () => {
-            if (!queue.length) return;
-            const { src, type } = queue.shift();
-            const script = document.createElement("script");
-            script.type = type;
-            script.src = src;
-            script.setAttribute("data-presets", "env,react");
-            script.onload = appendNext;
-            script.onerror = () =>
-              window.renderPlannerDependencyError?.(["Leaflet"]);
-            document.body.appendChild(script);
-          };
-
-          appendNext();
-        };
-
-        loadStylesheet(leafletCss);
-
-        window.plannerDepsReady = loadScriptSequentially(leafletScripts)
-          .then(() => loadScriptSequentially(heatScripts))
-          .then(loadJsxBundles)
-          .catch(() => {
-            window.renderPlannerDependencyError?.(["Leaflet"]);
-          });
-      })();
-    </script>
+    <!-- JSX bundles -->
+    <script src="js/components.jsx" type="text/babel" data-presets="env,react"></script>
+    <script src="js/main.jsx" type="text/babel" data-presets="env,react"></script>
 </body>
 </html>

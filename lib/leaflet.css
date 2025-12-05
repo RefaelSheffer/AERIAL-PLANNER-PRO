@@ -1,0 +1,5 @@
+/* Placeholder for Leaflet 1.9.4 CSS.
+ * Replace with the official stylesheet from:
+ * https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
+ */
+#map { height: 100%; width: 100%; }
