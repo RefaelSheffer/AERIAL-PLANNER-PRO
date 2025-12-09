@@ -45,6 +45,7 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="./lib/leaflet.css">
 </head>
 <body>
     <div id="root"></div>
@@ -87,111 +88,21 @@
     <!-- Drone Data -->
     <script src="./drone-data.js"></script>
 
-    <!-- SunCalc -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
-
-    <!-- Exports -->
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/shp-write@0.3.3/shpwrite.js"></script>
-
-    <!-- React + ReactDOM CDNs -->
-    <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
-
-    <!-- Babel -->
-    <script src="https://unpkg.com/@babel/standalone@7.25.5/babel.min.js"></script>
+    <!-- Local vendor bundles -->
+    <script src="./lib/react.production.min.js"></script>
+    <script src="./lib/react-dom.production.min.js"></script>
+    <script src="./lib/babel.min.js"></script>
+    <script src="./lib/leaflet.js"></script>
+    <script src="./lib/leaflet-heat.js"></script>
+    <script src="./lib/suncalc.min.js"></script>
+    <script src="./lib/jspdf.umd.min.js"></script>
+    <script src="./lib/shp-write.js"></script>
 
     <!-- Non-JSX scripts -->
     <script src="js/config.js"></script>
     <script src="js/services.js"></script>
 
-    <script>
-      // Load Leaflet (CSS + JS) with a CDN fallback before executing the JSX bundles.
-      (() => {
-        const leafletCss = [
-          { href: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" },
-          { href: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" },
-        ];
-
-        const leafletScripts = [
-          { src: "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" },
-          { src: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" },
-        ];
-
-        const heatScripts = [
-          {
-            src: "https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js",
-          },
-          {
-            src: "https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js",
-          },
-        ];
-
-        const loadStylesheet = (options, index = 0) => {
-          if (index >= options.length) return;
-          const existing = document.getElementById("leaflet-css");
-          if (existing) existing.remove();
-
-          const link = document.createElement("link");
-          link.id = "leaflet-css";
-          link.rel = "stylesheet";
-          link.href = options[index].href;
-          link.onerror = () => loadStylesheet(options, index + 1);
-          document.head.appendChild(link);
-        };
-
-        const loadScriptSequentially = (sources) =>
-          new Promise((resolve, reject) => {
-            const tryLoad = (idx = 0) => {
-              if (idx >= sources.length) {
-                reject(new Error("Unable to load script"));
-                return;
-              }
-
-              const script = document.createElement("script");
-              script.src = sources[idx].src;
-              script.onload = () => resolve();
-              script.onerror = () => {
-                script.remove();
-                tryLoad(idx + 1);
-              };
-              document.head.appendChild(script);
-            };
-
-            tryLoad();
-          });
-
-        const loadJsxBundles = () => {
-          const queue = [
-            { src: "js/components.jsx", type: "text/babel" },
-            { src: "js/main.jsx", type: "text/babel" },
-          ];
-
-          const appendNext = () => {
-            if (!queue.length) return;
-            const { src, type } = queue.shift();
-            const script = document.createElement("script");
-            script.type = type;
-            script.src = src;
-            script.setAttribute("data-presets", "env,react");
-            script.onload = appendNext;
-            script.onerror = () =>
-              window.renderPlannerDependencyError?.(["Leaflet"]);
-            document.body.appendChild(script);
-          };
-
-          appendNext();
-        };
-
-        loadStylesheet(leafletCss);
-
-        window.plannerDepsReady = loadScriptSequentially(leafletScripts)
-          .then(() => loadScriptSequentially(heatScripts))
-          .then(loadJsxBundles)
-          .catch(() => {
-            window.renderPlannerDependencyError?.(["Leaflet"]);
-          });
-      })();
-    </script>
+    <script type="text/babel" src="js/components.jsx" data-presets="env,react"></script>
+    <script type="text/babel" src="js/main.jsx" data-presets="env,react"></script>
 </body>
 </html>
