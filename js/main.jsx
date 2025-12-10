@@ -244,7 +244,6 @@ const App = () => {
   const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
   const [isMobile, setIsMobile] = useState(initialIsMobile);
   const [mobileDayIndex, setMobileDayIndex] = useState(0);
-  const overlayExclusive = isMobile;
   const [realtimePanelOpen, setRealtimePanelOpen] = useState(false);
   const [rainRadarEnabled, setRainRadarEnabled] = useState(false);
   const [rainRadarStatus, setRainRadarStatus] = useState("idle");
@@ -445,7 +444,7 @@ const App = () => {
   const [desktopDockOffset, setDesktopDockOffset] = useState(16);
 
   /**
-   * Toggle visibility of the sidebar, realtime panel, or timeline with mobile-aware exclusivity rules.
+   * Toggle visibility of the sidebar, realtime panel, or timeline while keeping them mutually exclusive.
    * @param {"sidebar"|"realtime"|"timeline"} panel - Target panel key to toggle.
    */
   const toggleExclusivePanel = useCallback(
@@ -458,36 +457,12 @@ const App = () => {
 
       const shouldOpen = !states[panel];
 
-      // On mobile keep panels exclusive to avoid layout overlap.
-      if (overlayExclusive) {
-        setSidebarOpen(panel === "sidebar" ? shouldOpen : false);
-        setRealtimePanelOpen(panel === "realtime" ? shouldOpen : false);
-        setShowTimeline(panel === "timeline" ? shouldOpen : false);
-        setDocumentationOpen(false);
-        return;
-      }
-
-      // Desktop: allow the planning sidebar and weather board together.
-      if (panel === "sidebar") {
-        setSidebarOpen(shouldOpen);
-        if (shouldOpen) setDocumentationOpen(false);
-        return;
-      }
-
-      if (panel === "timeline") {
-        setShowTimeline(shouldOpen);
-        return;
-      }
-
-      // Realtime panel remains exclusive to reduce clutter.
-      setRealtimePanelOpen(shouldOpen);
-      if (shouldOpen) {
-        setSidebarOpen(false);
-        setShowTimeline(false);
-        setDocumentationOpen(false);
-      }
+      setSidebarOpen(panel === "sidebar" ? shouldOpen : false);
+      setRealtimePanelOpen(panel === "realtime" ? shouldOpen : false);
+      setShowTimeline(panel === "timeline" ? shouldOpen : false);
+      setDocumentationOpen(false);
     },
-    [sidebarOpen, realtimePanelOpen, showTimeline, overlayExclusive],
+    [sidebarOpen, realtimePanelOpen, showTimeline],
   );
 
   /**
