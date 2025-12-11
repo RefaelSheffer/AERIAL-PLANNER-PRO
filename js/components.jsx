@@ -217,7 +217,7 @@ const TimelineBoard = ({
   const timelineCardSizing = isMobile ? "max-h-[78vh]" : "max-h-[82vh]";
 
   const timelineCardStyle = React.useMemo(() => {
-    const fallbackWidth = isMobile ? "calc(100vw - 32px)" : "22rem";
+    const fallbackWidth = "clamp(20rem, calc(100vw - 32px), 22rem)";
     const width = panelWidth || fallbackWidth;
 
     return {
@@ -473,9 +473,7 @@ const TimelineBoard = ({
                         </span>
                       </div>
                     </div>
-                    <div
-                      className={`grid ${isMobile ? "grid-cols-2 gap-1.5" : "grid-cols-1 gap-2"}`}
-                    >
+                    <div className="grid grid-cols-1 gap-2">
                       {!timelineEmpty && day.displaySlots.length > 0 ? (
                         day.displaySlots.map((slot) => {
                           const slotKey = `${day.day}T${slot.time}`;
@@ -515,7 +513,7 @@ const TimelineBoard = ({
                                 {slot.wind?.toFixed(1) ?? "-"} מ"ש
                                 {!isMobile && slot.isMajor && (
                                   <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">
-                                    מרווח 6ש'
+                                    מרווח 6 ש׳
                                   </span>
                                 )}
                               </div>
@@ -530,18 +528,12 @@ const TimelineBoard = ({
                                     style={{ width: `${slot.clouds ?? 0}%` }}
                                   ></div>
                                 </div>
-                                <div
-                                  className={`${
-                                    isMobile
-                                      ? "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 whitespace-nowrap"
-                                      : "text-[9px] text-slate-600 flex flex-wrap items-center gap-1 justify-center whitespace-nowrap"
-                                  }`}
-                                >
-                                  <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center whitespace-nowrap">
+                                <div className="text-[9px] text-slate-600 flex flex-wrap items-center gap-1 justify-center">
+                                  <span className="flex-1 min-w-0 px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center overflow-hidden text-ellipsis">
                                     עננות {slot.clouds ?? 0}%
                                   </span>
                                   <span
-                                    className={`min-w-[82px] px-1.5 py-0.5 rounded-full border text-center whitespace-nowrap ${
+                                    className={`flex-1 min-w-0 px-1.5 py-0.5 rounded-full border text-center overflow-hidden text-ellipsis ${
                                       slot.isFlyable
                                         ? "bg-green-50 text-green-700 border-green-200"
                                         : "bg-blue-50 text-blue-700 border-blue-200"
@@ -549,12 +541,8 @@ const TimelineBoard = ({
                                   >
                                     גשם {slot.rainProb ?? 0}%
                                   </span>
-                                  <span className="min-w-[82px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center whitespace-nowrap">
-                                    משבים{" "}
-                                    {slot.gust?.toFixed(1) ??
-                                      slot.wind?.toFixed(1) ??
-                                      "-"}{" "}
-                                    מ"ש
+                                  <span className="flex-1 min-w-0 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center overflow-hidden text-ellipsis">
+                                    משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? "-"} מ"ש
                                   </span>
                                 </div>
                               </div>
@@ -618,7 +606,7 @@ const RealtimePanel = ({
             זמן אמת
           </div>
           <h2 className="text-xl font-black text-slate-900 leading-tight">
-            מקם גשם ומיקומי מטוסים
+            מכ״ם גשם ומיקומי מטוסים
           </h2>
           <p className="text-sm text-slate-600">
             הפעלת שכבות מפה מתעדכנות ללא טקסט כפול או עומס מיותר.
@@ -634,9 +622,9 @@ const RealtimePanel = ({
                 <Icon name="radar" size={18} />
               </span>
               <div className="leading-tight text-right">
-                <div className="font-bold text-slate-900">מקם גשם</div>
+                <div className="font-bold text-slate-900">מכ״ם גשם</div>
                 <div className="text-[11px] text-blue-800/80">
-                  RainViewer · מתעדכן כל 5 דק'
+                  RainViewer · מתעדכן כל 5 דקות
                 </div>
               </div>
             </div>
@@ -651,12 +639,12 @@ const RealtimePanel = ({
               <div className="flex flex-wrap gap-2 items-center">
                 {rainRadarStatus === "loading" && (
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                    מקם טוען...
+                    מכ״ם נטען...
                   </span>
                 )}
                 {rainRadarStatus === "error" && (
                   <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
-                    מקם לא זמין
+                    מכ״ם לא זמין
                   </span>
                 )}
                 {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
@@ -696,7 +684,7 @@ const RealtimePanel = ({
                 onClick={onRefreshRainRadar}
                 className="flex items-center justify-center rounded-xl border border-blue-200 bg-white text-sm font-semibold text-blue-700 hover:bg-blue-50/80"
               >
-                רענון מקם
+                רענון מכ״ם
               </button>
             </div>
           </div>

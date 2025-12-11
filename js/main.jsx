@@ -2234,7 +2234,7 @@ const App = () => {
                 <div className="font-bold text-sm">{stats.dist}m</div>
               </div>
               <div className={`${themeStyles.subtlePanel} p-1 rounded border ${theme === "dark" ? "border-slate-700" : "border-slate-200"}`}>
-                <div className={`text-[9px] ${themeStyles.subtleText}`}>זמן (דק')</div>
+                <div className={`text-[9px] ${themeStyles.subtleText}`}>זמן (דקות)</div>
                 <div className={`font-bold text-sm ${themeStyles.accent}`}>
                   <Icon name="clock" size={10} className="inline mr-1" />
                   {stats.time}
