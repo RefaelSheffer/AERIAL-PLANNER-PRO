@@ -216,6 +216,10 @@ const TimelineBoard = ({
   const timelineEmpty = preparedTimeline.length === 0;
   const timelineCardSizing = isMobile ? "max-h-[78vh]" : "max-h-[82vh]";
 
+  const timelineScrollArea = isMobile
+    ? "flex-1 overflow-y-auto max-h-[74vh]"
+    : "flex-1 overflow-y-auto max-h-[80vh]";
+
   const timelineCardStyle = React.useMemo(() => {
     const fallbackWidth = "clamp(20rem, calc(100vw - 32px), 22rem)";
     const width = panelWidth || fallbackWidth;
@@ -232,7 +236,7 @@ const TimelineBoard = ({
   if (showStableSummary) {
     return (
       <div
-        className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
+        className={`bg-white/95 backdrop-blur border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing} flex flex-col overflow-hidden`}
         style={timelineCardStyle}
       >
         {dataUnavailable && (
@@ -266,7 +270,7 @@ const TimelineBoard = ({
             </div>
           </div>
         )}
-        <div className="px-3 pb-2">
+        <div className="px-3 pb-2 flex-1 overflow-y-auto">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-[70vh] overflow-y-auto custom-scroll">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-[12px] font-black text-blue-900">
@@ -320,7 +324,7 @@ const TimelineBoard = ({
 
   return (
     <div
-      className={`bg-white/95 border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing}`}
+      className={`bg-white/95 backdrop-blur border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing} flex flex-col overflow-hidden`}
       style={timelineCardStyle}
     >
       {dataUnavailable && (
@@ -355,7 +359,7 @@ const TimelineBoard = ({
         </div>
       )}
       {showStableSummary && (
-        <div className="px-3 pb-2">
+        <div className="px-3 pb-2 flex-1 overflow-y-auto">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-[70vh] overflow-y-auto custom-scroll">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-[12px] font-black text-blue-900">
@@ -431,16 +435,14 @@ const TimelineBoard = ({
         </div>
       )}
       {!showStableSummary && (
-        <div className="relative">
+        <div className="relative flex-1 flex flex-col overflow-hidden">
           <div
             ref={timelineContainerRef}
-            className={`custom-scroll ${
-              isMobile ? "overflow-y-auto max-h-[74vh]" : "overflow-y-auto max-h-[80vh]"
-            }`}
+            className={`custom-scroll ${timelineScrollArea}`}
           >
             <div
-                className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex flex-col gap-3 p-3"}`}
-              >
+              className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex flex-col gap-3 p-3"}`}
+            >
                 {preparedTimeline.map((day) => (
                   <div
                     key={day.day}
