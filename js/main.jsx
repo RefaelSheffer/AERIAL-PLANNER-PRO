@@ -3,6 +3,15 @@
 // Uses global AerialPlannerConfig, DRONE_PRESETS, AerialPlannerServices, and AerialPlannerComponents to render the experience.
 "use strict";
 
+// Feature flags (set to false to disable panels without removing code).
+const ENABLE_MISSION_PLANNING = false;
+const ENABLE_REALTIME_PANEL = false;
+const ENABLE_DOCUMENTATION = false;
+const WEATHER_ONLY_MODE =
+  !ENABLE_MISSION_PLANNING &&
+  !ENABLE_REALTIME_PANEL &&
+  !ENABLE_DOCUMENTATION;
+
 const renderDependencyError =
   window.renderPlannerDependencyError ||
   ((missingDeps) => {
@@ -239,8 +248,10 @@ const App = () => {
   const [terrainShadows, setTerrainShadows] = useState([]);
   const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
   const [weatherUnavailable, setWeatherUnavailable] = useState(false);
-  const [showTimeline, setShowTimeline] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(!initialIsMobile);
+  const [showTimeline, setShowTimeline] = useState(WEATHER_ONLY_MODE);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    ENABLE_MISSION_PLANNING && !initialIsMobile,
+  );
   const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
   const [isMobile, setIsMobile] = useState(initialIsMobile);
   const [mobileDayIndex, setMobileDayIndex] = useState(0);
@@ -442,6 +453,9 @@ const App = () => {
   const sidebarRef = useRef(null);
   const realtimePanelRef = useRef(null);
   const [desktopDockOffset, setDesktopDockOffset] = useState(16);
+  const showPlannerLayout =
+    ENABLE_MISSION_PLANNING || ENABLE_REALTIME_PANEL || ENABLE_DOCUMENTATION;
+  const timelineVisible = WEATHER_ONLY_MODE ? true : showTimeline;
 
   /**
    * Toggle visibility of the sidebar, realtime panel, or timeline while keeping them mutually exclusive.
@@ -449,6 +463,12 @@ const App = () => {
    */
   const toggleExclusivePanel = useCallback(
     (panel) => {
+      if (panel === "sidebar" && !ENABLE_MISSION_PLANNING) return;
+      if (panel === "realtime" && !ENABLE_REALTIME_PANEL) return;
+      if (panel === "timeline" && WEATHER_ONLY_MODE) {
+        setShowTimeline(true);
+        return;
+      }
       const states = {
         sidebar: sidebarOpen,
         realtime: realtimePanelOpen,
@@ -470,6 +490,7 @@ const App = () => {
    * and other overlays to prevent simultaneous open states (especially on mobile).
    */
   const toggleDocumentation = useCallback(() => {
+    if (!ENABLE_DOCUMENTATION) return;
     setDocumentationOpen((isOpen) => {
       const next = !isOpen;
       if (next) {
@@ -1408,6 +1429,7 @@ const App = () => {
 
   // --- Map Rendering ---
   useEffect(() => {
+    if (WEATHER_ONLY_MODE) return;
     if (!mapRef.current) {
       const esriImagery = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -1669,7 +1691,7 @@ const App = () => {
 
   const timelineBoard = (
     <TimelineBoard
-      show={showTimeline}
+      show={timelineVisible}
       isMobile={isMobile}
       windTimeline={windTimeline}
       visibleTimeline={visibleTimeline}
@@ -1698,7 +1720,7 @@ const App = () => {
 
   return (
     <>
-      {showSettings && (
+      {ENABLE_MISSION_PLANNING && showSettings && (
         <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="relative bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -1898,8 +1920,14 @@ const App = () => {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row h-full relative overflow-x-hidden">
+      {WEATHER_ONLY_MODE ? (
+        <div className="h-full w-full bg-slate-950 flex items-end justify-center">
+          {timelineBoard}
+        </div>
+      ) : (
+        <div className="flex flex-col md:flex-row h-full relative overflow-x-hidden">
         {/* Controls Sidebar */}
+        {ENABLE_MISSION_PLANNING && (
         <Sidebar
           open={sidebarOpen}
           containerRef={sidebarRef}
@@ -2260,8 +2288,10 @@ const App = () => {
             </div>
           </div>
         </Sidebar>
+        )}
 
         {/* Map */}
+        {showPlannerLayout && (
         <MapView className={`flex-1 relative h-full bg-black`}>
           <div id="map"></div>
           {locationMessage && (
@@ -2306,7 +2336,7 @@ const App = () => {
                     : "flex flex-col items-start gap-3"
                 }`}
               >
-                {documentationOpen && (
+                {ENABLE_DOCUMENTATION && documentationOpen && (
                 <div
                   className="bg-white/95 backdrop-blur rounded-2xl border border-blue-200 shadow-2xl text-right text-slate-800 p-3 space-y-3 pointer-events-auto z-[920]"
                   style={{ width: plannerPanelWidth }}
@@ -2631,54 +2661,64 @@ const App = () => {
                   </div>
                 )}
 
-                <RealtimePanel
-                  open={realtimePanelOpen}
-                  rainRadarEnabled={rainRadarEnabled}
-                  onToggleRainRadar={() => setRainRadarEnabled((prev) => !prev)}
-                  rainRadarStatus={rainRadarStatus}
-                  rainRadarUnavailable={rainRadarUnavailable}
-                  rainRadarTimestamp={rainRadarTimestamp}
-                  onRefreshRainRadar={refreshRainRadar}
-                  aircraftEnabled={aircraftEnabled}
-                  onToggleAircraft={() => setAircraftEnabled((prev) => !prev)}
-                  aircraftStatus={aircraftStatus}
-                  aircraftUnavailable={aircraftUnavailable}
-                  aircraftTimestamp={aircraftTimestamp}
-                  aircraftRangeKm={aircraftRangeKm}
-                  aircraftData={aircraftData}
-                  onRangeChange={setAircraftRangeKm}
-                  panelRef={realtimePanelRef}
-                  panelWidth={plannerPanelWidth}
-                />
+                {ENABLE_REALTIME_PANEL && (
+                  <RealtimePanel
+                    open={realtimePanelOpen}
+                    rainRadarEnabled={rainRadarEnabled}
+                    onToggleRainRadar={() =>
+                      setRainRadarEnabled((prev) => !prev)
+                    }
+                    rainRadarStatus={rainRadarStatus}
+                    rainRadarUnavailable={rainRadarUnavailable}
+                    rainRadarTimestamp={rainRadarTimestamp}
+                    onRefreshRainRadar={refreshRainRadar}
+                    aircraftEnabled={aircraftEnabled}
+                    onToggleAircraft={() => setAircraftEnabled((prev) => !prev)}
+                    aircraftStatus={aircraftStatus}
+                    aircraftUnavailable={aircraftUnavailable}
+                    aircraftTimestamp={aircraftTimestamp}
+                    aircraftRangeKm={aircraftRangeKm}
+                    aircraftData={aircraftData}
+                    onRangeChange={setAircraftRangeKm}
+                    panelRef={realtimePanelRef}
+                    panelWidth={plannerPanelWidth}
+                  />
+                )}
 
                 {timelineBoard}
               </div>
 
                 <div className="flex flex-col items-start gap-2">
-                  <DockButton
-                    icon="mission"
-                    label="תוכנית טיסה"
-                    active={sidebarOpen}
-                    onClick={() => toggleExclusivePanel("sidebar")}
-                  />
-                  <DockButton
-                    icon="radar"
-                    label="זמן אמת"
-                    active={realtimePanelOpen}
-                    onClick={() => toggleExclusivePanel("realtime")}
-                  />
+                  {ENABLE_MISSION_PLANNING && (
+                    <DockButton
+                      icon="mission"
+                      label="תוכנית טיסה"
+                      active={sidebarOpen}
+                      onClick={() => toggleExclusivePanel("sidebar")}
+                    />
+                  )}
+                  {ENABLE_REALTIME_PANEL && (
+                    <DockButton
+                      icon="radar"
+                      label="זמן אמת"
+                      active={realtimePanelOpen}
+                      onClick={() => toggleExclusivePanel("realtime")}
+                    />
+                  )}
                   <DockButton
                     icon="calendar"
                     label="לוח מזג אוויר"
                     active={showTimeline}
                     onClick={() => toggleExclusivePanel("timeline")}
                   />
-                  <DockButton
-                    icon="doc"
-                    label="כרטיסיית תיעוד"
-                    active={documentationOpen}
-                    onClick={toggleDocumentation}
-                  />
+                  {ENABLE_DOCUMENTATION && (
+                    <DockButton
+                      icon="doc"
+                      label="כרטיסיית תיעוד"
+                      active={documentationOpen}
+                      onClick={toggleDocumentation}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -2699,7 +2739,9 @@ const App = () => {
             </div>
           )}
         </MapView>
+        )}
       </div>
+      )}
     </>
   );
 };
