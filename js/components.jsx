@@ -128,6 +128,12 @@ const Icon = ({
         <path d="M15 10h6m0 0V4m0 6l-9 9" />
       </svg>
     ),
+    settings: (
+      <svg {...baseProps}>
+        <path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" />
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82 1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
+      </svg>
+    ),
   };
 
   return icons[name] || null;
@@ -184,6 +190,8 @@ const TimelineBoard = ({
   windTextColor,
   windSpeedToColor,
   panelWidth,
+  onOpenSettings,
+  showSettingsButton = false,
 }) => {
   if (!show) return null;
 
@@ -267,6 +275,16 @@ const TimelineBoard = ({
                 <Icon name="clock" size={12} />
                 {showStableSummary ? "הסתר ריכוז שעות יציבות" : "ריכוז שעות יציבות"}
               </button>
+              {showSettingsButton && (
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  className="flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                >
+                  <Icon name="settings" size={12} />
+                  הגדרות
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -355,6 +373,16 @@ const TimelineBoard = ({
               <Icon name="clock" size={12} />
               {showStableSummary ? "הסתר ריכוז שעות יציבות" : "ריכוז שעות יציבות"}
             </button>
+            {showSettingsButton && (
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              >
+                <Icon name="settings" size={12} />
+                הגדרות
+              </button>
+            )}
           </div>
         </div>
       )}
