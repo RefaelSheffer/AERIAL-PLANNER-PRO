@@ -548,6 +548,12 @@ const App = () => {
     setSuitabilitySettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const openSuitabilitySettings = () => {
+    setActiveSidebarTab("settings");
+    setShowSettings(true);
+    setSettingsReadOnly(true);
+  };
+
   const enableSettingsEditing = () => setSettingsReadOnly(false);
 
   // --- Geolocation ---
@@ -1715,6 +1721,8 @@ const App = () => {
       windTextColor={AerialPlanner.helpers.windTextColor}
       windSpeedToColor={AerialPlanner.helpers.windSpeedToColor}
       panelWidth={plannerPanelWidth}
+      onOpenSettings={openSuitabilitySettings}
+      showSettingsButton={ENABLE_MISSION_PLANNING}
     />
   );
 
