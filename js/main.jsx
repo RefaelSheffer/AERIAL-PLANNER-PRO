@@ -1435,7 +1435,6 @@ const App = () => {
 
   // --- Map Rendering ---
   useEffect(() => {
-    if (WEATHER_ONLY_MODE) return;
     if (!mapRef.current) {
       const esriImagery = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -1460,12 +1459,13 @@ const App = () => {
         layers: [esriImagery],
         zoomControl: false,
       });
-      mapRef.current.on("click", (e) =>
+      mapRef.current.on("click", (e) => {
+        if (!ENABLE_MISSION_PLANNING) return;
         setPolygon((prev) => [
           ...prev,
           { lat: e.latlng.lat, lng: e.latlng.lng },
-        ]),
-      );
+        ]);
+      });
       mapRef.current.on("moveend", () => {
         const center = mapRef.current.getCenter();
         setMapCenter([center.lat, center.lng]);
@@ -1929,9 +1929,29 @@ const App = () => {
       )}
 
       {WEATHER_ONLY_MODE ? (
-        <div className="h-full w-full bg-slate-950 flex items-end justify-center">
-          {timelineBoard}
-        </div>
+        <MapView className="flex-1 relative h-full bg-black">
+          <div id="map"></div>
+          {locationMessage && (
+            <div className="absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
+              {locationMessage}
+            </div>
+          )}
+          <div
+            className="absolute left-6 z-[930] pointer-events-auto flex flex-col items-start gap-2"
+            style={geolocateButtonStyle}
+          >
+            <button
+              onClick={recenterOnUser}
+              className="w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
+              aria-label="מרכז למיקום הנוכחי"
+            >
+              <Icon name="gps" size={18} />
+            </button>
+          </div>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[940] pointer-events-auto">
+            {timelineBoard}
+          </div>
+        </MapView>
       ) : (
         <div className="flex flex-col md:flex-row h-full relative overflow-x-hidden">
         {/* Controls Sidebar */}
