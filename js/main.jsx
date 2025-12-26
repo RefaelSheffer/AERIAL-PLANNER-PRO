@@ -208,20 +208,38 @@ const App = () => {
   const [weatherLocation, setWeatherLocation] = useState(
     Config.DEFAULT_MAP_CENTER,
   );
-  const [polygon, setPolygon] = useState([]);
+  const [polygon, setPolygon] = useState(() =>
+    ENABLE_MISSION_PLANNING ? [] : null,
+  );
   const [userLocation, setUserLocation] = useState(null);
   const [userAccuracy, setUserAccuracy] = useState(null);
   const [locationMessage, setLocationMessage] = useState(null);
 
   // Flight Params
-  const [selectedDrone, setSelectedDrone] = useState("mavic_3_e");
-  const [altitude, setAltitude] = useState(60);
-  const [overlapFront, setOverlapFront] = useState(75);
-  const [overlapSide, setOverlapSide] = useState(70);
-  const [speed, setSpeed] = useState(10); // m/s
-  const [azimuth, setAzimuth] = useState(0);
-  const [autoOrient, setAutoOrient] = useState(true);
-  const [opticalZoomIndex, setOpticalZoomIndex] = useState(0);
+  const [selectedDrone, setSelectedDrone] = useState(() =>
+    ENABLE_MISSION_PLANNING ? "mavic_3_e" : null,
+  );
+  const [altitude, setAltitude] = useState(() =>
+    ENABLE_MISSION_PLANNING ? 60 : null,
+  );
+  const [overlapFront, setOverlapFront] = useState(() =>
+    ENABLE_MISSION_PLANNING ? 75 : null,
+  );
+  const [overlapSide, setOverlapSide] = useState(() =>
+    ENABLE_MISSION_PLANNING ? 70 : null,
+  );
+  const [speed, setSpeed] = useState(() =>
+    ENABLE_MISSION_PLANNING ? 10 : null,
+  ); // m/s
+  const [azimuth, setAzimuth] = useState(() =>
+    ENABLE_MISSION_PLANNING ? 0 : null,
+  );
+  const [autoOrient, setAutoOrient] = useState(() =>
+    ENABLE_MISSION_PLANNING ? true : null,
+  );
+  const [opticalZoomIndex, setOpticalZoomIndex] = useState(() =>
+    ENABLE_MISSION_PLANNING ? 0 : null,
+  );
   const [flightDate, setFlightDate] = useState(
     new Date().toISOString().slice(0, 16),
   );
@@ -242,11 +260,21 @@ const App = () => {
 
   // Weather & DTM
   const [hourlyForecast, setHourlyForecast] = useState(null);
-  const [dtmData, setDtmData] = useState(null);
-  const [isFetchingDTM, setIsFetchingDTM] = useState(false);
-  const [dtmStats, setDtmStats] = useState(null);
-  const [terrainShadows, setTerrainShadows] = useState([]);
-  const [isSimulatedDTM, setIsSimulatedDTM] = useState(false); // New flag for fallback
+  const [dtmData, setDtmData] = useState(() =>
+    ENABLE_MISSION_PLANNING ? null : undefined,
+  );
+  const [isFetchingDTM, setIsFetchingDTM] = useState(() =>
+    ENABLE_MISSION_PLANNING ? false : null,
+  );
+  const [dtmStats, setDtmStats] = useState(() =>
+    ENABLE_MISSION_PLANNING ? null : undefined,
+  );
+  const [terrainShadows, setTerrainShadows] = useState(() =>
+    ENABLE_MISSION_PLANNING ? [] : null,
+  );
+  const [isSimulatedDTM, setIsSimulatedDTM] = useState(() =>
+    ENABLE_MISSION_PLANNING ? false : null,
+  ); // New flag for fallback
   const [weatherUnavailable, setWeatherUnavailable] = useState(false);
   const [showTimeline, setShowTimeline] = useState(WEATHER_ONLY_MODE);
   const [sidebarOpen, setSidebarOpen] = useState(
@@ -260,23 +288,47 @@ const App = () => {
   const [rainRadarStatus, setRainRadarStatus] = useState("idle");
   const [rainRadarTimestamp, setRainRadarTimestamp] = useState(null);
   const [rainRadarUnavailable, setRainRadarUnavailable] = useState(false);
-  const [aircraftEnabled, setAircraftEnabled] = useState(false);
-  const [aircraftStatus, setAircraftStatus] = useState("idle");
-  const [aircraftTimestamp, setAircraftTimestamp] = useState(null);
-  const [aircraftRangeKm, setAircraftRangeKm] = useState(80);
+  const [aircraftEnabled, setAircraftEnabled] = useState(() =>
+    ENABLE_REALTIME_PANEL ? false : null,
+  );
+  const [aircraftStatus, setAircraftStatus] = useState(() =>
+    ENABLE_REALTIME_PANEL ? "idle" : null,
+  );
+  const [aircraftTimestamp, setAircraftTimestamp] = useState(() =>
+    ENABLE_REALTIME_PANEL ? null : undefined,
+  );
+  const [aircraftRangeKm, setAircraftRangeKm] = useState(() =>
+    ENABLE_REALTIME_PANEL ? 80 : null,
+  );
   const [realtimePanelWidth, setRealtimePanelWidth] = useState(0);
-  const [aircraftData, setAircraftData] = useState([]);
-  const [aircraftUnavailable, setAircraftUnavailable] = useState(false);
-  const [documentationOpen, setDocumentationOpen] = useState(false);
-  const [docForm, setDocForm] = useState({
-    title: "",
-    notes: "",
-    images: [],
-    location: null,
-  });
-  const [docEntries, setDocEntries] = useState([]);
-  const [docLocationAllowed, setDocLocationAllowed] = useState(false);
-  const [docStorageMode, setDocStorageMode] = useState("session");
+  const [aircraftData, setAircraftData] = useState(() =>
+    ENABLE_REALTIME_PANEL ? [] : null,
+  );
+  const [aircraftUnavailable, setAircraftUnavailable] = useState(() =>
+    ENABLE_REALTIME_PANEL ? false : null,
+  );
+  const [documentationOpen, setDocumentationOpen] = useState(() =>
+    ENABLE_DOCUMENTATION ? false : null,
+  );
+  const [docForm, setDocForm] = useState(() =>
+    ENABLE_DOCUMENTATION
+      ? {
+          title: "",
+          notes: "",
+          images: [],
+          location: null,
+        }
+      : null,
+  );
+  const [docEntries, setDocEntries] = useState(() =>
+    ENABLE_DOCUMENTATION ? [] : null,
+  );
+  const [docLocationAllowed, setDocLocationAllowed] = useState(() =>
+    ENABLE_DOCUMENTATION ? false : null,
+  );
+  const [docStorageMode, setDocStorageMode] = useState(() =>
+    ENABLE_DOCUMENTATION ? "session" : null,
+  );
 
   const ALLOWED_DOC_IMAGE_TYPES = useMemo(
     () => new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]),
@@ -326,6 +378,7 @@ const App = () => {
   }, [selectedDrone, opticalZoomLevels ? opticalZoomLevels.length : 0]);
 
   useEffect(() => {
+    if (!ENABLE_DOCUMENTATION) return;
     if (typeof window === "undefined") return;
 
     const loadEntriesFromStorage = (storage, key) => {
@@ -366,6 +419,7 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    if (!ENABLE_DOCUMENTATION) return;
     if (typeof window === "undefined") return;
 
     const targetKey =
@@ -629,13 +683,13 @@ const App = () => {
   }, [weatherLocation]);
 
   useEffect(() => {
-    if (polygon.length > 2) {
+    if (ENABLE_MISSION_PLANNING && polygon && polygon.length > 2) {
       const bounds = L.latLngBounds(polygon.map((p) => L.latLng(p.lat, p.lng)));
       const center = bounds.getCenter();
       setWeatherLocation([center.lat, center.lng]);
-    } else {
-      setWeatherLocation(mapCenter);
+      return;
     }
+    setWeatherLocation(mapCenter);
   }, [polygon, mapCenter]);
 
   // --- Rain Radar (RainViewer) ---
@@ -698,6 +752,7 @@ const App = () => {
 
   // --- Aircraft (ADSBexchange) ---
   const fetchAircraft = useCallback(async () => {
+    if (!ENABLE_REALTIME_PANEL) return;
     if (!aircraftEnabled || !mapCenter) return;
     setAircraftStatus((prev) => (prev === "ready" ? "updating" : "loading"));
     setAircraftUnavailable(false);
@@ -716,6 +771,7 @@ const App = () => {
   }, [aircraftEnabled, mapCenter, aircraftRangeKm]);
 
   useEffect(() => {
+    if (!ENABLE_REALTIME_PANEL) return;
     if (!aircraftEnabled) {
       if (aircraftIntervalRef.current) {
         clearInterval(aircraftIntervalRef.current);
@@ -1243,6 +1299,7 @@ const App = () => {
 
   // --- DTM (With Fallback) ---
   const fetchDTM = async () => {
+    if (!ENABLE_MISSION_PLANNING) return;
     if (polygon.length < 3) return alert("סמן אזור תחילה");
     setIsFetchingDTM(true);
     setDtmData(null);
@@ -1323,6 +1380,7 @@ const App = () => {
   };
 
   useEffect(() => {
+    if (!ENABLE_MISSION_PLANNING) return;
     if (dtmData) calcShadows(dtmData, dtmStats?.min);
   }, [flightDate, dtmData, dtmStats]);
 
@@ -1332,6 +1390,7 @@ const App = () => {
    * @returns {number[][]} Ordered lat/lng pairs for the flight polyline.
    */
   const generatePath = () => {
+    if (!ENABLE_MISSION_PLANNING) return [];
     if (polygon.length < 3) {
       setTotalDistance(0);
       return [];
@@ -1425,6 +1484,7 @@ const App = () => {
   };
 
   useEffect(() => {
+    if (!ENABLE_MISSION_PLANNING) return;
     if (autoOrient && polygon.length > 2) {
       const best = AerialPlanner.geometry.getAutoAzimuth(
         polygon.map((p) => ({ lat: p.lat, lng: p.lng })),
@@ -1489,7 +1549,7 @@ const App = () => {
     if (Lr.shadows) map.removeLayer(Lr.shadows);
     if (Lr.heat) map.removeLayer(Lr.heat);
 
-    if (polygon.length > 0) {
+    if (ENABLE_MISSION_PLANNING && polygon?.length > 0) {
       const latLngs = polygon.map((p) => [p.lat, p.lng]);
       Lr.poly = L.polygon(latLngs, {
         color: "yellow",
@@ -1498,14 +1558,14 @@ const App = () => {
       }).addTo(map);
     }
 
-    if (polygon.length > 2) {
+    if (ENABLE_MISSION_PLANNING && polygon?.length > 2) {
       const pathPoints = generatePath();
       Lr.path = L.polyline(pathPoints, { color: "#3b82f6", weight: 3 }).addTo(
         map,
       );
     }
 
-    if (terrainShadows.length > 0) {
+    if (ENABLE_MISSION_PLANNING && terrainShadows?.length > 0) {
       // Draw Shadows
       Lr.shadows = L.layerGroup(
         terrainShadows.map((l) =>
@@ -1514,7 +1574,7 @@ const App = () => {
       ).addTo(map);
     }
 
-    if (dtmHeatPoints.length > 0 && L.heatLayer) {
+    if (ENABLE_MISSION_PLANNING && dtmHeatPoints.length > 0 && L.heatLayer) {
       // Draw smooth DTM heat layer
       Lr.heat = L.heatLayer(dtmHeatPoints, {
         radius: 28,
@@ -1534,8 +1594,9 @@ const App = () => {
       Lr.aircraft = null;
     }
 
-    if (aircraftEnabled && aircraftData.length > 0) {
-      const markers = aircraftData.map((a) => {
+    const aircraftList = aircraftData ?? [];
+    if (ENABLE_REALTIME_PANEL && aircraftEnabled && aircraftList.length > 0) {
+      const markers = aircraftList.map((a) => {
         const heading = Number.isFinite(a.Trak) ? a.Trak : 0;
         const icon = L.divIcon({
           html: `<div style="transform: rotate(${heading}deg); width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; color: #ef4444;">✈️</div>`,
@@ -2339,7 +2400,7 @@ const App = () => {
               <Icon name="gps" size={18} />
             </button>
           </div>
-          {polygon.length === 0 && (
+          {ENABLE_MISSION_PLANNING && polygon?.length === 0 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[900]">
               לחץ במפה לסימון
             </div>
