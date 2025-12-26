@@ -92,6 +92,7 @@ const slotIsFlyable = (slot, suitabilitySettings) => {
     maxRainProb,
     minSunAltitude,
     maxSunAltitude,
+    includeNightFlights,
   } = suitabilitySettings;
   const wind =
     typeof slot.wind === "number" && !Number.isNaN(slot.wind) ? slot.wind : null;
@@ -116,8 +117,9 @@ const slotIsFlyable = (slot, suitabilitySettings) => {
   const safeCloud = clouds === null ? true : clouds <= maxCloudCover;
   const safeRain = rainProb === null ? true : rainProb <= maxRainProb;
 
-  const sunOk =
-    slot.sunAlt === null
+  const sunOk = includeNightFlights
+    ? true
+    : slot.sunAlt === null
       ? true
       : slot.sunAlt >= minSunAltitude && slot.sunAlt <= maxSunAltitude;
 
@@ -243,8 +245,10 @@ const App = () => {
   const [flightDate, setFlightDate] = useState(
     new Date().toISOString().slice(0, 16),
   );
-  const [showStableSummary, setShowStableSummary] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [showDayDetails, setShowDayDetails] = useState(false);
+  const [filterFlyableOnly, setFilterFlyableOnly] = useState(false);
   const [activeSidebarTab, setActiveSidebarTab] = useState("mission");
   const [settingsReadOnly, setSettingsReadOnly] = useState(true);
   const [theme, setTheme] = useState(() => {
@@ -282,7 +286,6 @@ const App = () => {
   );
   const [dronePanelOpen, setDronePanelOpen] = useState(!initialIsMobile);
   const [isMobile, setIsMobile] = useState(initialIsMobile);
-  const [mobileDayIndex, setMobileDayIndex] = useState(0);
   const [realtimePanelOpen, setRealtimePanelOpen] = useState(false);
   const [rainRadarEnabled, setRainRadarEnabled] = useState(false);
   const [rainRadarStatus, setRainRadarStatus] = useState("idle");
@@ -503,7 +506,6 @@ const App = () => {
   const rainRadarTimestampRef = useRef(null);
   const userLocationInitialized = useRef(false);
   const aircraftIntervalRef = useRef(null);
-  const timelineContainerRef = useRef(null);
   const sidebarRef = useRef(null);
   const realtimePanelRef = useRef(null);
   const [desktopDockOffset, setDesktopDockOffset] = useState(16);
@@ -600,6 +602,11 @@ const App = () => {
 
   const updateSuitabilitySetting = (key, value) => {
     setSuitabilitySettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const resetSuitabilitySettings = () => {
+    setSuitabilitySettings(Config.DEFAULT_SUITABILITY);
+    setSettingsReadOnly(true);
   };
 
   const openSuitabilitySettings = () => {
@@ -804,34 +811,121 @@ const App = () => {
     [hourlyForecast, weatherLocation],
   );
 
+  const isSlotRelevant = useCallback(
+    (slot) => {
+      const {
+        includeNightFlights,
+        minSunAltitude,
+        maxSunAltitude,
+      } = suitabilitySettings;
+
+      if (includeNightFlights) return true;
+      if (slot.sunAlt === null || slot.sunAlt === undefined) return true;
+      return (
+        slot.sunAlt >= minSunAltitude && slot.sunAlt <= maxSunAltitude
+      );
+    },
+    [suitabilitySettings],
+  );
+
   const isSlotFlyable = useCallback(
     (slot) => slotIsFlyable(slot, suitabilitySettings),
     [suitabilitySettings],
   );
 
-  const stableSlotsByDay = useMemo(() => {
-    return windTimeline
-      .map((day) => {
-        const slots = day.slots
-          .map((slot) => ({ ...slot, isFlyable: isSlotFlyable(slot) }))
-          .filter((slot) => slot.isFlyable);
-        return { day: day.day, label: day.label, slots };
-      })
-      .filter((day) => day.slots.length > 0);
-  }, [windTimeline, isSlotFlyable]);
+  const daySuitability = useMemo(() => {
+    const formatRange = (values, unit) => {
+      if (!values.length) return "-";
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      if (min === max) return `${min.toFixed(1)}${unit}`;
+      return `${min.toFixed(1)}–${max.toFixed(1)}${unit}`;
+    };
 
-  const visibleTimeline = useMemo(() => {
-    if (!isMobile) return windTimeline;
-    if (windTimeline.length === 0) return [];
-    return [windTimeline[Math.min(mobileDayIndex, windTimeline.length - 1)]];
-  }, [isMobile, mobileDayIndex, windTimeline]);
+    const formatPercentRange = (values) => {
+      if (!values.length) return "-";
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      if (min === max) return `${min.toFixed(0)}%`;
+      return `${min.toFixed(0)}–${max.toFixed(0)}%`;
+    };
 
-  const scrollTimeline = (direction) => {
-    const container = timelineContainerRef.current;
-    if (!container) return;
-    const delta = direction * Math.max(container.clientWidth * 0.8, 320);
-    container.scrollBy({ left: delta, behavior: "smooth" });
-  };
+    const getWindows = (slots) => {
+      if (!slots.length) return [];
+      const windows = [];
+      let current = null;
+
+      slots.forEach((slot) => {
+        if (slot.isFlyable) {
+          if (!current) {
+            current = { start: slot, end: slot };
+          } else {
+            current.end = slot;
+          }
+        } else if (current) {
+          windows.push(current);
+          current = null;
+        }
+      });
+
+      if (current) windows.push(current);
+
+      return windows.map((window) => {
+        const startTime = window.start.time;
+        const endDate = new Date(`${window.end.key.slice(0, 13)}:00`);
+        endDate.setHours(endDate.getHours() + 3);
+        const endTime = endDate.toISOString().slice(11, 16);
+        return `${startTime}–${endTime}`;
+      });
+    };
+
+    return windTimeline.map((day) => {
+      const relevantSlots = day.slots.filter(isSlotRelevant);
+      const enrichedSlots = day.slots.map((slot) => ({
+        ...slot,
+        isRelevant: isSlotRelevant(slot),
+        isFlyable: isSlotFlyable(slot),
+      }));
+      const relevantEnriched = enrichedSlots.filter((slot) => slot.isRelevant);
+      const flyableSlots = relevantEnriched.filter((slot) => slot.isFlyable);
+      const percent =
+        relevantEnriched.length > 0
+          ? Math.round((flyableSlots.length / relevantEnriched.length) * 100)
+          : 0;
+
+      const winds = relevantSlots
+        .map((slot) => slot.wind)
+        .filter((value) => typeof value === "number");
+      const gusts = relevantSlots
+        .map((slot) => slot.gust ?? slot.wind)
+        .filter((value) => typeof value === "number");
+      const rain = relevantSlots
+        .map((slot) => slot.rainProb)
+        .filter((value) => typeof value === "number");
+      const clouds = relevantSlots
+        .map((slot) => slot.clouds)
+        .filter((value) => typeof value === "number");
+
+      return {
+        ...day,
+        enrichedSlots,
+        relevantSlots: relevantEnriched,
+        flyableSlots,
+        percent,
+        windRange: formatRange(winds, " m/s"),
+        gustRange: formatRange(gusts, " m/s"),
+        rainRange: formatPercentRange(rain),
+        cloudRange: formatPercentRange(clouds),
+        flyableWindows: getWindows(relevantEnriched),
+      };
+    });
+  }, [windTimeline, isSlotRelevant, isSlotFlyable]);
+
+  useEffect(() => {
+    if (selectedDayIndex >= daySuitability.length && daySuitability.length > 0) {
+      setSelectedDayIndex(0);
+    }
+  }, [daySuitability.length, selectedDayIndex]);
 
   const sanitizeDataUrl = (dataUrl, mimeType) => {
     if (typeof dataUrl !== "string") return null;
@@ -1290,12 +1384,6 @@ const App = () => {
     () => buildDtmHeatPoints(dtmData, dtmStats),
     [dtmData, dtmStats],
   );
-
-  useEffect(() => {
-    if (mobileDayIndex !== 0 && mobileDayIndex >= windTimeline.length) {
-      setMobileDayIndex(0);
-    }
-  }, [windTimeline.length, mobileDayIndex]);
 
   // --- DTM (With Fallback) ---
   const fetchDTM = async () => {
@@ -1760,36 +1848,34 @@ const App = () => {
     <TimelineBoard
       show={timelineVisible}
       isMobile={isMobile}
-      windTimeline={windTimeline}
-      visibleTimeline={visibleTimeline}
+      days={daySuitability}
       dataUnavailable={weatherUnavailable}
-      showStableSummary={showStableSummary}
-      onToggleStableSummary={() =>
-        setShowStableSummary((prev) => !prev)
-      }
-      stableSlotsByDay={stableSlotsByDay}
       selectedSlotKey={selectedSlotKey}
       onSlotSelect={setFlightDate}
-      onScroll={scrollTimeline}
-      timelineContainerRef={timelineContainerRef}
-      mobileDayIndex={mobileDayIndex}
-      onMobileDayChange={(delta) =>
-        setMobileDayIndex((i) =>
-          Math.min(Math.max(0, i + delta), windTimeline.length - 1),
-        )
+      selectedDayIndex={selectedDayIndex}
+      onSelectDay={(index) => {
+        setSelectedDayIndex(index);
+        setShowDayDetails(true);
+      }}
+      showDayDetails={showDayDetails}
+      onCloseDayDetails={() => setShowDayDetails(false)}
+      filterFlyableOnly={filterFlyableOnly}
+      onToggleFilterFlyable={() =>
+        setFilterFlyableOnly((prev) => !prev)
       }
-      isSlotFlyable={isSlotFlyable}
-      windTextColor={AerialPlanner.helpers.windTextColor}
-      windSpeedToColor={AerialPlanner.helpers.windSpeedToColor}
+      onJumpToToday={() => {
+        setSelectedDayIndex(0);
+        setShowDayDetails(true);
+      }}
       panelWidth={plannerPanelWidth}
       onOpenSettings={openSuitabilitySettings}
-      showSettingsButton={ENABLE_MISSION_PLANNING}
+      showSettingsButton={true}
     />
   );
 
   return (
     <>
-      {ENABLE_MISSION_PLANNING && showSettings && (
+      {showSettings && (
         <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="relative bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -1819,7 +1905,22 @@ const App = () => {
                 >
                   החלף למצב {theme === "dark" ? "בהיר" : "כהה"}
                 </button>
+                <button
+                  onClick={resetSuitabilitySettings}
+                  className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50"
+                >
+                  איפוס לברירת מחדל
+                </button>
               </div>
+            </div>
+
+            <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+              מה נחשב יציב: רוח ≤ {suitabilitySettings.maxWind} מ"ש · משבים ≤{" "}
+              {suitabilitySettings.maxGust} מ"ש · עננות ≤{" "}
+              {suitabilitySettings.maxCloudCover}% · גשם ≤{" "}
+              {suitabilitySettings.maxRainProb}% · שמש בין{" "}
+              {suitabilitySettings.minSunAltitude}° ל-
+              {suitabilitySettings.maxSunAltitude}°
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1964,6 +2065,38 @@ const App = () => {
                 <p className="text-xs text-slate-500">
                   ברירת מחדל: 85°. ניתן להגביל במקרים של סינוור חזק.
                 </p>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700">
+                  כולל טיסות לילה
+                </label>
+                <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3">
+                  <input
+                    id="includeNightFlights"
+                    type="checkbox"
+                    checked={suitabilitySettings.includeNightFlights}
+                    onChange={(e) =>
+                      updateSuitabilitySetting(
+                        "includeNightFlights",
+                        e.target.checked,
+                      )
+                    }
+                    onFocus={enableSettingsEditing}
+                    onClick={enableSettingsEditing}
+                    className="mt-1 h-4 w-4 accent-blue-600"
+                  />
+                  <div>
+                    <label
+                      htmlFor="includeNightFlights"
+                      className="text-sm font-semibold text-slate-700"
+                    >
+                      הכללת שעות לילה בחישוב התאמה
+                    </label>
+                    <p className="text-xs text-slate-500">
+                      כאשר כבוי, אחוז ההתאמה ושעות יציבות מחושבים רק בשעות יום.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

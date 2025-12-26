@@ -14,6 +14,7 @@ window.AerialPlannerConfig = {
     maxRainProb: 40,
     minSunAltitude: 5,
     maxSunAltitude: 85,
+    includeNightFlights: false,
   },
 
   // Color helpers for wind visualization

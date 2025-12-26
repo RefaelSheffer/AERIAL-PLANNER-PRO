@@ -174,425 +174,300 @@ const MapView = ({ className = "", children }) => (
 const TimelineBoard = ({
   show,
   isMobile,
-  windTimeline,
-  visibleTimeline,
+  days,
   dataUnavailable = false,
-  showStableSummary,
-  onToggleStableSummary,
-  stableSlotsByDay = [],
   selectedSlotKey,
   onSlotSelect,
-  onScroll,
-  timelineContainerRef,
-  mobileDayIndex,
-  onMobileDayChange,
-  isSlotFlyable,
-  windTextColor,
-  windSpeedToColor,
+  selectedDayIndex,
+  onSelectDay,
+  showDayDetails,
+  onCloseDayDetails,
+  filterFlyableOnly,
+  onToggleFilterFlyable,
+  onJumpToToday,
   panelWidth,
   onOpenSettings,
   showSettingsButton = false,
 }) => {
   if (!show) return null;
 
-  const preparedTimeline = React.useMemo(() => {
-    return visibleTimeline.map((day) => {
-      let flyableCount = 0;
-      let firstFlyable = null;
-      const enrichedSlots = day.slots.map((slot) => {
-        const slotWithFlag = { ...slot, isFlyable: isSlotFlyable(slot) };
-        if (slotWithFlag.isFlyable) {
-          flyableCount += 1;
-          if (!firstFlyable) firstFlyable = slotWithFlag;
-        }
+  const [showAllSlots, setShowAllSlots] = React.useState(false);
 
-        return slotWithFlag;
-      });
+  React.useEffect(() => {
+    if (!filterFlyableOnly) {
+      setShowAllSlots(false);
+    }
+  }, [filterFlyableOnly]);
 
-      const displaySlots = enrichedSlots;
-
-      return {
-        ...day,
-        enrichedSlots,
-        displaySlots,
-        flyableCount,
-        firstFlyable,
-      };
-    });
-  }, [visibleTimeline, isSlotFlyable]);
-
-  const timelineEmpty = preparedTimeline.length === 0;
-  const timelineCardSizing = isMobile ? "max-h-[78vh]" : "max-h-[82vh]";
-
-  const timelineScrollArea = isMobile
-    ? "flex-1 overflow-y-auto max-h-[74vh]"
-    : "flex-1 overflow-y-auto max-h-[80vh]";
-
+  const selectedDay = days?.[selectedDayIndex] || null;
   const timelineCardStyle = React.useMemo(() => {
-    const fallbackWidth = "clamp(20rem, calc(100vw - 32px), 22rem)";
+    const fallbackWidth = "min(920px, calc(100vw - 24px))";
     const width = panelWidth || fallbackWidth;
 
     return {
       width,
       maxWidth: width,
-      marginLeft: isMobile ? "auto" : undefined,
     };
-  }, [isMobile, panelWidth]);
+  }, [panelWidth]);
 
-  const hasSlots = preparedTimeline.some((day) => day.enrichedSlots.length > 0);
+  const getSuitabilityTone = (percent) => {
+    if (percent < 25) return "from-rose-500 to-rose-400";
+    if (percent < 50) return "from-orange-500 to-orange-400";
+    if (percent < 75) return "from-lime-500 to-lime-400";
+    return "from-emerald-500 to-emerald-400";
+  };
 
-  if (showStableSummary) {
-    return (
+  const getSuitabilityText = (percent) => {
+    if (percent < 25) return "text-rose-600";
+    if (percent < 50) return "text-orange-600";
+    if (percent < 75) return "text-lime-600";
+    return "text-emerald-600";
+  };
+
+  const formatSummary = (day) => [
+    { label: "רוח", value: day.windRange, icon: "wind" },
+    { label: "משבים", value: day.gustRange, icon: "warning" },
+    { label: "גשם", value: day.rainRange, icon: "cloud" },
+    { label: "עננות", value: day.cloudRange, icon: "cloud" },
+  ];
+
+  const displayedSlots = selectedDay
+    ? filterFlyableOnly && !showAllSlots
+      ? selectedDay.relevantSlots.filter((slot) => slot.isFlyable)
+      : selectedDay.relevantSlots
+    : [];
+
+  return (
+    <>
       <div
-        className={`bg-white/95 backdrop-blur border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing} flex flex-col overflow-hidden`}
+        className="bg-white/95 backdrop-blur border border-slate-200 shadow-2xl rounded-3xl overflow-hidden"
         style={timelineCardStyle}
       >
         {dataUnavailable && (
-          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
+          <div className="text-[11px] text-amber-800 bg-amber-50 border-b border-amber-200 px-3 py-2 text-center">
             מקור הנתונים לא זמין כרגע
           </div>
         )}
-        {hasSlots && (
-          <div
-            className={`flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700 ${
-              isMobile ? "flex-col items-start gap-2" : ""
-            }`}
-          >
-            <div
-              className={`flex items-center gap-2 ${
-                isMobile ? "flex-wrap" : "flex-wrap"
-              }`}
-            >
+        <div className="px-4 pt-3 pb-2 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-slate-700">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={onToggleStableSummary}
-                className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] transition ${
-                  showStableSummary
-                    ? "bg-green-600 text-white border-green-600 shadow"
+                onClick={onToggleFilterFlyable}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition ${
+                  filterFlyableOnly
+                    ? "bg-emerald-600 text-white border-emerald-600 shadow"
                     : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
                 }`}
               >
                 <Icon name="clock" size={12} />
-                {showStableSummary ? "הסתר ריכוז שעות יציבות" : "ריכוז שעות יציבות"}
+                סמן ימים ושעות מתאימות
               </button>
-              {showSettingsButton && (
-                <button
-                  type="button"
-                  onClick={onOpenSettings}
-                  className="flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                >
-                  <Icon name="settings" size={12} />
-                  הגדרות
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-        <div className="px-3 pb-2 flex-1 overflow-y-auto">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-[70vh] overflow-y-auto custom-scroll">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-[12px] font-black text-blue-900">
-                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
-                  <Icon name="clock" size={13} />
-                </span>
-                שעות יציבות לכל הימים
-              </div>
               <button
                 type="button"
-                onClick={onToggleStableSummary}
-                className="text-[11px] text-blue-700 hover:text-blue-900"
-                aria-label="סגור ריכוז שעות יציבות"
+                onClick={onJumpToToday}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               >
-                סגור
+                <Icon name="calendar" size={12} />
+                קפוץ להיום
               </button>
             </div>
-
-            {stableSlotsByDay.length === 0 ? (
-              <div className="text-[11px] text-blue-900 bg-white/90 border border-blue-200 rounded-lg px-3 py-2 text-center">
-                אין כרגע שעות יציבות בתאריכים הקרובים.
-              </div>
-            ) : (
-              stableSlotsByDay.map((day) => (
-                <div
-                  key={day.day}
-                  className="bg-white/90 border border-blue-100 rounded-lg px-3 py-2 space-y-1 shadow-sm"
-                >
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-blue-900">
-                    <span>{day.label}</span>
-                    <span className="text-blue-700">{day.slots.length} שעות</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {day.slots.map((slot) => (
-                      <span
-                        key={slot.key}
-                        className="px-2 py-1 rounded-full bg-green-600 text-white text-[11px] flex items-center gap-1 shadow"
-                      >
-                        <Icon name="clock" size={11} /> {slot.time}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`bg-white/95 backdrop-blur border border-slate-200 shadow-2xl rounded-2xl ${timelineCardSizing} flex flex-col overflow-hidden`}
-      style={timelineCardStyle}
-    >
-      {dataUnavailable && (
-        <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-t-2xl px-3 py-2 text-center">
-          מקור הנתונים לא זמין כרגע
-        </div>
-      )}
-      {hasSlots && (
-        <div
-          className={`flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700 ${
-            isMobile ? "flex-col items-start gap-2" : ""
-          }`}
-        >
-          <div
-            className={`flex items-center gap-2 ${
-              isMobile ? "flex-wrap" : "flex-wrap"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={onToggleStableSummary}
-              className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] transition ${
-                showStableSummary
-                  ? "bg-green-600 text-white border-green-600 shadow"
-                  : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
-              }`}
-            >
-              <Icon name="clock" size={12} />
-              {showStableSummary ? "הסתר ריכוז שעות יציבות" : "ריכוז שעות יציבות"}
-            </button>
             {showSettingsButton && (
               <button
                 type="button"
                 onClick={onOpenSettings}
-                className="flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               >
                 <Icon name="settings" size={12} />
                 הגדרות
               </button>
             )}
           </div>
-        </div>
-      )}
-      {showStableSummary && (
-        <div className="px-3 pb-2 flex-1 overflow-y-auto">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2 max-h-[70vh] overflow-y-auto custom-scroll">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-[12px] font-black text-blue-900">
-                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center">
-                  <Icon name="clock" size={13} />
-                </span>
-                שעות יציבות לכל הימים
-              </div>
-              <button
-                type="button"
-                onClick={onToggleStableSummary}
-                className="text-[11px] text-blue-700 hover:text-blue-900"
-                aria-label="סגור ריכוז שעות יציבות"
-              >
-                סגור
-              </button>
-            </div>
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scroll">
+            {(days || []).map((day, index) => {
+              const isSelected = index === selectedDayIndex;
+              const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
+              const gradient = getSuitabilityTone(day.percent);
+              const percentText = getSuitabilityText(day.percent);
 
-            {stableSlotsByDay.length === 0 ? (
-              <div className="text-[11px] text-blue-900 bg-white/90 border border-blue-200 rounded-lg px-3 py-2 text-center">
-                אין כרגע שעות יציבות בתאריכים הקרובים.
-              </div>
-            ) : (
-              stableSlotsByDay.map((day) => (
-                <div
+              return (
+                <button
                   key={day.day}
-                  className="bg-white/90 border border-blue-100 rounded-lg px-3 py-2 space-y-1 shadow-sm"
+                  onClick={() => onSelectDay(index)}
+                  className={`min-w-[180px] max-w-[200px] p-3 rounded-2xl border shadow-sm transition flex flex-col gap-2 text-right ${
+                    isSelected
+                      ? "border-blue-500 ring-2 ring-blue-200 bg-white"
+                      : "border-slate-200 bg-white/90 hover:border-blue-300"
+                  } ${isDim ? "opacity-40" : "opacity-100"}`}
                 >
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-blue-900">
-                    <span>{day.label}</span>
-                    <span className="text-blue-700">{day.slots.length} שעות</span>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span className="font-semibold text-slate-700">
+                      {day.label}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
+                      {day.day}
+                    </span>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {day.slots.map((slot) => (
-                      <span
-                        key={slot.key}
-                        className="px-2 py-1 rounded-full bg-green-600 text-white text-[11px] flex items-center gap-1 shadow"
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className={`text-2xl font-black ${percentText}`}>
+                        {day.percent}%
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        התאמה להטסה
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] text-slate-600">
+                      <Icon name="clock" size={12} />
+                      {day.flyableSlots.length} שעות יציבות
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-600">
+                    {formatSummary(day).slice(0, 4).map((item) => (
+                      <div
+                        key={`${day.day}-${item.label}`}
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 border border-slate-200"
                       >
-                        <Icon name="clock" size={11} /> {slot.time}
-                      </span>
+                        <Icon name={item.icon} size={11} />
+                        <span className="truncate">
+                          {item.label}: {item.value}
+                        </span>
+                      </div>
                     ))}
                   </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-      {!showStableSummary && timelineEmpty && (
-        <div className="p-4 text-center text-sm text-slate-600">
-          אין נתוני תחזית זמינים כרגע.
-        </div>
-      )}
-      {!showStableSummary && isMobile && windTimeline.length > 1 && (
-        <div className="flex items-center justify-between px-3 pt-2 pb-1 text-[12px] text-slate-700">
-          <button
-            className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
-            onClick={() => onMobileDayChange(-1)}
-            disabled={mobileDayIndex === 0}
-          >
-            יום קודם
-          </button>
-          <div className="font-semibold text-slate-800">
-            {visibleTimeline[0]?.label}
-          </div>
-          <button
-            className="px-2 py-1 rounded border border-slate-200 bg-white disabled:opacity-40"
-            onClick={() => onMobileDayChange(1)}
-            disabled={mobileDayIndex >= windTimeline.length - 1}
-          >
-            יום הבא
-          </button>
-        </div>
-      )}
-      {!showStableSummary && (
-        <div className="relative flex-1 flex flex-col overflow-hidden">
-          <div
-            ref={timelineContainerRef}
-            className={`custom-scroll ${timelineScrollArea}`}
-          >
-            <div
-              className={`${isMobile ? "flex flex-col gap-2 p-3" : "flex flex-col gap-3 p-3"}`}
-            >
-                {preparedTimeline.map((day) => (
-                  <div
-                    key={day.day}
-                    className={`${
-                      isMobile ? "w-full" : "w-full"
-                    } snap-start bg-white border border-slate-200 rounded-xl shadow-sm p-3 flex flex-col gap-2`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-extrabold text-slate-900">
-                          {day.label}
-                        </div>
-                        <div className="text-[10px] text-slate-500">
-                          {day.slots.length} חלונות זמן · {day.flyableCount} שעות
-                          יציבות
-                        </div>
-                        {day.firstFlyable && (
-                          <div className="text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5 inline-flex items-center gap-1 mt-1">
-                            <Icon name="clock" size={11} /> החל מ-
-                            {day.firstFlyable.time}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-end text-[10px] text-slate-600">
-                        <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 font-semibold">
-                          {day.day}
-                        </span>
-                        <span className="mt-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                          מרווח 3 שעות
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {!timelineEmpty && day.displaySlots.length > 0 ? (
-                        day.displaySlots.map((slot) => {
-                          const slotKey = `${day.day}T${slot.time}`;
-                          const isActive = slotKey === selectedSlotKey;
-                          return (
-                            <button
-                              key={slot.key}
-                              onClick={() => onSlotSelect(`${day.day}T${slot.time}`)}
-                              className={`${
-                                isMobile
-                                  ? "p-2 flex flex-col gap-1.5 text-[12px]"
-                                  : "p-2 flex flex-col gap-2 text-[12px]"
-                              } w-full h-full min-h-[120px] rounded-lg border transition shadow-sm hover:-translate-y-0.5 relative overflow-visible ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`}
-                              style={{ background: "white" }}
-                            >
-                              {slot.isFlyable && (
-                                <div className="absolute top-1 left-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm">
-                                  שעה יציבה
-                                </div>
-                              )}
-                              <div
-                                className={`${isMobile ? "flex items-center justify-between w-full text-[12px]" : "items-center justify-between text-xs"} text-slate-600`}
-                              >
-                                <span className="font-semibold">{slot.time}</span>
-                                {!isMobile && (
-                                  <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                                    <Icon name="clock" size={12} /> {day.label}
-                                  </span>
-                                )}
-                              </div>
-                              <div
-                                className={`${isMobile ? "h-9 w-full text-[13px]" : "h-9 w-full text-[12px]"} rounded-md flex items-center justify-center font-bold ${windTextColor(slot.wind)}`}
-                                style={{
-                                  background: windSpeedToColor(slot.wind),
-                                }}
-                              >
-                                {slot.wind?.toFixed(1) ?? "-"} מ"ש
-                                {!isMobile && slot.isMajor && (
-                                  <span className="absolute top-1 right-1 text-[9px] text-slate-100 bg-slate-900/50 px-2 py-0.5 rounded-full">
-                                    מרווח 6 ש׳
-                                  </span>
-                                )}
-                              </div>
-                              <div
-                                className={`${isMobile ? "w-full space-y-0.5" : "w-full px-1.5 pb-1 space-y-1"}`}
-                              >
-                                <div
-                                  className={`h-1.5 w-full rounded-full overflow-hidden ${slot.isFlyable ? "bg-green-100" : "bg-slate-200"}`}
-                                >
-                                  <div
-                                    className="h-full bg-blue-500"
-                                    style={{ width: `${slot.clouds ?? 0}%` }}
-                                  ></div>
-                                </div>
-                                <div className="text-[9px] text-slate-600 flex flex-wrap items-center gap-1 justify-center">
-                                  <span className="flex-1 min-w-0 px-1.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-center overflow-hidden text-ellipsis">
-                                    עננות {slot.clouds ?? 0}%
-                                  </span>
-                                  <span
-                                    className={`flex-1 min-w-0 px-1.5 py-0.5 rounded-full border text-center overflow-hidden text-ellipsis ${
-                                      slot.isFlyable
-                                        ? "bg-green-50 text-green-700 border-green-200"
-                                        : "bg-blue-50 text-blue-700 border-blue-200"
-                                    }`}
-                                  >
-                                    גשם {slot.rainProb ?? 0}%
-                                  </span>
-                                  <span className="flex-1 min-w-0 px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-center overflow-hidden text-ellipsis">
-                                    משבים {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? "-"} מ"ש
-                                  </span>
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })
-                      ) : (
-                        <div className="text-[11px] text-slate-500 p-2 border border-dashed border-slate-300 rounded w-full text-center col-span-full">
-                          אין שעות מתאימות לטיסה ביום זה
-                        </div>
-                      )}
-                    </div>
+                  <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className={`h-full bg-gradient-to-r ${gradient}`}
+                      style={{ width: `${day.percent}%` }}
+                    ></div>
                   </div>
-                ))}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {showDayDetails && selectedDay && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 px-4 py-6">
+          <div
+            className={`bg-white rounded-3xl shadow-2xl border border-slate-200 w-full ${
+              isMobile ? "max-h-[90vh]" : "max-h-[80vh] max-w-4xl"
+            } flex flex-col overflow-hidden`}
+          >
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-5 py-4 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1 text-right">
+                  <div className="text-sm font-semibold text-slate-500">
+                    {selectedDay.day}
+                  </div>
+                  <div className="text-xl font-black text-slate-900">
+                    {selectedDay.label}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold">
+                    {selectedDay.percent}% התאמה
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onCloseDayDetails}
+                    className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    aria-label="סגור פרטי יום"
+                  >
+                    <Icon name="close" size={16} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-slate-600">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200">
+                    חלונות יציבים:{" "}
+                    {selectedDay.flyableWindows.length
+                      ? selectedDay.flyableWindows.join(", ")
+                      : "אין"}
+                  </span>
+                  {filterFlyableOnly && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSlots((prev) => !prev)}
+                      className="px-3 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    >
+                      {showAllSlots ? "הצג רק יציבים" : "הצג גם פחות מתאימים"}
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  className="px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                >
+                  התאמת ספים
+                </button>
               </div>
             </div>
-          )}
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scroll">
+              {displayedSlots.length === 0 ? (
+                <div className="text-center text-sm text-slate-500 border border-dashed border-slate-300 rounded-xl py-6">
+                  אין חלונות מתאימים להצגה כרגע.
+                </div>
+              ) : (
+                displayedSlots.map((slot) => {
+                  const slotKey = `${selectedDay.day}T${slot.time}`;
+                  const isActive = slotKey === selectedSlotKey;
+                  return (
+                    <button
+                      key={slot.key}
+                      onClick={() =>
+                        onSlotSelect(`${selectedDay.day}T${slot.time}`)
+                      }
+                      className={`w-full text-right border rounded-2xl p-4 shadow-sm transition ${
+                        isActive
+                          ? "border-blue-500 ring-2 ring-blue-200"
+                          : "border-slate-200 hover:border-blue-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-xl font-black text-slate-900">
+                          {slot.time}
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-[11px] font-semibold ${
+                            slot.isFlyable
+                              ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                          }`}
+                        >
+                          {slot.isFlyable ? "שעה יציבה" : "פחות מתאים"}
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-2 text-[11px] text-slate-600">
+                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                          🌬 רוח: {slot.wind?.toFixed(1) ?? "-"} m/s
+                        </div>
+                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                          💨 משבים: {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? "-"} m/s
+                        </div>
+                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                          🌧 גשם: {slot.rainProb ?? 0}%
+                        </div>
+                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                          ☁ עננות: {slot.clouds ?? 0}%
+                        </div>
+                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                          🌫 ערפל: —
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
