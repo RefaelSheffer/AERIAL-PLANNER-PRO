@@ -301,30 +301,42 @@ const TimelineBoard = ({
     const riskLevel = getRiskLevel(percent);
     if (riskLevel === "low") {
       return (
-        <span
-          className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"
-          aria-label="סיכון נמוך"
-        />
+        <span className="inline-flex items-center gap-1 text-emerald-700">
+          <span
+            className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"
+            aria-hidden="true"
+          />
+          <span className="text-[11px] font-semibold">סיכון נמוך</span>
+        </span>
       );
     }
     if (riskLevel === "medium") {
       return (
-        <span
-          className="inline-flex h-2.5 w-2.5 rounded-full bg-orange-500"
-          aria-label="סיכון בינוני"
-        />
+        <span className="inline-flex items-center gap-1 text-orange-700">
+          <span
+            className="inline-flex h-2.5 w-2.5 rounded-full bg-orange-500"
+            aria-hidden="true"
+          />
+          <span className="text-[11px] font-semibold">סיכון בינוני</span>
+        </span>
       );
     }
     if (riskLevel === "high") {
       return (
-        <span className="text-red-600 text-sm leading-none" aria-label="סיכון גבוה">
-          ⚠️
+        <span className="inline-flex items-center gap-1 text-red-600">
+          <span className="text-sm leading-none" aria-hidden="true">
+            ⚠️
+          </span>
+          <span className="text-[11px] font-semibold">סיכון גבוה</span>
         </span>
       );
     }
     return (
-      <span className="text-red-700 text-sm leading-none" aria-label="סיכון קיצוני">
-        ⛔
+      <span className="inline-flex items-center gap-1 text-red-700">
+        <span className="text-sm leading-none" aria-hidden="true">
+          ⛔
+        </span>
+        <span className="text-[11px] font-semibold">סיכון גבוה</span>
       </span>
     );
   };
@@ -431,10 +443,8 @@ const TimelineBoard = ({
                       ></div>
                     </div>
                     <div className="text-[11px] font-semibold text-slate-500 flex items-center justify-between">
+                      <span>{riskIndicator}</span>
                       <span>הצג פירוט →</span>
-                      <span className="inline-flex items-center justify-center w-5 h-5">
-                        {riskIndicator}
-                      </span>
                     </div>
                   </button>
                 );
