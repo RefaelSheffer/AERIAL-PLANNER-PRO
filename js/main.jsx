@@ -512,6 +512,8 @@ const App = () => {
   const showPlannerLayout =
     ENABLE_MISSION_PLANNING || ENABLE_REALTIME_PANEL || ENABLE_DOCUMENTATION;
   const timelineVisible = WEATHER_ONLY_MODE ? true : showTimeline;
+  const timelineDockHeight = isMobile ? 180 : 210;
+  const mapBottomPadding = timelineVisible ? `${timelineDockHeight}px` : "0px";
 
   /**
    * Toggle visibility of the sidebar, realtime panel, or timeline while keeping them mutually exclusive.
@@ -2123,7 +2125,10 @@ const App = () => {
       )}
 
       {WEATHER_ONLY_MODE ? (
-        <MapView className="flex-1 relative h-full bg-black">
+        <MapView
+          className="flex-1 relative h-full bg-black box-border"
+          style={{ paddingBottom: mapBottomPadding }}
+        >
           <div id="map"></div>
           {locationMessage && (
             <div className="absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
@@ -2142,9 +2147,7 @@ const App = () => {
               <Icon name="gps" size={18} />
             </button>
           </div>
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[940] pointer-events-auto">
-            {timelineBoard}
-          </div>
+          {timelineBoard}
         </MapView>
       ) : (
         <div className="flex flex-col md:flex-row h-full relative overflow-x-hidden">
@@ -2514,7 +2517,10 @@ const App = () => {
 
         {/* Map */}
         {showPlannerLayout && (
-        <MapView className={`flex-1 relative h-full bg-black`}>
+        <MapView
+          className="flex-1 relative h-full bg-black box-border"
+          style={{ paddingBottom: mapBottomPadding }}
+        >
           <div id="map"></div>
           {locationMessage && (
             <div className="absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
