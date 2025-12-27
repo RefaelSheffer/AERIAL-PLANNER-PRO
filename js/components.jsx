@@ -270,24 +270,73 @@ const TimelineBoard = ({
 
   const selectedDay = days?.[selectedDayIndex] || null;
   const getSuitabilityTone = (percent) => {
-    if (percent < 25) return "from-rose-500 to-rose-400";
-    if (percent < 50) return "from-orange-500 to-orange-400";
-    if (percent < 75) return "from-lime-500 to-lime-400";
-    return "from-emerald-500 to-emerald-400";
+    if (percent <= 15) return "from-rose-400 to-rose-300";
+    if (percent <= 40) return "from-orange-500 to-orange-400";
+    if (percent <= 70) return "from-lime-500 to-lime-400";
+    return "from-emerald-600 to-emerald-500";
   };
 
   const getSuitabilityBackground = (percent) => {
-    if (percent < 25) return "from-slate-50 to-slate-100";
-    if (percent < 50) return "from-orange-50 to-orange-100";
-    if (percent < 75) return "from-lime-50 to-lime-100";
+    if (percent <= 15) return "from-slate-50 to-rose-50";
+    if (percent <= 40) return "from-orange-50 to-orange-100";
+    if (percent <= 70) return "from-lime-50 to-lime-100";
     return "from-emerald-50 to-emerald-100";
   };
 
   const getSuitabilityText = (percent) => {
-    if (percent < 25) return "text-rose-600";
-    if (percent < 50) return "text-orange-600";
-    if (percent < 75) return "text-lime-600";
+    if (percent <= 15) return "text-rose-600";
+    if (percent <= 40) return "text-orange-600";
+    if (percent <= 70) return "text-lime-600";
     return "text-emerald-600";
+  };
+
+  const getRiskLevel = (percent) => {
+    if (percent <= 15) return "extreme";
+    if (percent <= 40) return "high";
+    if (percent <= 70) return "medium";
+    return "low";
+  };
+
+  const renderRiskIndicator = (percent) => {
+    const riskLevel = getRiskLevel(percent);
+    if (riskLevel === "low") {
+      return (
+        <span
+          className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"
+          aria-label="סיכון נמוך"
+        />
+      );
+    }
+    if (riskLevel === "medium") {
+      return (
+        <span
+          className="inline-flex h-2.5 w-2.5 rounded-full bg-orange-500"
+          aria-label="סיכון בינוני"
+        />
+      );
+    }
+    if (riskLevel === "high") {
+      return (
+        <span className="text-red-600 text-sm leading-none" aria-label="סיכון גבוה">
+          ⚠️
+        </span>
+      );
+    }
+    return (
+      <span className="text-red-700 text-sm leading-none" aria-label="סיכון קיצוני">
+        ⛔
+      </span>
+    );
+  };
+
+  const formatDayHeader = (dayValue) => {
+    const date = new Date(dayValue);
+    if (Number.isNaN(date.getTime())) return dayValue;
+    const weekdayMap = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
+    const weekday = weekdayMap[date.getDay()];
+    const dayNum = `${date.getDate()}`.padStart(2, "0");
+    const monthNum = `${date.getMonth() + 1}`.padStart(2, "0");
+    return `${weekday} ${dayNum}.${monthNum}`;
   };
 
   const displayedSlots = selectedDay
@@ -351,7 +400,8 @@ const TimelineBoard = ({
                 const gradient = getSuitabilityTone(day.percent);
                 const percentText = getSuitabilityText(day.percent);
                 const backgroundTone = getSuitabilityBackground(day.percent);
-                const dayLine = day.label.replace(",", " ·");
+                const dayLine = formatDayHeader(day.day);
+                const riskIndicator = renderRiskIndicator(day.percent);
 
                 return (
                   <button
@@ -366,9 +416,12 @@ const TimelineBoard = ({
                     <div className="text-[11px] font-semibold text-slate-500">
                       {dayLine}
                     </div>
-                    <div>
-                      <div className={`text-3xl font-black ${percentText}`}>
-                        {day.percent}% מתאים להטסה
+                    <div className="text-center space-y-1">
+                      <div className={`text-4xl font-black ${percentText}`}>
+                        {day.percent}%
+                      </div>
+                      <div className="text-[11px] font-semibold text-slate-500 hidden sm:block">
+                        התאמה להטסה
                       </div>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-white/70 overflow-hidden">
@@ -377,8 +430,11 @@ const TimelineBoard = ({
                         style={{ width: `${day.percent}%` }}
                       ></div>
                     </div>
-                    <div className="text-[11px] font-semibold text-slate-500">
-                      הצג פירוט →
+                    <div className="text-[11px] font-semibold text-slate-500 flex items-center justify-between">
+                      <span>הצג פירוט →</span>
+                      <span className="inline-flex items-center justify-center w-5 h-5">
+                        {riskIndicator}
+                      </span>
                     </div>
                   </button>
                 );
