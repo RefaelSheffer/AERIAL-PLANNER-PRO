@@ -269,25 +269,11 @@ const TimelineBoard = ({
   };
 
   const selectedDay = days?.[selectedDayIndex] || null;
-  const getSuitabilityTone = (percent) => {
-    if (percent <= 15) return "from-rose-400 to-rose-300";
-    if (percent <= 40) return "from-orange-500 to-orange-400";
-    if (percent <= 70) return "from-lime-500 to-lime-400";
-    return "from-emerald-600 to-emerald-500";
-  };
-
   const getSuitabilityBackground = (percent) => {
     if (percent <= 15) return "from-slate-50 to-rose-50";
     if (percent <= 40) return "from-orange-50 to-orange-100";
     if (percent <= 70) return "from-lime-50 to-lime-100";
     return "from-emerald-50 to-emerald-100";
-  };
-
-  const getSuitabilityText = (percent) => {
-    if (percent <= 15) return "text-rose-600";
-    if (percent <= 40) return "text-orange-600";
-    if (percent <= 70) return "text-lime-600";
-    return "text-emerald-600";
   };
 
   const getRiskLevel = (percent) => {
@@ -409,11 +395,10 @@ const TimelineBoard = ({
               {(days || []).map((day, index) => {
                 const isSelected = index === selectedDayIndex;
                 const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
-                const gradient = getSuitabilityTone(day.percent);
-                const percentText = getSuitabilityText(day.percent);
                 const backgroundTone = getSuitabilityBackground(day.percent);
                 const dayLine = formatDayHeader(day.day);
                 const riskIndicator = renderRiskIndicator(day.percent);
+                const hasFlyableHours = day.flyableHoursTotal > 0;
 
                 return (
                   <button
@@ -428,19 +413,17 @@ const TimelineBoard = ({
                     <div className="text-[11px] font-semibold text-slate-500">
                       {dayLine}
                     </div>
-                    <div className="text-center space-y-1">
-                      <div className={`text-4xl font-black ${percentText}`}>
-                        {day.percent}%
-                      </div>
-                      <div className="text-[11px] font-semibold text-slate-500 hidden sm:block">
-                        התאמה להטסה
-                      </div>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-white/70 overflow-hidden">
+                    <div className="space-y-1">
                       <div
-                        className={`h-full bg-gradient-to-r ${gradient}`}
-                        style={{ width: `${day.percent}%` }}
-                      ></div>
+                        className={`text-3xl font-black ${
+                          hasFlyableHours ? "text-slate-900" : "text-slate-500"
+                        }`}
+                      >
+                        {day.flyableHoursLabel}
+                      </div>
+                      <div className="text-[11px] font-semibold text-slate-500">
+                        מתאימות להטסה
+                      </div>
                     </div>
                     <div className="text-[11px] font-semibold text-slate-500 flex items-center justify-between">
                       <span>{riskIndicator}</span>
