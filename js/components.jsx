@@ -404,28 +404,28 @@ const TimelineBoard = ({
                   <button
                     key={day.day}
                     onClick={() => onSelectDay(index)}
-                    className={`min-w-[240px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-4 rounded-2xl border shadow-sm transition flex flex-col gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${
+                    className={`min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${
                       isSelected
                         ? "border-blue-500 ring-2 ring-blue-200"
                         : "border-slate-200 hover:border-blue-300"
                     } ${isDim ? "opacity-40" : "opacity-100"}`}
                   >
-                    <div className="text-[11px] font-semibold text-slate-500">
+                    <div className="text-[10px] md:text-[11px] font-semibold text-slate-500">
                       {dayLine}
                     </div>
                     <div className="space-y-1">
                       <div
-                        className={`text-3xl font-black ${
+                        className={`text-2xl md:text-3xl font-black ${
                           hasFlyableHours ? "text-slate-900" : "text-slate-500"
                         }`}
                       >
                         {day.flyableHoursLabel}
                       </div>
-                      <div className="text-[11px] font-semibold text-slate-500">
+                      <div className="text-[10px] md:text-[11px] font-semibold text-slate-500">
                         מתאימות להטסה
                       </div>
                     </div>
-                    <div className="text-[11px] font-semibold text-slate-500 flex items-center justify-between">
+                    <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 flex items-center justify-between">
                       <span>{riskIndicator}</span>
                       <span>הצג פירוט →</span>
                     </div>
