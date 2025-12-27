@@ -881,6 +881,45 @@ const App = () => {
       });
     };
 
+    const summarizeFlyableHours = (slots) => {
+      if (!slots.length) {
+        return { text: "אין חלון מתאים", isEmpty: true };
+      }
+
+      const windows = [];
+      let current = [];
+
+      slots.forEach((slot) => {
+        if (slot.isFlyable) {
+          current.push(slot);
+        } else if (current.length) {
+          windows.push(current);
+          current = [];
+        }
+      });
+
+      if (current.length) windows.push(current);
+
+      if (!windows.length) {
+        return { text: "אין חלון מתאים", isEmpty: true };
+      }
+
+      const slotHours = 3;
+      const windowDurations = windows.map((window) => window.length * slotHours);
+      const hasSequence = windows.some((window) => window.length > 1);
+
+      if (!hasSequence) {
+        const totalHours = windowDurations.reduce((sum, hours) => sum + hours, 0);
+        return { text: `${totalHours}`, isEmpty: false };
+      }
+
+      const minHours = Math.min(...windowDurations);
+      const maxHours = Math.max(...windowDurations);
+      const rangeText = minHours === maxHours ? `${minHours}` : `${minHours}–${maxHours}`;
+
+      return { text: rangeText, isEmpty: false };
+    };
+
     return windTimeline.map((day) => {
       const relevantSlots = day.slots.filter(isSlotRelevant);
       const enrichedSlots = day.slots.map((slot) => ({
@@ -919,6 +958,7 @@ const App = () => {
         rainRange: formatPercentRange(rain),
         cloudRange: formatPercentRange(clouds),
         flyableWindows: getWindows(relevantEnriched),
+        flyableHourSummary: summarizeFlyableHours(relevantEnriched),
       };
     });
   }, [windTimeline, isSlotRelevant, isSlotFlyable]);

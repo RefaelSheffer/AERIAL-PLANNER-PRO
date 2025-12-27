@@ -269,13 +269,6 @@ const TimelineBoard = ({
   };
 
   const selectedDay = days?.[selectedDayIndex] || null;
-  const getSuitabilityTone = (percent) => {
-    if (percent <= 15) return "from-rose-400 to-rose-300";
-    if (percent <= 40) return "from-orange-500 to-orange-400";
-    if (percent <= 70) return "from-lime-500 to-lime-400";
-    return "from-emerald-600 to-emerald-500";
-  };
-
   const getSuitabilityBackground = (percent) => {
     if (percent <= 15) return "from-slate-50 to-rose-50";
     if (percent <= 40) return "from-orange-50 to-orange-100";
@@ -283,18 +276,19 @@ const TimelineBoard = ({
     return "from-emerald-50 to-emerald-100";
   };
 
-  const getSuitabilityText = (percent) => {
-    if (percent <= 15) return "text-rose-600";
-    if (percent <= 40) return "text-orange-600";
-    if (percent <= 70) return "text-lime-600";
-    return "text-emerald-600";
-  };
-
   const getRiskLevel = (percent) => {
     if (percent <= 15) return "extreme";
     if (percent <= 40) return "high";
     if (percent <= 70) return "medium";
     return "low";
+  };
+
+  const getRiskLabel = (percent) => {
+    const riskLevel = getRiskLevel(percent);
+    if (riskLevel === "low") return "סיכון נמוך";
+    if (riskLevel === "medium") return "סיכון בינוני";
+    if (riskLevel === "high") return "סיכון גבוה";
+    return "סיכון קיצוני";
   };
 
   const renderRiskIndicator = (percent) => {
@@ -397,11 +391,11 @@ const TimelineBoard = ({
               {(days || []).map((day, index) => {
                 const isSelected = index === selectedDayIndex;
                 const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
-                const gradient = getSuitabilityTone(day.percent);
-                const percentText = getSuitabilityText(day.percent);
                 const backgroundTone = getSuitabilityBackground(day.percent);
                 const dayLine = formatDayHeader(day.day);
                 const riskIndicator = renderRiskIndicator(day.percent);
+                const riskLabel = getRiskLabel(day.percent);
+                const flyableSummary = day.flyableHourSummary;
 
                 return (
                   <button
@@ -416,24 +410,27 @@ const TimelineBoard = ({
                     <div className="text-[11px] font-semibold text-slate-500">
                       {dayLine}
                     </div>
-                    <div className="text-center space-y-1">
-                      <div className={`text-4xl font-black ${percentText}`}>
-                        {day.percent}%
-                      </div>
-                      <div className="text-[11px] font-semibold text-slate-500 hidden sm:block">
-                        התאמה להטסה
-                      </div>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-white/70 overflow-hidden">
-                      <div
-                        className={`h-full bg-gradient-to-r ${gradient}`}
-                        style={{ width: `${day.percent}%` }}
-                      ></div>
+                    <div className="space-y-1 text-right">
+                      {flyableSummary?.isEmpty ? (
+                        <div className="text-xl font-black text-slate-900">
+                          {flyableSummary.text}
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-3xl font-black text-slate-900">
+                            {flyableSummary?.text} שעות
+                          </div>
+                          <div className="text-[11px] font-semibold text-slate-500">
+                            מתאימות להטסה
+                          </div>
+                        </>
+                      )}
                     </div>
                     <div className="text-[11px] font-semibold text-slate-500 flex items-center justify-between">
                       <span>הצג פירוט →</span>
-                      <span className="inline-flex items-center justify-center w-5 h-5">
+                      <span className="inline-flex items-center gap-1">
                         {riskIndicator}
+                        <span>{riskLabel}</span>
                       </span>
                     </div>
                   </button>
