@@ -122,6 +122,16 @@ const Icon = ({
         <path d="M7 9l5-5 5 5M12 4v12" />
       </svg>
     ),
+    "chevron-left": (
+      <svg {...baseProps}>
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+    ),
+    "chevron-right": (
+      <svg {...baseProps}>
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    ),
     export: (
       <svg {...baseProps}>
         <path d="M9 14l-6 6m0 0h7m-7 0v-7" />
@@ -194,12 +204,69 @@ const TimelineBoard = ({
   if (!show) return null;
 
   const [showAllSlots, setShowAllSlots] = React.useState(false);
+  const daysScrollRef = React.useRef(null);
+  const [showLeftFade, setShowLeftFade] = React.useState(false);
+  const [showRightFade, setShowRightFade] = React.useState(false);
 
   React.useEffect(() => {
     if (!filterFlyableOnly) {
       setShowAllSlots(false);
     }
   }, [filterFlyableOnly]);
+
+  const updateFadeEdges = React.useCallback(() => {
+    const container = daysScrollRef.current;
+    if (!container) return;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setShowLeftFade(scrollLeft > 4);
+    setShowRightFade(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
+
+  React.useEffect(() => {
+    updateFadeEdges();
+  }, [days?.length, updateFadeEdges]);
+
+  React.useEffect(() => {
+    const container = daysScrollRef.current;
+    if (!container) return;
+
+    const handleWheel = (event) => {
+      if (!daysScrollRef.current) return;
+      const hasDeltaX = Math.abs(event.deltaX) > 0;
+      const scrollDelta = hasDeltaX ? event.deltaX : event.deltaY;
+      if (scrollDelta === 0) return;
+      event.preventDefault();
+      daysScrollRef.current.scrollLeft += scrollDelta;
+    };
+
+    const handleScroll = () => {
+      updateFadeEdges();
+    };
+
+    const handleResize = () => {
+      updateFadeEdges();
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    container.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [updateFadeEdges]);
+
+  const scrollDaysBy = (direction) => {
+    const container = daysScrollRef.current;
+    if (!container) return;
+    const amount = container.clientWidth * 0.7;
+    container.scrollBy({
+      left: direction * amount,
+      behavior: "smooth",
+    });
+  };
 
   const selectedDay = days?.[selectedDayIndex] || null;
   const getSuitabilityTone = (percent) => {
@@ -273,7 +340,11 @@ const TimelineBoard = ({
             )}
           </div>
           <div className="relative flex-1 px-4">
-            <div className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 custom-scroll scroll-smooth snap-x snap-mandatory">
+            <div
+              ref={daysScrollRef}
+              className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 custom-scroll scroll-smooth snap-x snap-mandatory touch-pan-x"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
               {(days || []).map((day, index) => {
                 const isSelected = index === selectedDayIndex;
                 const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
@@ -335,8 +406,36 @@ const TimelineBoard = ({
                 );
               })}
             </div>
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white/95 to-transparent" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white/95 to-transparent" />
+            {!isMobile && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => scrollDaysBy(-1)}
+                  className="absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow hover:bg-white"
+                  aria-label="גלול ימים שמאלה"
+                >
+                  <Icon name="chevron-left" size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollDaysBy(1)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow hover:bg-white"
+                  aria-label="גלול ימים ימינה"
+                >
+                  <Icon name="chevron-right" size={14} />
+                </button>
+              </>
+            )}
+            <div
+              className={`pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white/95 to-transparent transition-opacity ${
+                showLeftFade ? "opacity-100" : "opacity-0"
+              }`}
+            />
+            <div
+              className={`pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white/95 to-transparent transition-opacity ${
+                showRightFade ? "opacity-100" : "opacity-0"
+              }`}
+            />
           </div>
         </div>
       </div>
