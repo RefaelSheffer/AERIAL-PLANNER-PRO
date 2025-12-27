@@ -166,8 +166,10 @@ const Sidebar = ({ open, className = "", children, containerRef }) => {
 };
 
 // Map view container
-const MapView = ({ className = "", children }) => (
-  <div className={className}>{children}</div>
+const MapView = ({ className = "", style, children }) => (
+  <div className={className} style={style}>
+    {children}
+  </div>
 );
 
 // Weather timeline board
@@ -200,16 +202,6 @@ const TimelineBoard = ({
   }, [filterFlyableOnly]);
 
   const selectedDay = days?.[selectedDayIndex] || null;
-  const timelineCardStyle = React.useMemo(() => {
-    const fallbackWidth = "min(920px, calc(100vw - 24px))";
-    const width = panelWidth || fallbackWidth;
-
-    return {
-      width,
-      maxWidth: width,
-    };
-  }, [panelWidth]);
-
   const getSuitabilityTone = (percent) => {
     if (percent < 25) return "from-rose-500 to-rose-400";
     if (percent < 50) return "from-orange-500 to-orange-400";
@@ -239,17 +231,14 @@ const TimelineBoard = ({
 
   return (
     <>
-      <div
-        className="bg-white/95 backdrop-blur border border-slate-200 shadow-2xl rounded-3xl overflow-hidden"
-        style={timelineCardStyle}
-      >
+      <div className="fixed bottom-0 left-0 right-0 z-[940] pointer-events-auto bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-6px_18px_rgba(15,23,42,0.12)]">
         {dataUnavailable && (
           <div className="text-[11px] text-amber-800 bg-amber-50 border-b border-amber-200 px-3 py-2 text-center">
             מקור הנתונים לא זמין כרגע
           </div>
         )}
-        <div className="px-4 pt-3 pb-2 flex flex-col gap-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-slate-700">
+        <div className="flex h-[180px] md:h-[210px] flex-col">
+          <div className="h-[48px] md:h-[52px] px-4 flex items-center justify-between gap-2 text-[12px] text-slate-700 border-b border-slate-200">
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -283,67 +272,71 @@ const TimelineBoard = ({
               </button>
             )}
           </div>
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 custom-scroll">
-            {(days || []).map((day, index) => {
-              const isSelected = index === selectedDayIndex;
-              const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
-              const gradient = getSuitabilityTone(day.percent);
-              const percentText = getSuitabilityText(day.percent);
+          <div className="relative flex-1 px-4">
+            <div className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 custom-scroll scroll-smooth snap-x snap-mandatory">
+              {(days || []).map((day, index) => {
+                const isSelected = index === selectedDayIndex;
+                const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
+                const gradient = getSuitabilityTone(day.percent);
+                const percentText = getSuitabilityText(day.percent);
 
-              return (
-                <button
-                  key={day.day}
-                  onClick={() => onSelectDay(index)}
-                  className={`min-w-[180px] max-w-[200px] p-3 rounded-2xl border shadow-sm transition flex flex-col gap-2 text-right ${
-                    isSelected
-                      ? "border-blue-500 ring-2 ring-blue-200 bg-white"
-                      : "border-slate-200 bg-white/90 hover:border-blue-300"
-                  } ${isDim ? "opacity-40" : "opacity-100"}`}
-                >
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="font-semibold text-slate-700">
-                      {day.label}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
-                      {day.day}
-                    </span>
-                  </div>
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <div className={`text-2xl font-black ${percentText}`}>
-                        {day.percent}%
+                return (
+                  <button
+                    key={day.day}
+                    onClick={() => onSelectDay(index)}
+                    className={`min-w-[240px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-3 rounded-2xl border shadow-sm transition flex flex-col gap-2 text-right snap-start ${
+                      isSelected
+                        ? "border-blue-500 ring-2 ring-blue-200 bg-white"
+                        : "border-slate-200 bg-white/90 hover:border-blue-300"
+                    } ${isDim ? "opacity-40" : "opacity-100"}`}
+                  >
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span className="font-semibold text-slate-700">
+                        {day.label}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
+                        {day.day}
+                      </span>
+                    </div>
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <div className={`text-2xl font-black ${percentText}`}>
+                          {day.percent}%
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          התאמה להטסה
+                        </div>
                       </div>
-                      <div className="text-[11px] text-slate-500">
-                        התאמה להטסה
+                      <div className="flex items-center gap-1 text-[10px] text-slate-600">
+                        <Icon name="clock" size={12} />
+                        {day.flyableSlots.length} שעות יציבות
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-600">
-                      <Icon name="clock" size={12} />
-                      {day.flyableSlots.length} שעות יציבות
+                    <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-600">
+                      {formatSummary(day).slice(0, 4).map((item) => (
+                        <div
+                          key={`${day.day}-${item.label}`}
+                          className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 border border-slate-200"
+                        >
+                          <Icon name={item.icon} size={11} />
+                          <span className="truncate">
+                            {item.label}: {item.value}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-600">
-                    {formatSummary(day).slice(0, 4).map((item) => (
+                    <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
                       <div
-                        key={`${day.day}-${item.label}`}
-                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 border border-slate-200"
-                      >
-                        <Icon name={item.icon} size={11} />
-                        <span className="truncate">
-                          {item.label}: {item.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className={`h-full bg-gradient-to-r ${gradient}`}
-                      style={{ width: `${day.percent}%` }}
-                    ></div>
-                  </div>
-                </button>
-              );
-            })}
+                        className={`h-full bg-gradient-to-r ${gradient}`}
+                        style={{ width: `${day.percent}%` }}
+                      ></div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white/95 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white/95 to-transparent" />
           </div>
         </div>
       </div>
