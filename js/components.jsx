@@ -364,7 +364,7 @@ const TimelineBoard = ({
                 }`}
               >
                 <Icon name="clock" size={12} />
-                סמן ימים ושעות מתאימות
+                סמן ימים ושעות מתאימות לטיסה
               </button>
               <button
                 type="button"
