@@ -276,19 +276,19 @@ const TimelineBoard = ({
     return "from-emerald-500 to-emerald-400";
   };
 
+  const getSuitabilityBackground = (percent) => {
+    if (percent < 25) return "from-slate-50 to-slate-100";
+    if (percent < 50) return "from-orange-50 to-orange-100";
+    if (percent < 75) return "from-lime-50 to-lime-100";
+    return "from-emerald-50 to-emerald-100";
+  };
+
   const getSuitabilityText = (percent) => {
     if (percent < 25) return "text-rose-600";
     if (percent < 50) return "text-orange-600";
     if (percent < 75) return "text-lime-600";
     return "text-emerald-600";
   };
-
-  const formatSummary = (day) => [
-    { label: "רוח", value: day.windRange, icon: "wind" },
-    { label: "משבים", value: day.gustRange, icon: "warning" },
-    { label: "גשם", value: day.rainRange, icon: "cloud" },
-    { label: "עננות", value: day.cloudRange, icon: "cloud" },
-  ];
 
   const displayedSlots = selectedDay
     ? filterFlyableOnly && !showAllSlots
@@ -350,57 +350,35 @@ const TimelineBoard = ({
                 const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
                 const gradient = getSuitabilityTone(day.percent);
                 const percentText = getSuitabilityText(day.percent);
+                const backgroundTone = getSuitabilityBackground(day.percent);
+                const dayLine = day.label.replace(",", " ·");
 
                 return (
                   <button
                     key={day.day}
                     onClick={() => onSelectDay(index)}
-                    className={`min-w-[240px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-3 rounded-2xl border shadow-sm transition flex flex-col gap-2 text-right snap-start ${
+                    className={`min-w-[240px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-4 rounded-2xl border shadow-sm transition flex flex-col gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${
                       isSelected
-                        ? "border-blue-500 ring-2 ring-blue-200 bg-white"
-                        : "border-slate-200 bg-white/90 hover:border-blue-300"
+                        ? "border-blue-500 ring-2 ring-blue-200"
+                        : "border-slate-200 hover:border-blue-300"
                     } ${isDim ? "opacity-40" : "opacity-100"}`}
                   >
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span className="font-semibold text-slate-700">
-                        {day.label}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200">
-                        {day.day}
-                      </span>
+                    <div className="text-[11px] font-semibold text-slate-500">
+                      {dayLine}
                     </div>
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <div className={`text-2xl font-black ${percentText}`}>
-                          {day.percent}%
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          התאמה להטסה
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-[10px] text-slate-600">
-                        <Icon name="clock" size={12} />
-                        {day.flyableSlots.length} שעות יציבות
+                    <div>
+                      <div className={`text-3xl font-black ${percentText}`}>
+                        {day.percent}% מתאים להטסה
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-600">
-                      {formatSummary(day).slice(0, 4).map((item) => (
-                        <div
-                          key={`${day.day}-${item.label}`}
-                          className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 border border-slate-200"
-                        >
-                          <Icon name={item.icon} size={11} />
-                          <span className="truncate">
-                            {item.label}: {item.value}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-1.5 w-full rounded-full bg-white/70 overflow-hidden">
                       <div
                         className={`h-full bg-gradient-to-r ${gradient}`}
                         style={{ width: `${day.percent}%` }}
                       ></div>
+                    </div>
+                    <div className="text-[11px] font-semibold text-slate-500">
+                      הצג פירוט →
                     </div>
                   </button>
                 );
