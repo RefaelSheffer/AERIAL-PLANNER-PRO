@@ -1906,6 +1906,14 @@ const App = () => {
       {showSettings && (
         <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="relative bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              className="absolute top-4 left-4 rounded-full border border-slate-200 bg-white/95 text-slate-600 p-2 shadow-sm transition hover:bg-slate-100 hover:text-slate-900"
+              aria-label="סגור הגדרות"
+            >
+              <Icon name="close" size={16} />
+            </button>
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div className="pr-8 md:pr-0">
                 <div className="text-sm uppercase tracking-widest text-blue-600 font-bold">
