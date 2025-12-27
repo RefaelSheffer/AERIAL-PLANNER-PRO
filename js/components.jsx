@@ -421,9 +421,11 @@ const TimelineBoard = ({
                       >
                         {day.flyableHoursLabel}
                       </div>
-                      <div className="text-[10px] md:text-[11px] font-semibold text-slate-500">
-                        מתאימות להטסה
-                      </div>
+                      {hasFlyableHours && (
+                        <div className="text-[10px] md:text-[11px] font-semibold text-slate-500">
+                          חלון טיסה
+                        </div>
+                      )}
                     </div>
                     <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 flex items-center justify-between">
                       <span>{riskIndicator}</span>

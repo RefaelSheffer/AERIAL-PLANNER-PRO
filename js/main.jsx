@@ -889,7 +889,7 @@ const App = () => {
     };
 
     const formatFlyableHoursLabel = (windowHours, totalHours) => {
-      if (totalHours <= 0) return "אין חלון מתאים";
+      if (totalHours <= 0) return "אין חלון טיסה";
       const hasSequence = windowHours.some((hours) => hours > SLOT_HOURS);
       if (!hasSequence) return `${totalHours} ש׳`;
       const min = Math.min(...windowHours);
