@@ -404,7 +404,7 @@ const TimelineBoard = ({
                   <button
                     key={day.day}
                     onClick={() => onSelectDay(index)}
-                    className={`min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${
+                    className={`min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${
                       isSelected
                         ? "border-blue-500 ring-2 ring-blue-200"
                         : "border-slate-200 hover:border-blue-300"
@@ -415,7 +415,7 @@ const TimelineBoard = ({
                     </div>
                     <div className="space-y-1">
                       <div
-                        className={`text-2xl md:text-3xl font-black ${
+                        className={`text-xl sm:text-2xl md:text-3xl font-black ${
                           hasFlyableHours ? "text-slate-900" : "text-slate-500"
                         }`}
                       >
