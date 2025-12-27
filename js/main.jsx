@@ -852,6 +852,8 @@ const App = () => {
       return `${min.toFixed(0)}–${max.toFixed(0)}%`;
     };
 
+    const SLOT_HOURS = 3;
+
     const getWindows = (slots) => {
       if (!slots.length) return [];
       const windows = [];
@@ -860,9 +862,10 @@ const App = () => {
       slots.forEach((slot) => {
         if (slot.isFlyable) {
           if (!current) {
-            current = { start: slot, end: slot };
+            current = { start: slot, end: slot, count: 1 };
           } else {
             current.end = slot;
+            current.count += 1;
           }
         } else if (current) {
           windows.push(current);
@@ -875,10 +878,24 @@ const App = () => {
       return windows.map((window) => {
         const startTime = window.start.time;
         const endDate = new Date(`${window.end.key.slice(0, 13)}:00`);
-        endDate.setHours(endDate.getHours() + 3);
+        endDate.setHours(endDate.getHours() + SLOT_HOURS);
         const endTime = endDate.toISOString().slice(11, 16);
-        return `${startTime}–${endTime}`;
+        return {
+          label: `${startTime}–${endTime}`,
+          hours: window.count * SLOT_HOURS,
+          count: window.count,
+        };
       });
+    };
+
+    const formatFlyableHoursLabel = (windowHours, totalHours) => {
+      if (totalHours <= 0) return "אין חלון מתאים";
+      const hasSequence = windowHours.some((hours) => hours > SLOT_HOURS);
+      if (!hasSequence) return `${totalHours} ש׳`;
+      const min = Math.min(...windowHours);
+      const max = Math.max(...windowHours);
+      if (min === max) return `${min} ש׳`;
+      return `${min}–${max} ש׳`;
     };
 
     return windTimeline.map((day) => {
@@ -908,6 +925,10 @@ const App = () => {
         .map((slot) => slot.clouds)
         .filter((value) => typeof value === "number");
 
+      const flyableWindows = getWindows(relevantEnriched);
+      const windowHours = flyableWindows.map((window) => window.hours);
+      const flyableHoursTotal = flyableSlots.length * SLOT_HOURS;
+
       return {
         ...day,
         enrichedSlots,
@@ -918,7 +939,12 @@ const App = () => {
         gustRange: formatRange(gusts, " m/s"),
         rainRange: formatPercentRange(rain),
         cloudRange: formatPercentRange(clouds),
-        flyableWindows: getWindows(relevantEnriched),
+        flyableWindows: flyableWindows.map((window) => window.label),
+        flyableHoursLabel: formatFlyableHoursLabel(
+          windowHours,
+          flyableHoursTotal,
+        ),
+        flyableHoursTotal,
       };
     });
   }, [windTimeline, isSlotRelevant, isSlotFlyable]);
