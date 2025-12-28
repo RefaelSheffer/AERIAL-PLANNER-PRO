@@ -1891,10 +1891,6 @@ const App = () => {
       onToggleFilterFlyable={() =>
         setFilterFlyableOnly((prev) => !prev)
       }
-      onJumpToToday={() => {
-        setSelectedDayIndex(0);
-        setShowDayDetails(true);
-      }}
       panelWidth={plannerPanelWidth}
       onOpenSettings={openSuitabilitySettings}
       showSettingsButton={true}
