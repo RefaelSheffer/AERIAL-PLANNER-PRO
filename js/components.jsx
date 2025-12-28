@@ -196,7 +196,6 @@ const TimelineBoard = ({
   onCloseDayDetails,
   filterFlyableOnly,
   onToggleFilterFlyable,
-  onJumpToToday,
   panelWidth,
   onOpenSettings,
   showSettingsButton = false,
@@ -365,14 +364,6 @@ const TimelineBoard = ({
               >
                 <Icon name="clock" size={12} />
                 סמן ימים ושעות מתאימות לטיסה
-              </button>
-              <button
-                type="button"
-                onClick={onJumpToToday}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              >
-                <Icon name="calendar" size={12} />
-                קפוץ להיום
               </button>
             </div>
             {showSettingsButton && (
