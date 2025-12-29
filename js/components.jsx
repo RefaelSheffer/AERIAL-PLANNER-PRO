@@ -401,7 +401,7 @@ const TimelineBoard = ({
                         : "border-slate-200 hover:border-blue-300"
                     } ${isDim ? "opacity-40" : "opacity-100"}`}
                   >
-                    <div className="text-[10px] md:text-[11px] font-semibold text-slate-500">
+                    <div className="text-[12px] md:text-[13px] font-semibold text-slate-500">
                       {dayLine}
                     </div>
                     <div className="space-y-1">
