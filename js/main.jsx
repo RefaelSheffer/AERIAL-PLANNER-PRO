@@ -128,6 +128,69 @@ const slotIsFlyable = (slot, suitabilitySettings) => {
 };
 
 /**
+ * Calculate a normalized risk score for a forecast slot based on threshold exceedance.
+ * @param {{wind:number|null, gust:number|null, clouds:number|null, rainProb:number|null, sunAlt:number|null}} slot - Normalized forecast slot values.
+ * @param {object} suitabilitySettings - User thresholds for evaluating flight suitability.
+ * @returns {number} Risk score between 0 and 1.
+ */
+const calculateSlotRisk = (slot, suitabilitySettings) => {
+  const {
+    maxWind,
+    maxGust,
+    maxCloudCover,
+    maxRainProb,
+    minSunAltitude,
+    maxSunAltitude,
+    includeNightFlights,
+  } = suitabilitySettings;
+
+  const wind =
+    typeof slot.wind === "number" && !Number.isNaN(slot.wind) ? slot.wind : null;
+  const gustRaw =
+    typeof slot.gust === "number" && !Number.isNaN(slot.gust)
+      ? slot.gust
+      : null;
+  const gust = gustRaw ?? wind;
+  const clouds =
+    typeof slot.clouds === "number" && !Number.isNaN(slot.clouds)
+      ? slot.clouds
+      : null;
+  const rainProb =
+    typeof slot.rainProb === "number" && !Number.isNaN(slot.rainProb)
+      ? slot.rainProb
+      : null;
+
+  const safeDivisor = (value, fallback = 1) =>
+    typeof value === "number" && value > 0 ? value : fallback;
+
+  const windRisk =
+    wind === null ? 0 : Math.max(0, (wind - maxWind) / safeDivisor(maxWind));
+  const gustRisk =
+    gust === null ? 0 : Math.max(0, (gust - maxGust) / safeDivisor(maxGust));
+  const cloudRisk =
+    clouds === null
+      ? 0
+      : Math.max(
+          0,
+          (clouds - maxCloudCover) / safeDivisor(maxCloudCover),
+        );
+  const rainDenominator = Math.max(1, 100 - maxRainProb);
+  const rainRisk =
+    rainProb === null
+      ? 0
+      : Math.max(0, (rainProb - maxRainProb) / rainDenominator);
+  const sunRisk = includeNightFlights
+    ? 0
+    : slot.sunAlt === null || slot.sunAlt === undefined
+      ? 0
+      : slot.sunAlt < minSunAltitude || slot.sunAlt > maxSunAltitude
+        ? 1
+        : 0;
+
+  return (windRisk + gustRisk + cloudRisk + rainRisk + sunRisk) / 5;
+};
+
+/**
  * Build a condensed wind timeline grouped by day, sampling every 3 hours with sun altitude enrichment.
  * @param {object|null} hourlyForecast - Weather API response containing hourly arrays.
  * @param {[number, number]|null} weatherLocation - Current location used for sun angle enrichment.
@@ -1036,6 +1099,17 @@ const App = () => {
         relevantEnriched.length > 0
           ? Math.round((flyableSlots.length / relevantEnriched.length) * 100)
           : 0;
+      const baseRiskScore =
+        relevantEnriched.length > 0
+          ? relevantEnriched.reduce(
+              (total, slot) =>
+                total + calculateSlotRisk(slot, suitabilitySettings),
+              0,
+            ) / relevantEnriched.length
+          : 0;
+      const availabilityPenalty = 1 - percent / 100;
+      const dayRiskScore =
+        percent > 0 ? (baseRiskScore + availabilityPenalty) / 2 : baseRiskScore;
 
       const winds = relevantSlots
         .map((slot) => slot.wind)
@@ -1060,6 +1134,7 @@ const App = () => {
         relevantSlots: relevantEnriched,
         flyableSlots,
         percent,
+        dayRiskScore,
         windRange: formatRange(winds, " m/s"),
         gustRange: formatRange(gusts, " m/s"),
         rainRange: formatPercentRange(rain),
@@ -1072,7 +1147,7 @@ const App = () => {
         flyableHoursTotal,
       };
     });
-  }, [windTimeline, isSlotRelevant, isSlotFlyable]);
+  }, [windTimeline, isSlotRelevant, isSlotFlyable, suitabilitySettings]);
 
   useEffect(() => {
     if (selectedDayIndex >= daySuitability.length && daySuitability.length > 0) {
