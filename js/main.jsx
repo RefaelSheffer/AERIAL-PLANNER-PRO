@@ -141,8 +141,6 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
   const {
     maxWind,
     maxGust,
-    minCloudCover,
-    maxCloudCover,
     maxRainProb,
     minSunAltitude,
     maxSunAltitude,
@@ -156,10 +154,6 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
       ? slot.gust
       : null;
   const gust = gustRaw ?? wind;
-  const clouds =
-    typeof slot.clouds === "number" && !Number.isNaN(slot.clouds)
-      ? slot.clouds
-      : null;
   const rainProb =
     typeof slot.rainProb === "number" && !Number.isNaN(slot.rainProb)
       ? slot.rainProb
@@ -172,16 +166,6 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
     wind === null ? 0 : Math.max(0, (wind - maxWind) / safeDivisor(maxWind));
   const gustRisk =
     gust === null ? 0 : Math.max(0, (gust - maxGust) / safeDivisor(maxGust));
-  const cloudRisk =
-    clouds === null
-      ? 0
-      : Math.max(
-          0,
-          Math.max(
-            (minCloudCover - clouds) / safeDivisor(minCloudCover),
-            (clouds - maxCloudCover) / safeDivisor(maxCloudCover),
-          ),
-        );
   const rainDenominator = Math.max(1, 100 - maxRainProb);
   const rainRisk =
     rainProb === null
@@ -195,7 +179,7 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
         ? 1
         : 0;
 
-  return (windRisk + gustRisk + cloudRisk + rainRisk + sunRisk) / 5;
+  return (windRisk + gustRisk + rainRisk + sunRisk) / 4;
 };
 
 /**
