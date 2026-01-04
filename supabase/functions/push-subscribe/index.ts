@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { corsHeaders } from "../_shared/cors.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rate_limit.ts";
+import { getAllowedOrigin, getClientIp } from "../_shared/security.ts";
 
 type PushSubscriptionPayload = {
   subscription?: {
@@ -17,14 +19,36 @@ const parseJson = async (req: Request) => {
 };
 
 Deno.serve(async (req) => {
+  const origin = getAllowedOrigin(req);
+  if (!origin) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const originCorsHeaders = buildCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: originCorsHeaders });
   }
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const clientIp = getClientIp(req);
+  const rateLimit = checkRateLimit(clientIp, 20, 5 * 60 * 1000);
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        ...originCorsHeaders,
+        "Content-Type": "application/json",
+        "Retry-After": Math.ceil(rateLimit.retryAfterMs / 1000).toString(),
+      },
     });
   }
 
@@ -37,7 +61,7 @@ Deno.serve(async (req) => {
   if (!endpoint || !p256dh || !auth) {
     return new Response(JSON.stringify({ error: "Invalid subscription data" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -46,7 +70,7 @@ Deno.serve(async (req) => {
   if (!supabaseUrl || !serviceKey) {
     return new Response(JSON.stringify({ error: "Missing Supabase config" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -71,14 +95,14 @@ Deno.serve(async (req) => {
   if (error || !data) {
     return new Response(JSON.stringify({ error: "Failed to save subscription" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
   return new Response(
     JSON.stringify({ ok: true, subscription_id: data.id }),
     {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     },
   );
 });

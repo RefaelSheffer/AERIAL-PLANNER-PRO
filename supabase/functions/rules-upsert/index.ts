@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { corsHeaders } from "../_shared/cors.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rate_limit.ts";
+import { getAllowedOrigin, getClientIp } from "../_shared/security.ts";
 
 type RulePayload = {
   lat?: number;
@@ -50,14 +52,36 @@ const clampNumber = (value: unknown, fallback: number) => {
 };
 
 Deno.serve(async (req) => {
+  const origin = getAllowedOrigin(req);
+  if (!origin) {
+    return new Response(JSON.stringify({ error: "Origin not allowed" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const originCorsHeaders = buildCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: originCorsHeaders });
   }
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const clientIp = getClientIp(req);
+  const rateLimit = checkRateLimit(clientIp, 40, 5 * 60 * 1000);
+  if (!rateLimit.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: {
+        ...originCorsHeaders,
+        "Content-Type": "application/json",
+        "Retry-After": Math.ceil(rateLimit.retryAfterMs / 1000).toString(),
+      },
     });
   }
 
@@ -68,7 +92,7 @@ Deno.serve(async (req) => {
   if (!subscriptionId || !rule) {
     return new Response(JSON.stringify({ error: "Missing rule payload" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -77,13 +101,13 @@ Deno.serve(async (req) => {
   if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
     return new Response(JSON.stringify({ error: "Invalid latitude" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
   if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
     return new Response(JSON.stringify({ error: "Invalid longitude" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -92,7 +116,7 @@ Deno.serve(async (req) => {
   if (!startDate || !endDate) {
     return new Response(JSON.stringify({ error: "Invalid date range" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
   const dayDiff = Math.floor(
@@ -101,7 +125,7 @@ Deno.serve(async (req) => {
   if (dayDiff < 0 || dayDiff > 7) {
     return new Response(JSON.stringify({ error: "Date range too large" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -110,7 +134,7 @@ Deno.serve(async (req) => {
   if (hourFrom > hourTo) {
     return new Response(JSON.stringify({ error: "Invalid hour range" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -151,7 +175,7 @@ Deno.serve(async (req) => {
   if (!allowedNotify.has(notifyOn)) {
     return new Response(JSON.stringify({ error: "Invalid notify_on value" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -174,7 +198,7 @@ Deno.serve(async (req) => {
   if (!supabaseUrl || !serviceKey) {
     return new Response(JSON.stringify({ error: "Missing Supabase config" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
@@ -203,11 +227,11 @@ Deno.serve(async (req) => {
   if (error || !data) {
     return new Response(JSON.stringify({ error: "Failed to upsert rule" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     });
   }
 
   return new Response(JSON.stringify({ ok: true, rule_id: data.id }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...originCorsHeaders, "Content-Type": "application/json" },
   });
 });
