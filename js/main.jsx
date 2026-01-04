@@ -609,6 +609,24 @@ const App = () => {
     setMapStyle((prev) => (prev === "satellite" ? "street" : "satellite"));
   }, []);
 
+  const applyBaseLayer = useCallback(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const baseLayers = layersRef.current.baseLayers;
+    if (!baseLayers) return;
+
+    Object.values(baseLayers).forEach((layer) => {
+      if (layer && map.hasLayer(layer)) {
+        map.removeLayer(layer);
+      }
+    });
+
+    const nextLayer = baseLayers[mapStyle];
+    if (nextLayer && !map.hasLayer(nextLayer)) {
+      map.addLayer(nextLayer);
+    }
+  }, [mapStyle]);
+
   /**
    * Toggle visibility of the sidebar, realtime panel, or timeline while keeping them mutually exclusive.
    * @param {"sidebar"|"realtime"|"timeline"} panel - Target panel key to toggle.
@@ -1884,22 +1902,8 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current) return;
-    const map = mapRef.current;
-    const baseLayers = layersRef.current.baseLayers;
-    if (!baseLayers) return;
-
-    const nextLayer = baseLayers[mapStyle];
-    const otherLayer =
-      mapStyle === "satellite" ? baseLayers.street : baseLayers.satellite;
-
-    if (otherLayer && map.hasLayer(otherLayer)) {
-      map.removeLayer(otherLayer);
-    }
-    if (nextLayer && !map.hasLayer(nextLayer)) {
-      map.addLayer(nextLayer);
-    }
-  }, [mapStyle]);
+    applyBaseLayer();
+  }, [applyBaseLayer]);
 
   useEffect(() => {
     if (mapRef.current) {
