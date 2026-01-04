@@ -24,6 +24,15 @@ type RuleRecord = {
   } | null;
 };
 
+type WeatherSlot = {
+  time: string;
+  wind: number | null;
+  gust: number | null;
+  clouds: number | null;
+  rainProb: number | null;
+  sunAlt: number | null;
+};
+
 const DEFAULT_CRITERIA = {
   maxWind: 20,
   maxGust: 25,
@@ -169,6 +178,32 @@ const normalizeBasePath = (value: unknown) => {
   return trimmed.replace(/\/$/, "");
 };
 
+const createLimiter = (maxConcurrency: number) => {
+  let active = 0;
+  const queue: Array<() => void> = [];
+  const next = () => {
+    if (active >= maxConcurrency || queue.length === 0) return;
+    const task = queue.shift();
+    if (task) task();
+  };
+  return async <T>(task: () => Promise<T>) => {
+    return await new Promise<T>((resolve, reject) => {
+      const run = () => {
+        active += 1;
+        task()
+          .then(resolve)
+          .catch(reject)
+          .finally(() => {
+            active -= 1;
+            next();
+          });
+      };
+      queue.push(run);
+      next();
+    });
+  };
+};
+
 const fetchWeatherSlots = async (
   lat: number,
   lon: number,
@@ -176,7 +211,7 @@ const fetchWeatherSlots = async (
   endDate: string,
   hourFrom: number,
   hourTo: number,
-) => {
+): Promise<WeatherSlot[]> => {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", String(lat));
   url.searchParams.set("longitude", String(lon));
@@ -219,7 +254,7 @@ const fetchWeatherSlots = async (
         sunAlt: Number.isFinite(sunAlt) ? sunAlt : null,
       };
     })
-    .filter((slot: unknown) => slot !== null);
+    .filter((slot: WeatherSlot | null): slot is WeatherSlot => slot !== null);
 };
 
 Deno.serve(async (req) => {
@@ -264,6 +299,26 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, serviceKey);
   const nowIso = new Date().toISOString();
+  const weatherLimiter = createLimiter(4);
+  const ruleLimiter = createLimiter(5);
+  const weatherCache = new Map<string, Promise<WeatherSlot[]>>();
+  const getWeatherSlots = (
+    lat: number,
+    lon: number,
+    startDate: string,
+    endDate: string,
+    hourFrom: number,
+    hourTo: number,
+  ) => {
+    const key = [lat, lon, startDate, endDate, hourFrom, hourTo].join("|");
+    const cached = weatherCache.get(key);
+    if (cached) return cached;
+    const request = weatherLimiter(() =>
+      fetchWeatherSlots(lat, lon, startDate, endDate, hourFrom, hourTo),
+    );
+    weatherCache.set(key, request);
+    return request;
+  };
 
   const { data: rules, error } = await supabase
     .from("rules")
@@ -282,10 +337,10 @@ Deno.serve(async (req) => {
   const updates: Promise<unknown>[] = [];
   const results = [];
 
-  for (const rule of (rules || []) as RuleRecord[]) {
+  const processRule = async (rule: RuleRecord) => {
     const subscription = rule.subscriptions;
-    if (!subscription || subscription.disabled_at) continue;
-    if (rule.notify_on === "disabled") continue;
+    if (!subscription || subscription.disabled_at) return;
+    if (rule.notify_on === "disabled") return;
 
     const criteriaRaw = rule.criteria ?? {};
     const criteria = normalizeCriteria(criteriaRaw);
@@ -300,7 +355,7 @@ Deno.serve(async (req) => {
     let riskScore = 0;
 
     try {
-      const slots = await fetchWeatherSlots(
+      const slots = await getWeatherSlots(
         rule.lat,
         rule.lon,
         rule.start_date,
@@ -422,7 +477,11 @@ Deno.serve(async (req) => {
       percent,
       state_changed: stateChanged,
     });
-  }
+  };
+
+  await Promise.all(
+    ((rules || []) as RuleRecord[]).map((rule) => ruleLimiter(() => processRule(rule))),
+  );
 
   if (updates.length) {
     await Promise.all(updates);
