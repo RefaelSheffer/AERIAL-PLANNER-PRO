@@ -161,10 +161,10 @@ Deno.serve(async (req) => {
         Date.UTC(
           endDateUtc.getUTCFullYear(),
           endDateUtc.getUTCMonth(),
-          endDateUtc.getUTCDate() + 1,
+          endDateUtc.getUTCDate(),
           23,
           59,
-          0,
+          59,
         ),
       )
     : null;
