@@ -581,7 +581,10 @@ const TimelineBoard = ({
                           ☁ עננות: {slot.clouds ?? 0}%
                         </div>
                         <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
-                          🌫 ערפל: —
+                          ☀ זווית שמש:{" "}
+                          {typeof slot.sunAlt === "number"
+                            ? `${slot.sunAlt.toFixed(1)}°`
+                            : "—"}
                         </div>
                       </div>
                     </button>
