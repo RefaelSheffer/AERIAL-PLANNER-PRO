@@ -63,6 +63,7 @@ const AerialPlanner = {
   helpers: Config.helpers,
   geometry: Config.geometry,
 };
+const SUITABILITY_STORAGE_KEY = "plannerSuitabilitySettings";
 
 /**
  * Calculate the sun altitude for the current weather location and a given timestamp.
@@ -259,9 +260,11 @@ const App = () => {
     if (typeof window === "undefined") return "light";
     return window.localStorage.getItem("plannerTheme") || "light";
   });
-  const [suitabilitySettings, setSuitabilitySettings] = useState(
-    Config.DEFAULT_SUITABILITY,
-  );
+  const [suitabilitySettings, setSuitabilitySettings] = useState(() => {
+    if (typeof window === "undefined") return Config.DEFAULT_SUITABILITY;
+    const saved = window.localStorage.getItem(SUITABILITY_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : Config.DEFAULT_SUITABILITY;
+  });
 
   // Stats
   const [totalDistance, setTotalDistance] = useState(0);
@@ -670,6 +673,7 @@ const App = () => {
 
   const resetSuitabilitySettings = () => {
     setSuitabilitySettings(Config.DEFAULT_SUITABILITY);
+    window.localStorage.removeItem(SUITABILITY_STORAGE_KEY);
     setSettingsReadOnly(true);
   };
 
@@ -713,6 +717,13 @@ const App = () => {
       setActiveSidebarTab("mission");
     }
   }, [showSettings, activeSidebarTab]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      SUITABILITY_STORAGE_KEY,
+      JSON.stringify(suitabilitySettings),
+    );
+  }, [suitabilitySettings]);
 
   useEffect(() => {
     const handleResize = () => {
