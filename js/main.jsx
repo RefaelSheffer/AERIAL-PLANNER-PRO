@@ -89,6 +89,7 @@ const slotIsFlyable = (slot, suitabilitySettings) => {
   const {
     maxWind,
     maxGust,
+    minCloudCover,
     maxCloudCover,
     maxRainProb,
     minSunAltitude,
@@ -115,7 +116,10 @@ const slotIsFlyable = (slot, suitabilitySettings) => {
         ? true
         : wind <= maxGust
       : gust <= maxGust;
-  const safeCloud = clouds === null ? true : clouds <= maxCloudCover;
+  const safeCloud =
+    clouds === null
+      ? true
+      : clouds >= minCloudCover && clouds <= maxCloudCover;
   const safeRain = rainProb === null ? true : rainProb <= maxRainProb;
 
   const sunOk = includeNightFlights
@@ -137,6 +141,7 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
   const {
     maxWind,
     maxGust,
+    minCloudCover,
     maxCloudCover,
     maxRainProb,
     minSunAltitude,
@@ -172,7 +177,10 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
       ? 0
       : Math.max(
           0,
-          (clouds - maxCloudCover) / safeDivisor(maxCloudCover),
+          Math.max(
+            (minCloudCover - clouds) / safeDivisor(minCloudCover),
+            (clouds - maxCloudCover) / safeDivisor(maxCloudCover),
+          ),
         );
   const rainDenominator = Math.max(1, 100 - maxRainProb);
   const rainRisk =
@@ -326,7 +334,8 @@ const App = () => {
   const [suitabilitySettings, setSuitabilitySettings] = useState(() => {
     if (typeof window === "undefined") return Config.DEFAULT_SUITABILITY;
     const saved = window.localStorage.getItem(SUITABILITY_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : Config.DEFAULT_SUITABILITY;
+    if (!saved) return Config.DEFAULT_SUITABILITY;
+    return { ...Config.DEFAULT_SUITABILITY, ...JSON.parse(saved) };
   });
 
   // Stats
@@ -2148,7 +2157,8 @@ const App = () => {
 
             <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
               מה נחשב יציב: רוח ≤ {suitabilitySettings.maxWind} מ"ש · משבים ≤{" "}
-              {suitabilitySettings.maxGust} מ"ש · עננות ≤{" "}
+              {suitabilitySettings.maxGust} מ"ש · עננות בין{" "}
+              {suitabilitySettings.minCloudCover}% ל-
               {suitabilitySettings.maxCloudCover}% · גשם ≤{" "}
               {suitabilitySettings.maxRainProb}% · שמש בין{" "}
               {suitabilitySettings.minSunAltitude}° ל-
@@ -2201,6 +2211,29 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className="text-xs text-slate-500">ברירת מחדל: 18 מ"ש.</p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700">
+                  מינימום כיסוי עננים (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={suitabilitySettings.minCloudCover}
+                  onChange={(e) =>
+                    updateSuitabilitySetting(
+                      "minCloudCover",
+                      Number(e.target.value) || 0,
+                    )
+                  }
+                  onFocus={enableSettingsEditing}
+                  onClick={enableSettingsEditing}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  readOnly={settingsReadOnly}
+                />
+                <p className="text-xs text-slate-500">ברירת מחדל: 0%.</p>
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700">
