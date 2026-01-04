@@ -1125,6 +1125,7 @@ const App = () => {
         ...slot,
         isRelevant: isSlotRelevant(slot),
         isFlyable: isSlotFlyable(slot),
+        riskScore: calculateSlotRisk(slot, suitabilitySettings),
       }));
       const relevantEnriched = enrichedSlots.filter((slot) => slot.isRelevant);
       const flyableSlots = relevantEnriched.filter((slot) => slot.isFlyable);
