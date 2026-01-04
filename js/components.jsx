@@ -554,7 +554,11 @@ const TimelineBoard = ({
                           {slot.isFlyable ? "שעה יציבה" : "פחות מתאים"}
                         </span>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-2 text-[11px] text-slate-600">
+                      <div className="mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 text-[11px] text-slate-600">
+                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 flex items-center gap-2">
+                          <span className="whitespace-nowrap">מדד סיכון:</span>
+                          {renderRiskIndicator(slot.riskScore ?? 0)}
+                        </div>
                         <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
                           🌬 רוח: {slot.wind?.toFixed(1) ?? "-"} m/s
                         </div>
