@@ -216,6 +216,10 @@ const App = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [userAccuracy, setUserAccuracy] = useState(null);
   const [locationMessage, setLocationMessage] = useState(null);
+  const [addressQuery, setAddressQuery] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [addressStatus, setAddressStatus] = useState("idle");
+  const [isAddressOpen, setIsAddressOpen] = useState(false);
 
   // Flight Params
   const [selectedDrone, setSelectedDrone] = useState(() =>
@@ -508,6 +512,8 @@ const App = () => {
   const aircraftIntervalRef = useRef(null);
   const sidebarRef = useRef(null);
   const realtimePanelRef = useRef(null);
+  const addressSearchRef = useRef(null);
+  const addressAbortRef = useRef(null);
   const [desktopDockOffset, setDesktopDockOffset] = useState(16);
   const showPlannerLayout =
     ENABLE_MISSION_PLANNING || ENABLE_REALTIME_PANEL || ENABLE_DOCUMENTATION;
@@ -560,6 +566,31 @@ const App = () => {
     });
   }, []);
 
+  const moveToLocation = useCallback((coords, label) => {
+    if (!coords) return;
+    setMapCenter(coords);
+    setWeatherLocation(coords);
+    if (mapRef.current) {
+      const zoom = Math.max(mapRef.current.getZoom(), 15);
+      mapRef.current.flyTo(coords, zoom, { duration: 0.75 });
+    }
+    if (label) {
+      setAddressQuery(label);
+    }
+    setIsAddressOpen(false);
+    setAddressSuggestions([]);
+    setLocationMessage("מציג תחזית לכתובת...");
+    setTimeout(() => setLocationMessage(null), 2200);
+  }, []);
+
+  const handleAddressSelect = useCallback(
+    (suggestion) => {
+      if (!suggestion) return;
+      moveToLocation([suggestion.lat, suggestion.lng], suggestion.label);
+    },
+    [moveToLocation],
+  );
+
   const recenterOnUser = useCallback(() => {
     if (!mapRef.current) return;
 
@@ -601,6 +632,37 @@ const App = () => {
       { enableHighAccuracy: true, timeout: 9000 },
     );
   }, [userLocation]);
+
+  const handleAddressSubmit = useCallback(
+    async (event) => {
+      event.preventDefault();
+      if (addressSuggestions.length > 0) {
+        handleAddressSelect(addressSuggestions[0]);
+        return;
+      }
+
+      const query = addressQuery.trim();
+      if (!query) return;
+      setAddressStatus("loading");
+      try {
+        const results = await Services.fetchLocationSuggestions(query, {
+          limit: 1,
+        });
+        if (results.length > 0) {
+          handleAddressSelect(results[0]);
+        } else {
+          setAddressSuggestions([]);
+          setIsAddressOpen(true);
+          setAddressStatus("ready");
+        }
+      } catch (e) {
+        console.error("Address lookup failed", e);
+        setAddressStatus("error");
+        setAddressSuggestions([]);
+      }
+    },
+    [addressQuery, addressSuggestions, handleAddressSelect],
+  );
 
   const updateSuitabilitySetting = (key, value) => {
     setSuitabilitySettings((prev) => ({ ...prev, [key]: value }));
@@ -667,6 +729,58 @@ const App = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!addressSearchRef.current) return;
+      if (!addressSearchRef.current.contains(event.target)) {
+        setIsAddressOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  useEffect(() => {
+    const trimmed = addressQuery.trim();
+    if (trimmed.length < 2) {
+      setAddressSuggestions([]);
+      setAddressStatus("idle");
+      return;
+    }
+
+    setAddressStatus("loading");
+    if (addressAbortRef.current) {
+      addressAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    addressAbortRef.current = controller;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const results = await Services.fetchLocationSuggestions(trimmed, {
+          signal: controller.signal,
+          limit: 6,
+        });
+        if (!controller.signal.aborted) {
+          setAddressSuggestions(results);
+          setAddressStatus("ready");
+          setIsAddressOpen(true);
+        }
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          console.error("Autocomplete failed", e);
+          setAddressStatus("error");
+          setAddressSuggestions([]);
+        }
+      }
+    }, 350);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [addressQuery]);
 
   // --- Weather ---
   const fetchWeather = async () => {
@@ -2160,6 +2274,71 @@ const App = () => {
           style={{ paddingBottom: mapBottomPadding }}
         >
           <div id="map"></div>
+          <div
+            className="absolute top-4 right-6 z-[940] w-[320px] max-w-[85vw] pointer-events-auto"
+            ref={addressSearchRef}
+          >
+            <form onSubmit={handleAddressSubmit}>
+              <div className="flex items-center gap-2 rounded-full bg-white/95 border border-slate-200 px-3 py-2 shadow-lg focus-within:ring-2 focus-within:ring-blue-500">
+                <Icon name="map" size={16} className="text-slate-500" />
+                <input
+                  type="text"
+                  value={addressQuery}
+                  onChange={(event) => setAddressQuery(event.target.value)}
+                  onFocus={() => setIsAddressOpen(true)}
+                  placeholder="חיפוש כתובת להצגת מזג אוויר"
+                  className="w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                />
+                {addressQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddressQuery("");
+                      setAddressSuggestions([]);
+                      setIsAddressOpen(false);
+                      setAddressStatus("idle");
+                    }}
+                    className="text-slate-400 hover:text-slate-600"
+                    aria-label="נקה חיפוש"
+                  >
+                    <Icon name="close" size={14} />
+                  </button>
+                ) : null}
+              </div>
+            </form>
+            {isAddressOpen && addressQuery.trim().length > 0 && (
+              <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-xl">
+                <div className="max-h-60 overflow-y-auto">
+                  {addressStatus === "loading" && (
+                    <div className="px-4 py-3 text-xs text-slate-500">
+                      טוען הצעות...
+                    </div>
+                  )}
+                  {addressStatus === "error" && (
+                    <div className="px-4 py-3 text-xs text-red-600">
+                      לא הצלחנו להביא הצעות כרגע.
+                    </div>
+                  )}
+                  {addressStatus === "ready" &&
+                    addressSuggestions.length === 0 && (
+                      <div className="px-4 py-3 text-xs text-slate-500">
+                        לא נמצאו תוצאות.
+                      </div>
+                    )}
+                  {addressSuggestions.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleAddressSelect(item)}
+                      className="w-full text-right px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           {locationMessage && (
             <div className="absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none">
               {locationMessage}
