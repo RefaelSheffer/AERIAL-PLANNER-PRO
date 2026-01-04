@@ -10,6 +10,7 @@ window.AerialPlannerConfig = {
   DEFAULT_SUITABILITY: {
     maxWind: 20,
     maxGust: 25,
+    minCloudCover: 0,
     maxCloudCover: 100,
     maxRainProb: 40,
     minSunAltitude: 5,
