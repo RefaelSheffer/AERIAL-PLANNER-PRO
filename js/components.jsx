@@ -363,7 +363,7 @@ const TimelineBoard = ({
                 }`}
               >
                 <Icon name="clock" size={12} />
-                סמן ימים ושעות מתאימות לטיסה
+                סמן - קח שממש ישארו רק הימים המתאימים בלבד
               </button>
             </div>
             {showSettingsButton && (
