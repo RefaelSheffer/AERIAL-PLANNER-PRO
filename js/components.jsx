@@ -199,6 +199,11 @@ const TimelineBoard = ({
   panelWidth,
   onOpenSettings,
   showSettingsButton = false,
+  notificationsSupported = false,
+  notificationsEnabled = false,
+  notificationsLoading = false,
+  onEnableNotifications,
+  onDisableNotifications,
 }) => {
   if (!show) return null;
 
@@ -518,13 +523,37 @@ const TimelineBoard = ({
                     </button>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={onOpenSettings}
-                  className="px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                >
-                  התאמת ספים
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onOpenSettings}
+                    className="px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  >
+                    התאמת ספים
+                  </button>
+                  {notificationsSupported && (
+                    <button
+                      type="button"
+                      onClick={
+                        notificationsEnabled
+                          ? onDisableNotifications
+                          : onEnableNotifications
+                      }
+                      disabled={notificationsLoading}
+                      className={`px-3 py-1 rounded-full border text-[11px] font-semibold transition ${
+                        notificationsEnabled
+                          ? "bg-amber-500 text-white border-amber-500"
+                          : "bg-blue-600 text-white border-blue-600"
+                      } ${notificationsLoading ? "opacity-60 cursor-wait" : ""}`}
+                    >
+                      {notificationsLoading
+                        ? "מעבד בקשה..."
+                        : notificationsEnabled
+                          ? "כיבוי התראות לתאריך"
+                          : "הפעל התראות לתאריך הנבחר"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

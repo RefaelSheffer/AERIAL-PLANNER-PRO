@@ -64,6 +64,7 @@ const AerialPlanner = {
   geometry: Config.geometry,
 };
 const SUITABILITY_STORAGE_KEY = "plannerSuitabilitySettings";
+const PUSH_RULE_STORAGE_KEY = "plannerPushRule";
 
 /**
  * Calculate the sun altitude for the current weather location and a given timestamp.
@@ -259,6 +260,17 @@ const computeIsMobile = () => {
   return window.innerWidth < 900 || coarsePointer;
 };
 
+const urlBase64ToUint8Array = (base64String) => {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+};
+
 const App = () => {
   const initialIsMobile = computeIsMobile();
 
@@ -322,6 +334,18 @@ const App = () => {
     if (!saved) return Config.DEFAULT_SUITABILITY;
     return { ...Config.DEFAULT_SUITABILITY, ...JSON.parse(saved) };
   });
+  const [toastItems, setToastItems] = useState([]);
+  const [pushRuleState, setPushRuleState] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const stored = window.localStorage.getItem(PUSH_RULE_STORAGE_KEY);
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      return null;
+    }
+  });
+  const [isPushWorking, setIsPushWorking] = useState(false);
 
   // Stats
   const [totalDistance, setTotalDistance] = useState(0);
@@ -574,6 +598,42 @@ const App = () => {
         : "border-slate-200 bg-white",
     };
   }, [theme]);
+
+  const vapidPublicKey = Config.VAPID_PUBLIC_KEY;
+  const supabaseFunctionsUrl = Config.SUPABASE_FUNCTIONS_URL;
+
+  const pushSupported = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window
+    );
+  }, []);
+
+  const pushToast = useCallback((message, tone = "info") => {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setToastItems((prev) => [...prev, { id, message, tone }]);
+    window.setTimeout(() => {
+      setToastItems((prev) => prev.filter((item) => item.id !== id));
+    }, 4500);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (pushRuleState) {
+        window.localStorage.setItem(
+          PUSH_RULE_STORAGE_KEY,
+          JSON.stringify(pushRuleState),
+        );
+      } else {
+        window.localStorage.removeItem(PUSH_RULE_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn("Failed to persist push rule state", e);
+    }
+  }, [pushRuleState]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -1195,6 +1255,138 @@ const App = () => {
       setSelectedDayIndex(0);
     }
   }, [daySuitability.length, selectedDayIndex]);
+
+  const selectedDay = daySuitability?.[selectedDayIndex] || null;
+
+  const callEdgeFunction = useCallback(
+    async (path, payload) => {
+      if (!supabaseFunctionsUrl) {
+        throw new Error("חסר URL לשירותי Supabase.");
+      }
+      const baseUrl = supabaseFunctionsUrl.replace(/\/$/, "");
+      const res = await fetch(`${baseUrl}/${path}`, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "הקריאה לשירות נכשלה.");
+      }
+      return data;
+    },
+    [supabaseFunctionsUrl],
+  );
+
+  const buildRulePayload = useCallback(
+    (day) => ({
+      lat: weatherLocation?.[0],
+      lon: weatherLocation?.[1],
+      start_date: day?.day,
+      end_date: day?.day,
+      hour_from: 0,
+      hour_to: 23,
+      criteria: { ...suitabilitySettings },
+      notify_on: "status_change",
+    }),
+    [weatherLocation, suitabilitySettings],
+  );
+
+  const handleEnableNotifications = useCallback(async () => {
+    if (!pushSupported) {
+      pushToast("הדפדפן לא תומך בהתראות פוש.", "warning");
+      return;
+    }
+    if (!vapidPublicKey) {
+      pushToast("חסר מפתח VAPID ציבורי בהגדרות.", "warning");
+      return;
+    }
+    if (!selectedDay?.day) {
+      pushToast("בחר תאריך תחזית תחילה.", "warning");
+      return;
+    }
+    if (!weatherLocation) {
+      pushToast("לא זוהה מיקום לחישוב מזג אוויר.", "warning");
+      return;
+    }
+
+    setIsPushWorking(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        pushToast("יש לאשר הרשאות התראות בדפדפן.", "warning");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
+      }
+
+      const subscribeResult = await callEdgeFunction("push-subscribe", {
+        subscription: subscription.toJSON(),
+      });
+      const rulePayload = buildRulePayload(selectedDay);
+      const ruleResult = await callEdgeFunction("rules-upsert", {
+        subscription_id: subscribeResult.subscription_id,
+        rule: rulePayload,
+      });
+
+      setPushRuleState({
+        subscription_id: subscribeResult.subscription_id,
+        rule_id: ruleResult.rule_id,
+        rule: rulePayload,
+      });
+      pushToast("התראות הופעלו לתאריך הנבחר.", "success");
+    } catch (err) {
+      console.error("Push enable failed", err);
+      pushToast(err?.message || "לא הצלחנו להפעיל התראות.", "warning");
+    } finally {
+      setIsPushWorking(false);
+    }
+  }, [
+    buildRulePayload,
+    callEdgeFunction,
+    pushSupported,
+    pushToast,
+    selectedDay,
+    vapidPublicKey,
+    weatherLocation,
+  ]);
+
+  const handleDisableNotifications = useCallback(async () => {
+    if (!pushRuleState?.rule || !pushRuleState?.subscription_id) {
+      setPushRuleState(null);
+      return;
+    }
+    setIsPushWorking(true);
+    try {
+      const rulePayload = {
+        ...pushRuleState.rule,
+        notify_on: "disabled",
+      };
+      await callEdgeFunction("rules-upsert", {
+        subscription_id: pushRuleState.subscription_id,
+        rule: rulePayload,
+      });
+      setPushRuleState(null);
+      pushToast("התראות בוטלו לתאריך הנבחר.", "success");
+    } catch (err) {
+      console.error("Push disable failed", err);
+      pushToast(err?.message || "לא הצלחנו לבטל התראות.", "warning");
+    } finally {
+      setIsPushWorking(false);
+    }
+  }, [callEdgeFunction, pushRuleState, pushToast]);
+
+  const isSelectedDayPushEnabled =
+    pushRuleState?.rule?.start_date === selectedDay?.day &&
+    pushRuleState?.rule?.notify_on !== "disabled";
 
   const sanitizeDataUrl = (dataUrl, mimeType) => {
     if (typeof dataUrl !== "string") return null;
@@ -2150,11 +2342,36 @@ const App = () => {
       panelWidth={plannerPanelWidth}
       onOpenSettings={openSuitabilitySettings}
       showSettingsButton={true}
+      notificationsSupported={pushSupported}
+      notificationsEnabled={isSelectedDayPushEnabled}
+      notificationsLoading={isPushWorking}
+      onEnableNotifications={handleEnableNotifications}
+      onDisableNotifications={handleDisableNotifications}
     />
   );
 
   return (
     <>
+      {toastItems.length > 0 && (
+        <div className="fixed top-4 right-4 z-[2100] flex flex-col gap-2">
+          {toastItems.map((toast) => {
+            const toneStyles =
+              toast.tone === "success"
+                ? "bg-emerald-600 text-white"
+                : toast.tone === "warning"
+                  ? "bg-amber-500 text-white"
+                  : "bg-slate-900 text-white";
+            return (
+              <div
+                key={toast.id}
+                className={`rounded-xl px-4 py-3 text-sm shadow-lg ${toneStyles}`}
+              >
+                {toast.message}
+              </div>
+            );
+          })}
+        </div>
+      )}
       {showSettings && (
         <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div
