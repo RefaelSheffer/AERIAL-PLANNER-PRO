@@ -566,6 +566,30 @@ const App = () => {
     };
   }, [theme]);
 
+  const settingsTheme = useMemo(() => {
+    const isDark = theme === "dark";
+    return {
+      modal: isDark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-900",
+      closeButton: isDark
+        ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+        : "border-slate-200 bg-white/95 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+      title: isDark ? "text-slate-100" : "text-slate-900",
+      subtitle: isDark ? "text-slate-300" : "text-slate-600",
+      metaText: isDark ? "text-slate-300" : "text-slate-700",
+      label: isDark ? "text-slate-200" : "text-slate-700",
+      helperText: isDark ? "text-slate-400" : "text-slate-500",
+      summary: isDark
+        ? "text-slate-300 bg-slate-800 border-slate-700"
+        : "text-slate-600 bg-slate-50 border-slate-200",
+      input: isDark
+        ? "bg-slate-800 text-slate-100 border-slate-700 placeholder-slate-500 focus:ring-blue-400"
+        : "",
+      panel: isDark
+        ? "border-slate-700 bg-slate-800"
+        : "border-slate-200 bg-white",
+    };
+  }, [theme]);
+
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.body.dataset.theme = theme;
@@ -2110,11 +2134,13 @@ const App = () => {
     <>
       {showSettings && (
         <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="relative bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
+          <div
+            className={`relative rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4 ${settingsTheme.modal}`}
+          >
             <button
               type="button"
               onClick={() => setShowSettings(false)}
-              className="absolute top-4 left-4 rounded-full border border-slate-200 bg-white/95 text-slate-600 p-2 shadow-sm transition hover:bg-slate-100 hover:text-slate-900"
+              className={`absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${settingsTheme.closeButton}`}
               aria-label="סגור הגדרות"
             >
               <Icon name="close" size={16} />
@@ -2124,17 +2150,17 @@ const App = () => {
                 <div className="text-sm uppercase tracking-widest text-blue-600 font-bold">
                   הגדרות מערכת
                 </div>
-                <h2 className="text-2xl font-black text-slate-900">
+                <h2 className={`text-2xl font-black ${settingsTheme.title}`}>
                   ספי יציבות לטיסה
                 </h2>
-                <p className="text-sm text-slate-600">
+                <p className={`text-sm ${settingsTheme.subtitle}`}>
                   הגדר פרמטרים ברירת מחדל למה נחשב יום מתאים לטיסה. לחץ על פרמטר
                   כדי לאפשר עריכה.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 justify-end">
-                <div className="text-sm text-slate-700 flex items-center gap-2">
+                <div className={`text-sm flex items-center gap-2 ${settingsTheme.metaText}`}>
                   מצב תצוגה:
                   <span className="font-semibold">
                     {theme === "dark" ? "כהה" : "בהיר"}
@@ -2148,14 +2174,20 @@ const App = () => {
                 </button>
                 <button
                   onClick={resetSuitabilitySettings}
-                  className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50"
+                  className={`px-3 py-2 rounded-lg border text-sm font-semibold ${
+                    theme === "dark"
+                      ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
                 >
                   איפוס לברירת מחדל
                 </button>
               </div>
             </div>
 
-            <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            <div
+              className={`text-xs border rounded-lg px-3 py-2 ${settingsTheme.summary}`}
+            >
               מה נחשב יציב: רוח ≤ {suitabilitySettings.maxWind} מ"ש · משבים ≤{" "}
               {suitabilitySettings.maxGust} מ"ש · עננות בין{" "}
               {suitabilitySettings.minCloudCover}% ל-
@@ -2167,7 +2199,7 @@ const App = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   מקסימום רוח (מ"ש)
                 </label>
                 <input
@@ -2184,13 +2216,15 @@ const App = () => {
                   }
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
-                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
-                <p className="text-xs text-slate-500">ברירת מחדל: 12 מ"ש.</p>
+                <p className={`text-xs ${settingsTheme.helperText}`}>
+                  ברירת מחדל: 12 מ"ש.
+                </p>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   מקסימום משבי רוח (מ"ש)
                 </label>
                 <input
@@ -2207,13 +2241,15 @@ const App = () => {
                   }
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
-                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
-                <p className="text-xs text-slate-500">ברירת מחדל: 18 מ"ש.</p>
+                <p className={`text-xs ${settingsTheme.helperText}`}>
+                  ברירת מחדל: 18 מ"ש.
+                </p>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   מינימום כיסוי עננים (%)
                 </label>
                 <input
@@ -2230,13 +2266,15 @@ const App = () => {
                   }
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
-                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
-                <p className="text-xs text-slate-500">ברירת מחדל: 0%.</p>
+                <p className={`text-xs ${settingsTheme.helperText}`}>
+                  ברירת מחדל: 0%.
+                </p>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   מקסימום כיסוי עננים (%)
                 </label>
                 <input
@@ -2253,13 +2291,15 @@ const App = () => {
                   }
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
-                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
-                <p className="text-xs text-slate-500">ברירת מחדל: 70%.</p>
+                <p className={`text-xs ${settingsTheme.helperText}`}>
+                  ברירת מחדל: 70%.
+                </p>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   מקסימום הסתברות גשם (%)
                 </label>
                 <input
@@ -2276,13 +2316,15 @@ const App = () => {
                   }
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
-                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
-                <p className="text-xs text-slate-500">ברירת מחדל: 20%.</p>
+                <p className={`text-xs ${settingsTheme.helperText}`}>
+                  ברירת מחדל: 20%.
+                </p>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   גובה שמש מינימלי (°)
                 </label>
                 <input
@@ -2299,15 +2341,15 @@ const App = () => {
                   }
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
-                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
-                <p className="text-xs text-slate-500">
+                <p className={`text-xs ${settingsTheme.helperText}`}>
                   ברירת מחדל: 5°. ערך גבוה יותר ימנע טיסה בשעת דמדומים.
                 </p>
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   גובה שמש מקסימלי (°)
                 </label>
                 <input
@@ -2324,18 +2366,18 @@ const App = () => {
                   }
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
-                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""}`}
+                  className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
-                <p className="text-xs text-slate-500">
+                <p className={`text-xs ${settingsTheme.helperText}`}>
                   ברירת מחדל: 85°. ניתן להגביל במקרים של סינוור חזק.
                 </p>
               </div>
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-slate-700">
+                <label className={`text-sm font-semibold ${settingsTheme.label}`}>
                   כולל טיסות לילה
                 </label>
-                <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3">
+                <div className={`flex items-start gap-3 rounded-lg border p-3 ${settingsTheme.panel}`}>
                   <input
                     id="includeNightFlights"
                     type="checkbox"
@@ -2353,11 +2395,11 @@ const App = () => {
                   <div>
                     <label
                       htmlFor="includeNightFlights"
-                      className="text-sm font-semibold text-slate-700"
+                      className={`text-sm font-semibold ${settingsTheme.label}`}
                     >
                       הכללת שעות לילה בחישוב התאמה
                     </label>
-                    <p className="text-xs text-slate-500">
+                    <p className={`text-xs ${settingsTheme.helperText}`}>
                       כאשר כבוי, אחוז ההתאמה ושעות יציבות מחושבים רק בשעות יום.
                     </p>
                   </div>
