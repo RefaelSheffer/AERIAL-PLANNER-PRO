@@ -65,6 +65,7 @@ const AerialPlanner = {
 };
 const SUITABILITY_STORAGE_KEY = "plannerSuitabilitySettings";
 const PUSH_RULE_STORAGE_KEY = "plannerPushRule";
+const DAY_QUERY_PARAM = "day";
 
 /**
  * Calculate the sun altitude for the current weather location and a given timestamp.
@@ -260,6 +261,14 @@ const computeIsMobile = () => {
   return window.innerWidth < 900 || coarsePointer;
 };
 
+const getQueryDayParam = () => {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const dayValue = params.get(DAY_QUERY_PARAM);
+  if (!dayValue || !/^\d{4}-\d{2}-\d{2}$/.test(dayValue)) return null;
+  return dayValue;
+};
+
 const urlBase64ToUint8Array = (base64String) => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -346,6 +355,8 @@ const App = () => {
     }
   });
   const [isPushWorking, setIsPushWorking] = useState(false);
+  const queryDay = useMemo(() => getQueryDayParam(), []);
+  const queryDayAppliedRef = useRef(false);
 
   // Stats
   const [totalDistance, setTotalDistance] = useState(0);
@@ -1251,6 +1262,19 @@ const App = () => {
   }, [windTimeline, isSlotRelevant, isSlotFlyable, suitabilitySettings]);
 
   useEffect(() => {
+    if (queryDayAppliedRef.current) return;
+    if (!queryDay) return;
+    if (!daySuitability.length) return;
+    const dayIndex = daySuitability.findIndex((day) => day.day === queryDay);
+    if (dayIndex >= 0) {
+      setSelectedDayIndex(dayIndex);
+      setShowDayDetails(true);
+      setShowTimeline(true);
+    }
+    queryDayAppliedRef.current = true;
+  }, [daySuitability, queryDay]);
+
+  useEffect(() => {
     if (selectedDayIndex >= daySuitability.length && daySuitability.length > 0) {
       setSelectedDayIndex(0);
     }
@@ -1287,7 +1311,10 @@ const App = () => {
       end_date: day?.day,
       hour_from: 0,
       hour_to: 23,
-      criteria: { ...suitabilitySettings },
+      criteria: {
+        ...suitabilitySettings,
+        appBasePath: (Config.APP_BASE_PATH || "").replace(/\/$/, ""),
+      },
       notify_on: "status_change",
     }),
     [weatherLocation, suitabilitySettings],

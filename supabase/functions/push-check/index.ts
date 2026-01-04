@@ -34,6 +34,7 @@ const DEFAULT_CRITERIA = {
   maxSunAltitude: 85,
   includeNightFlights: false,
 };
+const DAY_QUERY_PARAM = "day";
 
 const parseJson = async (req: Request) => {
   try {
@@ -161,6 +162,13 @@ const normalizeCriteria = (criteria: Record<string, unknown> | null) => {
   };
 };
 
+const normalizeBasePath = (value: unknown) => {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/")) return "";
+  return trimmed.replace(/\/$/, "");
+};
+
 const fetchWeatherSlots = async (
   lat: number,
   lon: number,
@@ -279,7 +287,11 @@ Deno.serve(async (req) => {
     if (!subscription || subscription.disabled_at) continue;
     if (rule.notify_on === "disabled") continue;
 
-    const criteria = normalizeCriteria(rule.criteria ?? {});
+    const criteriaRaw = rule.criteria ?? {};
+    const criteria = normalizeCriteria(criteriaRaw);
+    const appBasePath = normalizeBasePath(
+      (criteriaRaw as { appBasePath?: unknown }).appBasePath,
+    );
     const hourFrom = rule.hour_from ?? 0;
     const hourTo = rule.hour_to ?? 23;
 
@@ -345,6 +357,8 @@ Deno.serve(async (req) => {
       rule.notify_on === "always" || (stateChanged && rule.notify_on !== "disabled");
 
     if (shouldNotify && subscription?.endpoint) {
+      const dayQuery = encodeURIComponent(rule.start_date);
+      const url = `${appBasePath}/?${DAY_QUERY_PARAM}=${dayQuery}`;
       const payload = {
         title: "עדכון תחזית לטיסה",
         body:
@@ -355,7 +369,7 @@ Deno.serve(async (req) => {
               : status === "no-fly"
                 ? "התנאים אינם מתאימים לטיסה בתאריך שבחרת."
                 : "לא הצלחנו לחשב תחזית מדויקת כרגע.",
-        url: "/",
+        url,
       };
       try {
         await webPush.sendNotification(

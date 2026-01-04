@@ -142,6 +142,12 @@ Deno.serve(async (req) => {
     (rule.criteria && typeof rule.criteria === "object"
       ? rule.criteria
       : {}) as Record<string, unknown>;
+  const appBasePathRaw =
+    typeof criteriaRaw.appBasePath === "string" ? criteriaRaw.appBasePath.trim() : "";
+  const appBasePath =
+    appBasePathRaw && appBasePathRaw.startsWith("/")
+      ? appBasePathRaw.replace(/\/$/, "")
+      : "";
   const criteria = {
     maxWind: clampNumber(criteriaRaw.maxWind, DEFAULT_CRITERIA.maxWind),
     maxGust: clampNumber(criteriaRaw.maxGust, DEFAULT_CRITERIA.maxGust),
@@ -166,6 +172,7 @@ Deno.serve(async (req) => {
       DEFAULT_CRITERIA.maxSunAltitude,
     ),
     includeNightFlights: Boolean(criteriaRaw.includeNightFlights),
+    appBasePath,
   };
 
   const notifyOn = typeof rule.notify_on === "string"
