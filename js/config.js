@@ -4,9 +4,13 @@
 "use strict";
 
 // Configuration and constants for Aerial Planner
+const envConfig = window.AERIAL_PLANNER_ENV || {};
+
 window.AerialPlannerConfig = {
   DRONE_PRESETS: window.DRONE_PRESETS || {},
   DEFAULT_MAP_CENTER: [32.0853, 34.7818],
+  VAPID_PUBLIC_KEY: envConfig.VAPID_PUBLIC_KEY || "",
+  SUPABASE_FUNCTIONS_URL: envConfig.SUPABASE_FUNCTIONS_URL || "",
   DEFAULT_SUITABILITY: {
     maxWind: 20,
     maxGust: 25,
