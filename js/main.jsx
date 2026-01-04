@@ -1319,7 +1319,11 @@ const App = () => {
         return;
       }
 
-      const registration = await navigator.serviceWorker.register("/sw.js");
+      const base = (Config.APP_BASE_PATH || "").replace(/\/$/, "");
+      const swUrl = `${base}/sw.js`;
+      const registration = await navigator.serviceWorker.register(swUrl, {
+        scope: base ? `${base}/` : "/",
+      });
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
         subscription = await registration.pushManager.subscribe({
