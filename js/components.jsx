@@ -275,15 +275,15 @@ const TimelineBoard = ({
     return "from-emerald-50 to-emerald-100";
   };
 
-  const getRiskLevel = (percent) => {
-    if (percent <= 15) return "extreme";
-    if (percent <= 40) return "high";
-    if (percent <= 70) return "medium";
+  const getRiskLevel = (riskScore) => {
+    if (riskScore >= 0.75) return "extreme";
+    if (riskScore >= 0.5) return "high";
+    if (riskScore >= 0.25) return "medium";
     return "low";
   };
 
-  const renderRiskIndicator = (percent) => {
-    const riskLevel = getRiskLevel(percent);
+  const renderRiskIndicator = (riskScore) => {
+    const riskLevel = getRiskLevel(riskScore);
     if (riskLevel === "low") {
       return (
         <span className="inline-flex items-center gap-1 text-emerald-700">
@@ -388,7 +388,7 @@ const TimelineBoard = ({
                 const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
                 const backgroundTone = getSuitabilityBackground(day.percent);
                 const dayLine = formatDayHeader(day.day);
-                const riskIndicator = renderRiskIndicator(day.percent);
+                const riskIndicator = renderRiskIndicator(day.dayRiskScore);
                 const hasFlyableHours = day.flyableHoursTotal > 0;
 
                 return (
