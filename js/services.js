@@ -170,10 +170,47 @@
     }
   };
 
+  /**
+   * Fetch address autocomplete suggestions using OpenStreetMap Nominatim.
+   * @param {string} query - Free text address query.
+   * @param {{signal?: AbortSignal, limit?: number}} [options] - Optional fetch controls.
+   * @returns {Promise<{id: string, label: string, lat: number, lng: number}[]>}
+   */
+  const fetchLocationSuggestions = async (query, options = {}) => {
+    const trimmed = query?.trim();
+    if (!trimmed) return [];
+    const { signal, limit = 6 } = options;
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("format", "json");
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("limit", String(limit));
+    url.searchParams.set("q", trimmed);
+    url.searchParams.set("accept-language", "he");
+
+    const res = await fetch(url.toString(), {
+      signal,
+      headers: { "Accept-Language": "he" },
+    });
+    if (!res.ok) {
+      throw new Error(`Geocode failed: ${res.status}`);
+    }
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+    return data
+      .map((item, index) => ({
+        id: String(item.place_id || `${item.lat}-${item.lon}-${index}`),
+        label: item.display_name,
+        lat: Number(item.lat),
+        lng: Number(item.lon),
+      }))
+      .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+  };
+
   window.AerialPlannerServices = {
     fetchWeather,
     fetchRainRadar,
     fetchAircraft,
     fetchDTM,
+    fetchLocationSuggestions,
   };
 })();
