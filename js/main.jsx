@@ -266,6 +266,7 @@ const App = () => {
   const [weatherLocation, setWeatherLocation] = useState(
     Config.DEFAULT_MAP_CENTER,
   );
+  const [mapStyle, setMapStyle] = useState("satellite");
   const [polygon, setPolygon] = useState(() =>
     ENABLE_MISSION_PLANNING ? [] : null,
   );
@@ -603,6 +604,10 @@ const App = () => {
   const timelineVisible = WEATHER_ONLY_MODE ? true : showTimeline;
   const timelineDockHeight = isMobile ? 180 : 210;
   const mapBottomPadding = timelineVisible ? `${timelineDockHeight}px` : "0px";
+
+  const toggleMapStyle = useCallback(() => {
+    setMapStyle((prev) => (prev === "satellite" ? "street" : "satellite"));
+  }, []);
 
   /**
    * Toggle visibility of the sidebar, realtime panel, or timeline while keeping them mutually exclusive.
@@ -1840,6 +1845,11 @@ const App = () => {
         { attribution: "&copy; OpenStreetMap contributors" },
       );
 
+      layersRef.current.baseLayers = {
+        satellite: esriImagery,
+        street: osmFallback,
+      };
+
       // If the Esri imagery fails (rate limit / CORS), fall back to OpenStreetMap so the map still renders.
       esriImagery.on("tileerror", () => {
         if (!mapRef.current.hasLayer(osmFallback)) {
@@ -1850,7 +1860,9 @@ const App = () => {
       mapRef.current = L.map("map", {
         center: mapCenter,
         zoom: 15,
-        layers: [esriImagery],
+        layers: [
+          mapStyle === "street" ? osmFallback : esriImagery,
+        ],
         zoomControl: false,
       });
       mapRef.current.on("click", (e) => {
@@ -1866,6 +1878,24 @@ const App = () => {
       });
     }
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const baseLayers = layersRef.current.baseLayers;
+    if (!baseLayers) return;
+
+    const nextLayer = baseLayers[mapStyle];
+    const otherLayer =
+      mapStyle === "satellite" ? baseLayers.street : baseLayers.satellite;
+
+    if (otherLayer && map.hasLayer(otherLayer)) {
+      map.removeLayer(otherLayer);
+    }
+    if (nextLayer && !map.hasLayer(nextLayer)) {
+      map.addLayer(nextLayer);
+    }
+  }, [mapStyle]);
 
   useEffect(() => {
     if (mapRef.current) {
@@ -2503,6 +2533,14 @@ const App = () => {
             >
               <Icon name="gps" size={18} />
             </button>
+            <button
+              onClick={toggleMapStyle}
+              className="px-3 py-2 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center gap-2 text-xs font-semibold hover:-translate-y-0.5 hover:shadow-xl transition"
+              aria-label="החלפת תצוגת מפה"
+            >
+              <Icon name="map" size={16} className="text-slate-500" />
+              {mapStyle === "satellite" ? "מפה רגילה" : "תצלום לווין"}
+            </button>
           </div>
           {timelineBoard}
         </MapView>
@@ -2894,6 +2932,14 @@ const App = () => {
               aria-label="מרכז למיקום הנוכחי"
             >
               <Icon name="gps" size={18} />
+            </button>
+            <button
+              onClick={toggleMapStyle}
+              className="px-3 py-2 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center gap-2 text-xs font-semibold hover:-translate-y-0.5 hover:shadow-xl transition"
+              aria-label="החלפת תצוגת מפה"
+            >
+              <Icon name="map" size={16} className="text-slate-500" />
+              {mapStyle === "satellite" ? "מפה רגילה" : "תצלום לווין"}
             </button>
           </div>
           {ENABLE_MISSION_PLANNING && polygon?.length === 0 && (
