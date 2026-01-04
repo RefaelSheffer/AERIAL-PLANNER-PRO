@@ -1523,7 +1523,11 @@ const App = () => {
   };
 
   const geolocateButtonStyle = {
-    bottom: !isMobile && showTimeline ? "calc(55vh + 1rem)" : "1.5rem",
+    bottom: timelineVisible
+      ? isMobile
+        ? `calc(${timelineDockHeight}px + env(safe-area-inset-bottom, 0px) + 1rem)`
+        : "calc(55vh + 1rem)"
+      : "1.5rem",
   };
 
   const computeSidebarWidthPx = useCallback(() => {
