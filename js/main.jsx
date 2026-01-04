@@ -2523,7 +2523,7 @@ const App = () => {
             </div>
           )}
           <div
-            className="absolute left-6 z-[930] pointer-events-auto flex flex-col items-start gap-2"
+            className="absolute right-6 z-[930] pointer-events-auto flex flex-col items-end gap-2"
             style={geolocateButtonStyle}
           >
             <button
@@ -2923,7 +2923,7 @@ const App = () => {
             </div>
           )}
           <div
-            className="absolute left-6 z-[930] pointer-events-auto flex flex-col items-start gap-2"
+            className="absolute right-6 z-[930] pointer-events-auto flex flex-col items-end gap-2"
             style={geolocateButtonStyle}
           >
             <button
