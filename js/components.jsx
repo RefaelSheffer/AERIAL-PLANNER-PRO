@@ -213,6 +213,13 @@ const TimelineBoard = ({
     }
   }, [filterFlyableOnly]);
 
+  const visibleDays = React.useMemo(() => {
+    if (!Array.isArray(days)) return [];
+    const withIndex = days.map((day, index) => ({ ...day, originalIndex: index }));
+    if (!filterFlyableOnly) return withIndex;
+    return withIndex.filter((day) => day.flyableSlots.length > 0);
+  }, [days, filterFlyableOnly]);
+
   const updateFadeEdges = React.useCallback(() => {
     const container = daysScrollRef.current;
     if (!container) return;
@@ -223,7 +230,7 @@ const TimelineBoard = ({
 
   React.useEffect(() => {
     updateFadeEdges();
-  }, [days?.length, updateFadeEdges]);
+  }, [visibleDays.length, updateFadeEdges]);
 
   React.useEffect(() => {
     const container = daysScrollRef.current;
@@ -363,7 +370,9 @@ const TimelineBoard = ({
                 }`}
               >
                 <Icon name="clock" size={12} />
-                סמן - קח שממש ישארו רק הימים המתאימים בלבד
+                {filterFlyableOnly
+                  ? "הצג את כל הימים"
+                  : "הצג ימים מתאימים לטיסה"}
               </button>
             </div>
             {showSettingsButton && (
@@ -383,9 +392,9 @@ const TimelineBoard = ({
               className="flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 custom-scroll scroll-smooth snap-x snap-mandatory touch-pan-x"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
-              {(days || []).map((day, index) => {
-                const isSelected = index === selectedDayIndex;
-                const isDim = filterFlyableOnly && day.flyableSlots.length === 0;
+              {visibleDays.map((day) => {
+                const isSelected = day.originalIndex === selectedDayIndex;
+                const isDim = !filterFlyableOnly && day.flyableSlots.length === 0;
                 const backgroundTone = getSuitabilityBackground(day.percent);
                 const dayLine = formatDayHeader(day.day);
                 const riskIndicator = renderRiskIndicator(day.dayRiskScore);
@@ -394,7 +403,7 @@ const TimelineBoard = ({
                 return (
                   <button
                     key={day.day}
-                    onClick={() => onSelectDay(index)}
+                    onClick={() => onSelectDay(day.originalIndex)}
                     className={`min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${
                       isSelected
                         ? "border-blue-500 ring-2 ring-blue-200"
