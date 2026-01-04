@@ -2221,7 +2221,7 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: 12 מ"ש.
+                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.maxWind} מ"ש.
                 </p>
               </div>
               <div className="space-y-1">
@@ -2246,7 +2246,7 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: 18 מ"ש.
+                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.maxGust} מ"ש.
                 </p>
               </div>
               <div className="space-y-1">
@@ -2271,7 +2271,7 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: 0%.
+                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.minCloudCover}%.
                 </p>
               </div>
               <div className="space-y-1">
@@ -2296,7 +2296,7 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: 70%.
+                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.maxCloudCover}%.
                 </p>
               </div>
               <div className="space-y-1">
@@ -2321,7 +2321,7 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: 20%.
+                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.maxRainProb}%.
                 </p>
               </div>
               <div className="space-y-1">
@@ -2346,7 +2346,8 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: 5°. ערך גבוה יותר ימנע טיסה בשעת דמדומים.
+                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.minSunAltitude}°. ערך
+                  גבוה יותר ימנע טיסה בשעת דמדומים.
                 </p>
               </div>
               <div className="space-y-1">
@@ -2371,7 +2372,8 @@ const App = () => {
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: 85°. ניתן להגביל במקרים של סינוור חזק.
+                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.maxSunAltitude}°. ניתן
+                  להגביל במקרים של סינוור חזק.
                 </p>
               </div>
               <div className="space-y-2 md:col-span-2">
