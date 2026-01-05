@@ -204,6 +204,7 @@ const TimelineBoard = ({
   notificationsLoading = false,
   onEnableNotifications,
   onDisableNotifications,
+  suitabilitySettings,
 }) => {
   if (!show) return null;
 
@@ -347,6 +348,80 @@ const TimelineBoard = ({
     const monthNum = `${date.getMonth() + 1}`.padStart(2, "0");
     return `${weekday} ${dayNum}.${monthNum}`;
   };
+
+  const getSlotAlerts = (slot) => {
+    if (!suitabilitySettings || slot.isFlyable) {
+      return {
+        wind: false,
+        gust: false,
+        clouds: false,
+        rain: false,
+        sun: false,
+      };
+    }
+    const {
+      maxWind,
+      maxGust,
+      minCloudCover,
+      maxCloudCover,
+      maxRainProb,
+      minSunAltitude,
+      maxSunAltitude,
+      includeNightFlights,
+    } = suitabilitySettings;
+
+    const wind =
+      typeof slot.wind === "number" && !Number.isNaN(slot.wind)
+        ? slot.wind
+        : null;
+    const gustRaw =
+      typeof slot.gust === "number" && !Number.isNaN(slot.gust)
+        ? slot.gust
+        : null;
+    const gust = gustRaw ?? wind;
+    const clouds =
+      typeof slot.clouds === "number" && !Number.isNaN(slot.clouds)
+        ? slot.clouds
+        : null;
+    const rainProb =
+      typeof slot.rainProb === "number" && !Number.isNaN(slot.rainProb)
+        ? slot.rainProb
+        : null;
+    const sunAlt =
+      typeof slot.sunAlt === "number" && !Number.isNaN(slot.sunAlt)
+        ? slot.sunAlt
+        : null;
+
+    return {
+      wind: wind !== null && wind > maxWind,
+      gust: gust !== null && gust > maxGust,
+      clouds:
+        clouds !== null &&
+        (clouds < minCloudCover || clouds > maxCloudCover),
+      rain: rainProb !== null && rainProb > maxRainProb,
+      sun:
+        !includeNightFlights &&
+        sunAlt !== null &&
+        (sunAlt < minSunAltitude || sunAlt > maxSunAltitude),
+    };
+  };
+
+  const getSlotChipClass = (isAlert) =>
+    `px-2 py-1 rounded-full border flex items-center gap-2 ${
+      isAlert
+        ? "border-rose-200 bg-rose-50 text-rose-700"
+        : "bg-slate-100 border-slate-200 text-slate-600"
+    }`;
+
+  const renderAlertBadge = (isAlert) =>
+    isAlert ? (
+      <span
+        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-bold"
+        aria-hidden="true"
+      >
+        !
+      </span>
+    ) : null;
 
   const displayedSlots = selectedDay
     ? filterFlyableOnly && !showAllSlots
@@ -566,6 +641,7 @@ const TimelineBoard = ({
                 displayedSlots.map((slot) => {
                   const slotKey = `${selectedDay.day}T${slot.time}`;
                   const isActive = slotKey === selectedSlotKey;
+                  const slotAlerts = getSlotAlerts(slot);
                   return (
                     <button
                       key={slot.key}
@@ -597,23 +673,32 @@ const TimelineBoard = ({
                           <span className="whitespace-nowrap">מדד סיכון:</span>
                           {renderRiskIndicator(slot.riskScore ?? 0)}
                         </div>
-                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                        <div className={getSlotChipClass(slotAlerts.wind)}>
                           🌬 רוח: {slot.wind?.toFixed(1) ?? "-"} m/s
+                          {renderAlertBadge(slotAlerts.wind)}
                         </div>
-                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
-                          💨 משבים: {slot.gust?.toFixed(1) ?? slot.wind?.toFixed(1) ?? "-"} m/s
+                        <div className={getSlotChipClass(slotAlerts.gust)}>
+                          💨 משבים:{" "}
+                          {slot.gust?.toFixed(1) ??
+                            slot.wind?.toFixed(1) ??
+                            "-"}{" "}
+                          m/s
+                          {renderAlertBadge(slotAlerts.gust)}
                         </div>
-                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                        <div className={getSlotChipClass(slotAlerts.rain)}>
                           🌧 גשם: {slot.rainProb ?? 0}%
+                          {renderAlertBadge(slotAlerts.rain)}
                         </div>
-                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                        <div className={getSlotChipClass(slotAlerts.clouds)}>
                           ☁ עננות: {slot.clouds ?? 0}%
+                          {renderAlertBadge(slotAlerts.clouds)}
                         </div>
-                        <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+                        <div className={getSlotChipClass(slotAlerts.sun)}>
                           ☀ זווית שמש:{" "}
                           {typeof slot.sunAlt === "number"
                             ? `${slot.sunAlt.toFixed(1)}°`
                             : "—"}
+                          {renderAlertBadge(slotAlerts.sun)}
                         </div>
                       </div>
                     </button>
