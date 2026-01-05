@@ -181,7 +181,24 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
         ? 1
         : 0;
 
-  return (windRisk + gustRisk + rainRisk + sunRisk) / 4;
+  const riskComponents = [windRisk, gustRisk, rainRisk, sunRisk];
+  const baseScore =
+    riskComponents.reduce((total, value) => total + value, 0) / 4;
+  const mediumThreshold = 0.25;
+  const highThreshold = 0.5;
+  const mediumCount = riskComponents.filter(
+    (value) => value >= mediumThreshold,
+  ).length;
+
+  let adjustedScore = baseScore;
+  if (rainProb !== null && rainProb >= 98) {
+    adjustedScore = Math.max(adjustedScore, highThreshold);
+  }
+  if (mediumCount >= 2) {
+    adjustedScore = Math.max(adjustedScore, highThreshold);
+  }
+
+  return adjustedScore;
 };
 
 /**
