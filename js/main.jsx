@@ -2378,6 +2378,7 @@ const App = () => {
       notificationsLoading={isPushWorking}
       onEnableNotifications={handleEnableNotifications}
       onDisableNotifications={handleDisableNotifications}
+      suitabilitySettings={suitabilitySettings}
     />
   );
 
