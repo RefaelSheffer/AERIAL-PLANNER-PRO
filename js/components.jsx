@@ -474,7 +474,6 @@ const TimelineBoard = ({
             >
               {visibleDays.map((day) => {
                 const isSelected = day.originalIndex === selectedDayIndex;
-                const isDim = !filterFlyableOnly && day.flyableSlots.length === 0;
                 const backgroundTone = getSuitabilityBackground(day.percent);
                 const dayLine = formatDayHeader(day.day);
                 const riskIndicator = renderRiskIndicator(day.dayRiskScore);
@@ -488,7 +487,7 @@ const TimelineBoard = ({
                       isSelected
                         ? "border-blue-500 ring-2 ring-blue-200"
                         : "border-slate-200 hover:border-blue-300"
-                    } ${isDim ? "opacity-40" : "opacity-100"}`}
+                    } opacity-100`}
                   >
                     <div className="text-[12px] md:text-[13px] font-semibold text-slate-500">
                       {dayLine}
