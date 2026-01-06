@@ -1787,6 +1787,7 @@ const App = () => {
         ? `calc(${timelineDockHeight}px + env(safe-area-inset-bottom, 0px) + 1rem)`
         : "calc(55vh + 1rem)"
       : "1.5rem",
+    right: "calc(env(safe-area-inset-right, 0px) + 1.5rem)",
   };
 
   const computeSidebarWidthPx = useCallback(() => {
@@ -2799,7 +2800,7 @@ const App = () => {
             </div>
           )}
           <div
-            className="absolute right-6 z-[930] pointer-events-auto flex flex-col items-end gap-2"
+            className="absolute z-[930] pointer-events-auto flex flex-col items-end gap-2"
             style={geolocateButtonStyle}
           >
             <button
@@ -3199,7 +3200,7 @@ const App = () => {
             </div>
           )}
           <div
-            className="absolute right-6 z-[930] pointer-events-auto flex flex-col items-end gap-2"
+            className="absolute z-[930] pointer-events-auto flex flex-col items-end gap-2"
             style={geolocateButtonStyle}
           >
             <button
