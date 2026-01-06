@@ -687,6 +687,7 @@ const App = () => {
   const addressSearchRef = useRef(null);
   const addressAbortRef = useRef(null);
   const [desktopDockOffset, setDesktopDockOffset] = useState(16);
+  const [mapReady, setMapReady] = useState(false);
   const showPlannerLayout =
     ENABLE_MISSION_PLANNING || ENABLE_REALTIME_PANEL || ENABLE_DOCUMENTATION;
   const timelineVisible = WEATHER_ONLY_MODE ? true : showTimeline;
@@ -698,7 +699,7 @@ const App = () => {
   }, []);
 
   const applyBaseLayer = useCallback(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !mapReady) return;
     const map = mapRef.current;
     const baseLayers = layersRef.current.baseLayers;
     if (!baseLayers) return;
@@ -713,7 +714,7 @@ const App = () => {
     if (nextLayer && !map.hasLayer(nextLayer)) {
       map.addLayer(nextLayer);
     }
-  }, [mapStyle]);
+  }, [mapStyle, mapReady]);
 
   /**
    * Toggle visibility of the sidebar, realtime panel, or timeline while keeping them mutually exclusive.
@@ -2138,12 +2139,13 @@ const App = () => {
         const center = mapRef.current.getCenter();
         setMapCenter([center.lat, center.lng]);
       });
+      setMapReady(true);
     }
   }, []);
 
   useEffect(() => {
     applyBaseLayer();
-  }, [applyBaseLayer]);
+  }, [applyBaseLayer, mapReady]);
 
   useEffect(() => {
     if (mapRef.current) {
