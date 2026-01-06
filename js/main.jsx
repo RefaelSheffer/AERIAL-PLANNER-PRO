@@ -1877,10 +1877,10 @@ const App = () => {
           ? sidebarOffsetPx
           : mobileGapPx;
 
-      return { right: `${offsetPx}px` };
+      return { right: `${offsetPx}px`, top: "1rem" };
     }
 
-    return { right: `${desktopDockOffset}px` };
+    return { right: `${desktopDockOffset}px`, top: "35vh" };
   }, [
     desktopDockOffset,
     computeSidebarWidthPx,
@@ -3226,7 +3226,7 @@ const App = () => {
 
           {/* Docked controls aligned to the right */}
           <div
-            className={`absolute top-4 z-[940] ${dockPositionClasses}`}
+            className={`absolute z-[940] ${dockPositionClasses}`}
             style={dockPositionStyle}
           >
             <div
