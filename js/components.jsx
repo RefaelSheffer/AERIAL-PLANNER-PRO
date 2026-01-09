@@ -579,6 +579,31 @@ const TimelineBoard = ({
                   </button>
                 </div>
               </div>
+              {visibleDays.length > 1 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 custom-scroll">
+                  {visibleDays.map((day) => {
+                    const isSelected = day.originalIndex === selectedDayIndex;
+                    const dayLine = formatDayHeader(day.day);
+                    return (
+                      <button
+                        key={day.day}
+                        type="button"
+                        onClick={() => onSelectDay(day.originalIndex)}
+                        className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
+                        }`}
+                      >
+                        <span>{dayLine}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {day.percent}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-slate-600">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200">
