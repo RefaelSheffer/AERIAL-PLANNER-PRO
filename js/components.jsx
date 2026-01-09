@@ -630,27 +630,38 @@ const TimelineBoard = ({
                   >
                     התאמת ספים
                   </button>
-                  {notificationsSupported && (
-                    <button
-                      type="button"
-                      onClick={
-                        notificationsEnabled
-                          ? onDisableNotifications
-                          : onEnableNotifications
-                      }
-                      disabled={notificationsLoading}
-                      className={`px-3 py-1 rounded-full border text-[11px] font-semibold transition ${
-                        notificationsEnabled
-                          ? "bg-amber-500 text-white border-amber-500"
-                          : "bg-blue-600 text-white border-blue-600"
-                      } ${notificationsLoading ? "opacity-60 cursor-wait" : ""}`}
-                    >
-                      {notificationsLoading
-                        ? "מעבד בקשה..."
-                        : notificationsEnabled
-                          ? "כיבוי התראות לתאריך"
-                          : "הפעל התראות לתאריך הנבחר"}
-                    </button>
+                  {!notificationsSupported ? (
+                    <span className="px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[11px] text-slate-600">
+                      הדפדפן לא תומך בהתראות.
+                    </span>
+                  ) : (
+                    <>
+                      {notificationsEnabled && (
+                        <span className="px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700">
+                          התראות פעילות
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={
+                          notificationsEnabled
+                            ? onDisableNotifications
+                            : onEnableNotifications
+                        }
+                        disabled={notificationsLoading}
+                        className={`px-3 py-1 rounded-full border text-[11px] font-semibold transition ${
+                          notificationsEnabled
+                            ? "bg-amber-500 text-white border-amber-500"
+                            : "bg-blue-600 text-white border-blue-600"
+                        } ${notificationsLoading ? "opacity-60 cursor-wait" : ""}`}
+                      >
+                        {notificationsLoading
+                          ? "מעבד בקשה..."
+                          : notificationsEnabled
+                            ? "בטל התראות"
+                            : "הפעל התראות לתאריך הנבחר"}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

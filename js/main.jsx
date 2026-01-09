@@ -64,7 +64,7 @@ const AerialPlanner = {
   geometry: Config.geometry,
 };
 const SUITABILITY_STORAGE_KEY = "plannerSuitabilitySettings";
-const PUSH_RULE_STORAGE_KEY = "plannerPushRule";
+const PUSH_SUBSCRIPTION_STORAGE_KEY = "plannerPushSubscription";
 const DAY_QUERY_PARAM = "day";
 
 /**
@@ -361,9 +361,9 @@ const App = () => {
     return { ...Config.DEFAULT_SUITABILITY, ...JSON.parse(saved) };
   });
   const [toastItems, setToastItems] = useState([]);
-  const [pushRuleState, setPushRuleState] = useState(() => {
+  const [pushSubscriptionState, setPushSubscriptionState] = useState(() => {
     if (typeof window === "undefined") return null;
-    const stored = window.localStorage.getItem(PUSH_RULE_STORAGE_KEY);
+    const stored = window.localStorage.getItem(PUSH_SUBSCRIPTION_STORAGE_KEY);
     if (!stored) return null;
     try {
       return JSON.parse(stored);
@@ -629,6 +629,7 @@ const App = () => {
 
   const vapidPublicKey = Config.VAPID_PUBLIC_KEY;
   const supabaseFunctionsUrl = Config.SUPABASE_FUNCTIONS_URL;
+  const appBasePath = (Config.APP_BASE_PATH || "").replace(/\/$/, "");
 
   const pushSupported = useMemo(() => {
     if (typeof window === "undefined") return false;
@@ -638,6 +639,33 @@ const App = () => {
       "Notification" in window
     );
   }, []);
+
+  useEffect(() => {
+    if (!pushSupported || typeof navigator === "undefined") return;
+    let isActive = true;
+    const scope = appBasePath ? `${appBasePath}/` : "/";
+    navigator.serviceWorker
+      .getRegistration(scope)
+      .then((registration) =>
+        registration ? registration.pushManager.getSubscription() : null,
+      )
+      .then((subscription) => {
+        if (!isActive) return;
+        if (subscription) {
+          setPushSubscriptionState({
+            endpoint: subscription.endpoint,
+          });
+        } else {
+          setPushSubscriptionState(null);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to detect existing push subscription", err);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [appBasePath, pushSupported]);
 
   const pushToast = useCallback((message, tone = "info") => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -650,18 +678,18 @@ const App = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      if (pushRuleState) {
+      if (pushSubscriptionState) {
         window.localStorage.setItem(
-          PUSH_RULE_STORAGE_KEY,
-          JSON.stringify(pushRuleState),
+          PUSH_SUBSCRIPTION_STORAGE_KEY,
+          JSON.stringify(pushSubscriptionState),
         );
       } else {
-        window.localStorage.removeItem(PUSH_RULE_STORAGE_KEY);
+        window.localStorage.removeItem(PUSH_SUBSCRIPTION_STORAGE_KEY);
       }
     } catch (e) {
-      console.warn("Failed to persist push rule state", e);
+      console.warn("Failed to persist push subscription state", e);
     }
-  }, [pushRuleState]);
+  }, [pushSubscriptionState]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -1321,26 +1349,9 @@ const App = () => {
     [supabaseFunctionsUrl],
   );
 
-  const buildRulePayload = useCallback(
-    (day) => ({
-      lat: weatherLocation?.[0],
-      lon: weatherLocation?.[1],
-      start_date: day?.day,
-      end_date: day?.day,
-      hour_from: 0,
-      hour_to: 23,
-      criteria: {
-        ...suitabilitySettings,
-        appBasePath: (Config.APP_BASE_PATH || "").replace(/\/$/, ""),
-      },
-      notify_on: "status_change",
-    }),
-    [weatherLocation, suitabilitySettings],
-  );
-
   const handleEnableNotifications = useCallback(async () => {
     if (!pushSupported) {
-      pushToast("הדפדפן לא תומך בהתראות פוש.", "warning");
+      pushToast("הדפדפן לא תומך בהתראות.", "warning");
       return;
     }
     if (!vapidPublicKey) {
@@ -1351,47 +1362,51 @@ const App = () => {
       pushToast("בחר תאריך תחזית תחילה.", "warning");
       return;
     }
-    if (!weatherLocation) {
-      pushToast("לא זוהה מיקום לחישוב מזג אוויר.", "warning");
-      return;
-    }
 
     setIsPushWorking(true);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        pushToast("יש לאשר הרשאות התראות בדפדפן.", "warning");
+        pushToast("לא ניתן להפעיל התראות בלי הרשאה.", "warning");
         return;
       }
 
-      const base = (Config.APP_BASE_PATH || "").replace(/\/$/, "");
-      const swUrl = `${base}/sw.js`;
-      const registration = await navigator.serviceWorker.register(swUrl, {
-        scope: base ? `${base}/` : "/",
-      });
+      const swUrl = `${appBasePath}/service-worker.js`;
+      const scope = appBasePath ? `${appBasePath}/` : "/";
+      let registration;
+      try {
+        registration = await navigator.serviceWorker.register(swUrl, { scope });
+      } catch (err) {
+        console.error("Service worker registration failed", err);
+        pushToast("כשל ברישום שירות התראות", "warning");
+        return;
+      }
       let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-        });
+      try {
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+          });
+        }
+      } catch (err) {
+        console.error("Push subscription failed", err);
+        pushToast("כשל ביצירת הרשמה להתראות", "warning");
+        return;
       }
 
-      const subscribeResult = await callEdgeFunction("push-subscribe", {
-        subscription: subscription.toJSON(),
-      });
-      const rulePayload = buildRulePayload(selectedDay);
-      const ruleResult = await callEdgeFunction("rules-upsert", {
-        subscription_id: subscribeResult.subscription_id,
-        rule: rulePayload,
-      });
+      try {
+        await callEdgeFunction("push-subscribe", {
+          subscription: subscription.toJSON(),
+        });
+      } catch (err) {
+        console.error("Push subscription save failed", err);
+        pushToast("כשל בשמירת הרשמה להתראות — נסה שוב", "warning");
+        return;
+      }
 
-      setPushRuleState({
-        subscription_id: subscribeResult.subscription_id,
-        rule_id: ruleResult.rule_id,
-        rule: rulePayload,
-      });
-      pushToast("התראות הופעלו לתאריך הנבחר.", "success");
+      setPushSubscriptionState({ endpoint: subscription.endpoint });
+      pushToast("התראות פעילות.", "success");
     } catch (err) {
       console.error("Push enable failed", err);
       pushToast(err?.message || "לא הצלחנו להפעיל התראות.", "warning");
@@ -1399,43 +1414,36 @@ const App = () => {
       setIsPushWorking(false);
     }
   }, [
-    buildRulePayload,
     callEdgeFunction,
     pushSupported,
     pushToast,
     selectedDay,
     vapidPublicKey,
-    weatherLocation,
+    appBasePath,
   ]);
 
   const handleDisableNotifications = useCallback(async () => {
-    if (!pushRuleState?.rule || !pushRuleState?.subscription_id) {
-      setPushRuleState(null);
-      return;
-    }
     setIsPushWorking(true);
     try {
-      const rulePayload = {
-        ...pushRuleState.rule,
-        notify_on: "disabled",
-      };
-      await callEdgeFunction("rules-upsert", {
-        subscription_id: pushRuleState.subscription_id,
-        rule: rulePayload,
-      });
-      setPushRuleState(null);
-      pushToast("התראות בוטלו לתאריך הנבחר.", "success");
+      const scope = appBasePath ? `${appBasePath}/` : "/";
+      const registration = await navigator.serviceWorker.getRegistration(scope);
+      if (registration) {
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          await subscription.unsubscribe();
+        }
+      }
+      setPushSubscriptionState(null);
+      pushToast("התראות בוטלו.", "success");
     } catch (err) {
       console.error("Push disable failed", err);
       pushToast(err?.message || "לא הצלחנו לבטל התראות.", "warning");
     } finally {
       setIsPushWorking(false);
     }
-  }, [callEdgeFunction, pushRuleState, pushToast]);
+  }, [appBasePath, pushToast]);
 
-  const isSelectedDayPushEnabled =
-    pushRuleState?.rule?.start_date === selectedDay?.day &&
-    pushRuleState?.rule?.notify_on !== "disabled";
+  const isSelectedDayPushEnabled = Boolean(pushSubscriptionState?.endpoint);
 
   const sanitizeDataUrl = (dataUrl, mimeType) => {
     if (typeof dataUrl !== "string") return null;
