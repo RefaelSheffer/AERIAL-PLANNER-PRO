@@ -643,7 +643,7 @@ const App = () => {
   useEffect(() => {
     if (!pushSupported || typeof navigator === "undefined") return;
     let isActive = true;
-    const scope = appBasePath ? `${appBasePath}/` : "/";
+    const scope = `${appBasePath}/`;
     navigator.serviceWorker
       .getRegistration(scope)
       .then((registration) =>
@@ -1334,16 +1334,28 @@ const App = () => {
         throw new Error("חסר URL לשירותי Supabase.");
       }
       const baseUrl = supabaseFunctionsUrl.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/${path}`, {
+      const url = `${baseUrl}/${path}`;
+      console.info("Calling Supabase Edge Function", { url });
+      const res = await fetch(url, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json().catch(() => ({}));
+      const responseText = await res.text();
+      let data = {};
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch (err) {
+          console.warn("Failed to parse edge function response", err);
+        }
+      }
       if (!res.ok) {
         throw new Error(
-          data?.error || `הקריאה לשירות נכשלה (סטטוס ${res.status}).`,
+          data?.error ||
+            responseText ||
+            `הקריאה לשירות נכשלה (סטטוס ${res.status}).`,
         );
       }
       return data;
@@ -1368,13 +1380,19 @@ const App = () => {
     setIsPushWorking(true);
     try {
       const permission = await Notification.requestPermission();
+      console.info("Push permission result", { permission });
       if (permission !== "granted") {
         pushToast("לא ניתן להפעיל התראות בלי הרשאה.", "warning");
         return;
       }
 
       const swUrl = `${appBasePath}/service-worker.js`;
-      const scope = appBasePath ? `${appBasePath}/` : "/";
+      const scope = `${appBasePath}/`;
+      console.info("Service worker registration details", {
+        appBasePath,
+        swUrl,
+        scope,
+      });
       let registration;
       try {
         registration = await navigator.serviceWorker.register(swUrl, { scope });
@@ -1403,8 +1421,15 @@ const App = () => {
       }
 
       try {
+        console.info("Push subscription endpoint", {
+          endpoint: subscription?.endpoint,
+        });
         await callEdgeFunction("push-subscribe", {
-          subscription: subscription.toJSON(),
+          subscription:
+            typeof subscription?.toJSON === "function"
+              ? subscription.toJSON()
+              : subscription,
+          userAgent: navigator.userAgent,
         });
       } catch (err) {
         console.error("Push subscription save failed", err);
@@ -1432,7 +1457,7 @@ const App = () => {
   const handleDisableNotifications = useCallback(async () => {
     setIsPushWorking(true);
     try {
-      const scope = appBasePath ? `${appBasePath}/` : "/";
+      const scope = `${appBasePath}/`;
       const registration = await navigator.serviceWorker.getRegistration(scope);
       if (registration) {
         const subscription = await registration.pushManager.getSubscription();
