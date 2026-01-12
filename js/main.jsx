@@ -1342,7 +1342,9 @@ const App = () => {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || "הקריאה לשירות נכשלה.");
+        throw new Error(
+          data?.error || `הקריאה לשירות נכשלה (סטטוס ${res.status}).`,
+        );
       }
       return data;
     },
@@ -1382,6 +1384,11 @@ const App = () => {
         return;
       }
       let subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        setPushSubscriptionState({ endpoint: subscription.endpoint });
+        pushToast("התראות כבר פעילות.", "success");
+        return;
+      }
       try {
         if (!subscription) {
           subscription = await registration.pushManager.subscribe({
