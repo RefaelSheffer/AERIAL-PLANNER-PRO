@@ -629,6 +629,7 @@ const App = () => {
 
   const vapidPublicKey = Config.VAPID_PUBLIC_KEY;
   const supabaseFunctionsUrl = Config.SUPABASE_FUNCTIONS_URL;
+  const supabaseAnonKey = Config.SUPABASE_ANON_KEY;
   const appBasePath = (Config.APP_BASE_PATH || "").replace(/\/$/, "");
 
   const pushSupported = useMemo(() => {
@@ -1333,13 +1334,20 @@ const App = () => {
       if (!supabaseFunctionsUrl) {
         throw new Error("חסר URL לשירותי Supabase.");
       }
+      if (!supabaseAnonKey) {
+        throw new Error("חסר מפתח Supabase ציבורי.");
+      }
       const baseUrl = supabaseFunctionsUrl.replace(/\/$/, "");
       const url = `${baseUrl}/${path}`;
       console.info("Calling Supabase Edge Function", { url });
       const res = await fetch(url, {
         method: "POST",
         mode: "cors",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
         body: JSON.stringify(payload),
       });
       const responseText = await res.text();
@@ -1352,15 +1360,22 @@ const App = () => {
         }
       }
       if (!res.ok) {
+        console.error("Edge Function request failed", {
+          status: res.status,
+          statusText: res.statusText,
+          responseText,
+          url,
+        });
         throw new Error(
           data?.error ||
-            responseText ||
-            `הקריאה לשירות נכשלה (סטטוס ${res.status}).`,
+            `הקריאה לשירות נכשלה (${res.status} ${res.statusText})${
+              responseText ? `: ${responseText}` : ""
+            }`,
         );
       }
       return data;
     },
-    [supabaseFunctionsUrl],
+    [supabaseFunctionsUrl, supabaseAnonKey],
   );
 
   const handleEnableNotifications = useCallback(async () => {
