@@ -8,7 +8,7 @@ Update `js/env.js` (or override `window.AERIAL_PLANNER_ENV` before `config.js` l
 ```js
 window.AERIAL_PLANNER_ENV = {
   VAPID_PUBLIC_KEY: "<your-vapid-public-key>",
-  SUPABASE_FUNCTIONS_URL: "https://<project-ref>.supabase.co/functions/v1",
+  SUPABASE_ANON_KEY: "<your-anon-key>",
 };
 ```
 
@@ -18,7 +18,7 @@ The public VAPID key is safe to expose in the client. **Do not** place any servi
 From the repo root:
 
 ```bash
-supabase functions deploy push-subscribe
+supabase functions deploy subscribe
 supabase functions deploy rules-upsert
 supabase functions deploy push-check
 ```

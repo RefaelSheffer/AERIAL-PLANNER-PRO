@@ -1,4 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate_limit.ts";
 import { getAllowedOrigin, getClientIp } from "../_shared/security.ts";
@@ -52,8 +51,15 @@ Deno.serve(async (req) => {
     });
   }
 
+  console.log("subscribe invoked");
   const body = (await parseJson(req)) as PushSubscriptionPayload | null;
   const subscription = body?.subscription;
+  console.log(
+    "payload keys ok:",
+    !!subscription?.endpoint,
+    !!subscription?.keys?.p256dh,
+    !!subscription?.keys?.auth,
+  );
   const endpoint = subscription?.endpoint?.trim();
   const p256dh = subscription?.keys?.p256dh?.trim();
   const auth = subscription?.keys?.auth?.trim();
@@ -74,33 +80,48 @@ Deno.serve(async (req) => {
     });
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const restUrl = `${supabaseUrl}/rest/v1/subscriptions?on_conflict=endpoint&select=id`;
+  const res = await fetch(restUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=representation",
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({
+      endpoint,
+      p256dh,
+      auth,
+      disabled_at: null,
+      last_error: null,
+      updated_at: new Date().toISOString(),
+    }),
+  });
 
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .upsert(
+  const text = await res.text();
+  if (!res.ok) {
+    return new Response(
+      JSON.stringify({ error: "DB error", status: res.status, details: text }),
       {
-        endpoint,
-        p256dh,
-        auth,
-        disabled_at: null,
-        last_error: null,
-        updated_at: new Date().toISOString(),
+        status: 500,
+        headers: { ...originCorsHeaders, "Content-Type": "application/json" },
       },
-      { onConflict: "endpoint" },
-    )
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    return new Response(JSON.stringify({ error: "Failed to save subscription" }), {
-      status: 500,
-      headers: { ...originCorsHeaders, "Content-Type": "application/json" },
-    });
+    );
   }
 
+  let data: Array<{ id: string }> = [];
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = [];
+    }
+  }
+  const subscriptionId = data?.[0]?.id ?? null;
+
   return new Response(
-    JSON.stringify({ ok: true, subscription_id: data.id }),
+    JSON.stringify({ ok: true, subscription_id: subscriptionId }),
     {
       headers: { ...originCorsHeaders, "Content-Type": "application/json" },
     },
