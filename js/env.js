@@ -6,5 +6,6 @@ window.AERIAL_PLANNER_ENV = window.AERIAL_PLANNER_ENV || {
     "BJm9BtX9mJ3nA40ngBy5ct1agNC5Fzvxam6pppjYCJvcrx0ICdx_4kJM3gNP8zpcrixTnugmSr4BlpIwMT2XZuc",
   SUPABASE_FUNCTIONS_URL:
     "https://wpmxaadzsxxyyhhpsywf.supabase.co/functions/v1",
+  SUPABASE_ANON_KEY: "",
   APP_BASE_PATH: "/AERIAL-PLANNER-PRO",
 };
