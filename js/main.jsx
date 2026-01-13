@@ -628,9 +628,10 @@ const App = () => {
   }, [theme]);
 
   const vapidPublicKey = Config.VAPID_PUBLIC_KEY;
-  const supabaseFunctionsUrl = Config.SUPABASE_FUNCTIONS_URL;
   const supabaseAnonKey = Config.SUPABASE_ANON_KEY;
   const appBasePath = (Config.APP_BASE_PATH || "").replace(/\/$/, "");
+  const subscribeEndpoint =
+    "https://wpmxaadzsxxyyhhpsywf.supabase.co/functions/v1/subscribe";
 
   const pushSupported = useMemo(() => {
     if (typeof window === "undefined") return false;
@@ -1331,18 +1332,15 @@ const App = () => {
 
   const callEdgeFunction = useCallback(
     async (payload) => {
-      if (!supabaseFunctionsUrl) {
-        throw new Error("חסר URL לשירותי Supabase.");
-      }
       if (!supabaseAnonKey) {
         throw new Error(
           "Missing SUPABASE_ANON_KEY. Set it in js/env.local.js (not committed).",
         );
       }
-      const baseUrl = supabaseFunctionsUrl.replace(/\/$/, "");
-      const url = `${baseUrl}/push-subscribe`;
-      console.info("Calling Supabase Edge Function", { url });
-      const res = await fetch(url, {
+      console.info("Calling Supabase Edge Function", {
+        url: subscribeEndpoint,
+      });
+      const res = await fetch(subscribeEndpoint, {
         method: "POST",
         mode: "cors",
         headers: {
@@ -1361,23 +1359,26 @@ const App = () => {
           console.warn("Failed to parse edge function response", err);
         }
       }
+      console.info("Edge Function response", {
+        status: res.status,
+        statusText: res.statusText,
+        responseText,
+        data,
+      });
       if (!res.ok) {
         console.error("Edge Function request failed", {
           status: res.status,
           statusText: res.statusText,
           responseText,
-          url,
+          data,
         });
-        throw new Error(
-          data?.error ||
-            `הקריאה לשירות נכשלה (${res.status} ${res.statusText})${
-              responseText ? `: ${responseText}` : ""
-            }`,
-        );
+        const details =
+          data?.details || data?.error || responseText || res.statusText;
+        throw new Error(`שמירת הרשמה נכשלה: ${details}`);
       }
       return data;
     },
-    [supabaseFunctionsUrl, supabaseAnonKey],
+    [subscribeEndpoint, supabaseAnonKey],
   );
 
   const handleEnableNotifications = useCallback(async () => {
@@ -1446,11 +1447,13 @@ const App = () => {
             typeof subscription?.toJSON === "function"
               ? subscription.toJSON()
               : subscription,
-          userAgent: navigator.userAgent,
         });
       } catch (err) {
         console.error("Push subscription save failed", err);
-        pushToast("כשל בשמירת הרשמה להתראות — נסה שוב", "warning");
+        pushToast(
+          err?.message || "כשל בשמירת הרשמה להתראות — נסה שוב",
+          "warning",
+        );
         return;
       }
 
