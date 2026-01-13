@@ -1330,15 +1330,17 @@ const App = () => {
   const selectedDay = daySuitability?.[selectedDayIndex] || null;
 
   const callEdgeFunction = useCallback(
-    async (path, payload) => {
+    async (payload) => {
       if (!supabaseFunctionsUrl) {
         throw new Error("חסר URL לשירותי Supabase.");
       }
       if (!supabaseAnonKey) {
-        throw new Error("חסר מפתח Supabase ציבורי.");
+        throw new Error(
+          "Missing SUPABASE_ANON_KEY. Set it in js/env.local.js (not committed).",
+        );
       }
       const baseUrl = supabaseFunctionsUrl.replace(/\/$/, "");
-      const url = `${baseUrl}/${path}`;
+      const url = `${baseUrl}/push-subscribe`;
       console.info("Calling Supabase Edge Function", { url });
       const res = await fetch(url, {
         method: "POST",
@@ -1439,7 +1441,7 @@ const App = () => {
         console.info("Push subscription endpoint", {
           endpoint: subscription?.endpoint,
         });
-        await callEdgeFunction("push-subscribe", {
+        await callEdgeFunction({
           subscription:
             typeof subscription?.toJSON === "function"
               ? subscription.toJSON()
