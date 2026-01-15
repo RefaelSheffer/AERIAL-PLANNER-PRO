@@ -630,8 +630,7 @@ const App = () => {
   const vapidPublicKey = Config.VAPID_PUBLIC_KEY;
   const supabaseAnonKey = Config.SUPABASE_ANON_KEY;
   const appBasePath = (Config.APP_BASE_PATH || "").replace(/\/$/, "");
-  const subscribeEndpoint =
-    "https://wpmxaadzsxxyyhhpsywf.supabase.co/functions/v1/subscribe";
+  const subscribeEndpoint = `${Config.SUPABASE_FUNCTIONS_URL}/push-subscribe`;
 
   const pushSupported = useMemo(() => {
     if (typeof window === "undefined") return false;
