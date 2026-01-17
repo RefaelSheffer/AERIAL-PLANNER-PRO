@@ -630,7 +630,8 @@ const App = () => {
   const vapidPublicKey = Config.VAPID_PUBLIC_KEY;
   const supabaseAnonKey = Config.SUPABASE_ANON_KEY;
   const appBasePath = (Config.APP_BASE_PATH || "").replace(/\/$/, "");
-  const subscribeEndpoint = `${Config.SUPABASE_FUNCTIONS_URL}/push-subscribe`;
+  const subscribeEndpoint =
+    "https://wpmxaadzsxxyyhhpsywf.supabase.co/functions/v1/subscribe";
 
   const pushSupported = useMemo(() => {
     if (typeof window === "undefined") return false;
@@ -1330,14 +1331,15 @@ const App = () => {
   const selectedDay = daySuitability?.[selectedDayIndex] || null;
 
   const callEdgeFunction = useCallback(
-    async (payload) => {
+    async (subscription) => {
       if (!supabaseAnonKey) {
         throw new Error(
           "Missing SUPABASE_ANON_KEY. Set it in js/env.local.js (not committed).",
         );
       }
-      console.info("Calling Supabase Edge Function", {
+      console.log("Calling subscribe function", {
         url: subscribeEndpoint,
+        hasAnonKey: !!supabaseAnonKey,
       });
       const res = await fetch(subscribeEndpoint, {
         method: "POST",
@@ -1347,35 +1349,21 @@ const App = () => {
           apikey: supabaseAnonKey,
           Authorization: `Bearer ${supabaseAnonKey}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ subscription }),
       });
       const responseText = await res.text();
-      let data = {};
-      if (responseText) {
-        try {
-          data = JSON.parse(responseText);
-        } catch (err) {
-          console.warn("Failed to parse edge function response", err);
-        }
-      }
-      console.info("Edge Function response", {
-        status: res.status,
-        statusText: res.statusText,
-        responseText,
-        data,
-      });
+      console.log("subscribe status:", res.status);
+      console.log("subscribe response:", responseText);
       if (!res.ok) {
-        console.error("Edge Function request failed", {
-          status: res.status,
-          statusText: res.statusText,
-          responseText,
-          data,
-        });
-        const details =
-          data?.details || data?.error || responseText || res.statusText;
-        throw new Error(`שמירת הרשמה נכשלה: ${details}`);
+        throw new Error(responseText || res.statusText);
       }
-      return data;
+      if (!responseText) return {};
+      try {
+        return JSON.parse(responseText);
+      } catch (err) {
+        console.warn("Failed to parse edge function response", err);
+        return {};
+      }
     },
     [subscribeEndpoint, supabaseAnonKey],
   );
@@ -1441,12 +1429,11 @@ const App = () => {
         console.info("Push subscription endpoint", {
           endpoint: subscription?.endpoint,
         });
-        await callEdgeFunction({
-          subscription:
-            typeof subscription?.toJSON === "function"
-              ? subscription.toJSON()
-              : subscription,
-        });
+        await callEdgeFunction(
+          typeof subscription?.toJSON === "function"
+            ? subscription.toJSON()
+            : subscription,
+        );
       } catch (err) {
         console.error("Push subscription save failed", err);
         pushToast(
