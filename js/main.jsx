@@ -44,7 +44,43 @@ if (missingDeps.length) {
   throw new Error(`Missing client dependencies: ${missingDeps.join(", ")}`);
 }
 
-// Main application setup
+const isLocalHostname = (hostname) =>
+  hostname === "localhost" ||
+  hostname === "127.0.0.1" ||
+  hostname === "[::1]" ||
+  hostname.endsWith(".local");
+
+const loadLocalEnvOverrides = async () => {
+  if (!isLocalHostname(window.location.hostname)) return false;
+
+  const basePath = (
+    window.APP_ENV?.APP_BASE_PATH ||
+    window.AERIAL_PLANNER_ENV?.APP_BASE_PATH ||
+    ""
+  ).replace(/\/$/, "");
+  const envLocalUrl = `${basePath}/js/env.local.js`;
+
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = envLocalUrl;
+    script.async = false;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+};
+
+const ensurePlannerEnvReady = async () => {
+  const loaded = await loadLocalEnvOverrides();
+  if (loaded && typeof window.applyAerialPlannerEnv === "function") {
+    window.applyAerialPlannerEnv();
+  }
+};
+
+(async () => {
+  await ensurePlannerEnvReady();
+
+  // Main application setup
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 const Config = window.AerialPlannerConfig;
 const Services = window.AerialPlannerServices;
@@ -1334,7 +1370,7 @@ const App = () => {
     async (subscription) => {
       if (!supabaseAnonKey) {
         throw new Error(
-          "Missing SUPABASE_ANON_KEY. Set it in js/env.local.js (not committed).",
+          "Missing SUPABASE_ANON_KEY. Set it in js/env.js or js/env.local.js.",
         );
       }
       console.log("Calling subscribe function", {
@@ -3702,3 +3738,5 @@ const App = () => {
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);
+
+})();
