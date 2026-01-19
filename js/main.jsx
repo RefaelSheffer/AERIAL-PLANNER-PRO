@@ -100,8 +100,15 @@ const AerialPlanner = {
   geometry: Config.geometry,
 };
 const SUITABILITY_STORAGE_KEY = "plannerSuitabilitySettings";
+const WIND_UNIT_STORAGE_KEY = "plannerWindUnit";
 const PUSH_SUBSCRIPTION_STORAGE_KEY = "plannerPushSubscription";
 const DAY_QUERY_PARAM = "day";
+const WIND_UNITS = [
+  { id: "mps", label: 'מ"ש', suffix: 'מ"ש', factor: 1 },
+  { id: "kmh", label: 'קמ"ש', suffix: 'קמ"ש', factor: 3.6 },
+  { id: "kt", label: "קשר", suffix: "קשר", factor: 1.94384 },
+  { id: "mph", label: "mph", suffix: "mph", factor: 2.23694 },
+];
 
 /**
  * Calculate the sun altitude for the current weather location and a given timestamp.
@@ -396,6 +403,13 @@ const App = () => {
     if (!saved) return Config.DEFAULT_SUITABILITY;
     return { ...Config.DEFAULT_SUITABILITY, ...JSON.parse(saved) };
   });
+  const [windUnit, setWindUnit] = useState(() => {
+    if (typeof window === "undefined") return WIND_UNITS[0].id;
+    const saved = window.localStorage.getItem(WIND_UNIT_STORAGE_KEY);
+    return WIND_UNITS.some((unit) => unit.id === saved)
+      ? saved
+      : WIND_UNITS[0].id;
+  });
   const [toastItems, setToastItems] = useState([]);
   const [pushSubscriptionState, setPushSubscriptionState] = useState(() => {
     if (typeof window === "undefined") return null;
@@ -410,6 +424,58 @@ const App = () => {
   const [isPushWorking, setIsPushWorking] = useState(false);
   const queryDay = useMemo(() => getQueryDayParam(), []);
   const queryDayAppliedRef = useRef(false);
+  const windUnitMeta = useMemo(
+    () => WIND_UNITS.find((unit) => unit.id === windUnit) || WIND_UNITS[0],
+    [windUnit],
+  );
+  const windUnitStep = useMemo(
+    () => Number((0.5 * windUnitMeta.factor).toFixed(2)),
+    [windUnitMeta],
+  );
+  const windUnitLimits = useMemo(
+    () => ({
+      maxWind: Number((40 * windUnitMeta.factor).toFixed(1)),
+      maxGust: Number((50 * windUnitMeta.factor).toFixed(1)),
+    }),
+    [windUnitMeta],
+  );
+  const convertWindToDisplay = useCallback(
+    (value) =>
+      typeof value === "number" && !Number.isNaN(value)
+        ? value * windUnitMeta.factor
+        : null,
+    [windUnitMeta],
+  );
+  const convertWindToMs = useCallback(
+    (value) =>
+      typeof value === "number" && !Number.isNaN(value)
+        ? value / windUnitMeta.factor
+        : 0,
+    [windUnitMeta],
+  );
+  const formatWindNumber = useCallback(
+    (value, decimals = 1) => {
+      const converted = convertWindToDisplay(value);
+      if (converted === null) return "-";
+      return converted.toFixed(decimals);
+    },
+    [convertWindToDisplay],
+  );
+  const formatWindValue = useCallback(
+    (value, decimals = 1) => {
+      const formatted = formatWindNumber(value, decimals);
+      if (formatted === "-") return "-";
+      return `${formatted} ${windUnitMeta.suffix}`;
+    },
+    [formatWindNumber, windUnitMeta],
+  );
+  const cycleWindUnit = useCallback(() => {
+    setWindUnit((prev) => {
+      const index = WIND_UNITS.findIndex((unit) => unit.id === prev);
+      const nextIndex = index === -1 ? 0 : (index + 1) % WIND_UNITS.length;
+      return WIND_UNITS[nextIndex].id;
+    });
+  }, []);
 
   // Stats
   const [totalDistance, setTotalDistance] = useState(0);
@@ -742,6 +808,15 @@ const App = () => {
     }
   }, [theme]);
 
+  useEffect(() => {
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.setItem(WIND_UNIT_STORAGE_KEY, windUnit);
+    } catch (e) {
+      console.warn("Failed to persist wind unit", e);
+    }
+  }, [windUnit]);
+
   const mapRef = useRef(null);
   const layersRef = useRef({});
   const radarIntervalRef = useRef(null);
@@ -928,6 +1003,21 @@ const App = () => {
   const updateSuitabilitySetting = (key, value) => {
     setSuitabilitySettings((prev) => ({ ...prev, [key]: value }));
   };
+  const getWindInputValue = useCallback(
+    (value) => {
+      const converted = convertWindToDisplay(value);
+      if (converted === null) return "";
+      return Number(converted.toFixed(1));
+    },
+    [convertWindToDisplay],
+  );
+  const handleWindSettingChange = useCallback(
+    (key) => (event) => {
+      const raw = Number(event.target.value);
+      updateSuitabilitySetting(key, convertWindToMs(raw));
+    },
+    [convertWindToMs, updateSuitabilitySetting],
+  );
 
   const resetSuitabilitySettings = () => {
     setSuitabilitySettings(Config.DEFAULT_SUITABILITY);
@@ -1219,12 +1309,17 @@ const App = () => {
   );
 
   const daySuitability = useMemo(() => {
-    const formatRange = (values, unit) => {
+    const formatWindRange = (values) => {
       if (!values.length) return "-";
-      const min = Math.min(...values);
-      const max = Math.max(...values);
-      if (min === max) return `${min.toFixed(1)}${unit}`;
-      return `${min.toFixed(1)}–${max.toFixed(1)}${unit}`;
+      const converted = values
+        .map((value) => convertWindToDisplay(value))
+        .filter((value) => typeof value === "number" && !Number.isNaN(value));
+      if (!converted.length) return "-";
+      const min = Math.min(...converted);
+      const max = Math.max(...converted);
+      if (min === max)
+        return `${min.toFixed(1)} ${windUnitMeta.suffix}`;
+      return `${min.toFixed(1)}–${max.toFixed(1)} ${windUnitMeta.suffix}`;
     };
 
     const formatPercentRange = (values) => {
@@ -1331,8 +1426,8 @@ const App = () => {
         flyableSlots,
         percent,
         dayRiskScore,
-        windRange: formatRange(winds, " m/s"),
-        gustRange: formatRange(gusts, " m/s"),
+        windRange: formatWindRange(winds),
+        gustRange: formatWindRange(gusts),
         rainRange: formatPercentRange(rain),
         cloudRange: formatPercentRange(clouds),
         flyableWindows: flyableWindows.map((window) => window.label),
@@ -1343,7 +1438,14 @@ const App = () => {
         flyableHoursTotal,
       };
     });
-  }, [windTimeline, isSlotRelevant, isSlotFlyable, suitabilitySettings]);
+  }, [
+    windTimeline,
+    isSlotRelevant,
+    isSlotFlyable,
+    suitabilitySettings,
+    convertWindToDisplay,
+    windUnitMeta,
+  ]);
 
   useEffect(() => {
     if (queryDayAppliedRef.current) return;
@@ -2452,6 +2554,16 @@ const App = () => {
     () => `${flightDate.slice(0, 13)}:00`,
     [flightDate],
   );
+  const renderWindUnitToggle = (className = "") => (
+    <button
+      type="button"
+      onClick={cycleWindUnit}
+      className={`inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100 ${className}`}
+      aria-label="החלף יחידת רוח"
+    >
+      {windUnitMeta.label}
+    </button>
+  );
 
   const timelineBoard = (
     <TimelineBoard
@@ -2481,6 +2593,7 @@ const App = () => {
       onEnableNotifications={handleEnableNotifications}
       onDisableNotifications={handleDisableNotifications}
       suitabilitySettings={suitabilitySettings}
+      formatWindValue={formatWindValue}
     />
   );
 
@@ -2562,8 +2675,10 @@ const App = () => {
             <div
               className={`text-xs border rounded-lg px-3 py-2 ${settingsTheme.summary}`}
             >
-              מה נחשב יציב: רוח ≤ {suitabilitySettings.maxWind} מ"ש · משבים ≤{" "}
-              {suitabilitySettings.maxGust} מ"ש · עננות בין{" "}
+              מה נחשב יציב: רוח ≤ {formatWindNumber(suitabilitySettings.maxWind)}{" "}
+              {renderWindUnitToggle("align-middle")} · משבים ≤{" "}
+              {formatWindNumber(suitabilitySettings.maxGust)}{" "}
+              {renderWindUnitToggle("align-middle")} · עננות בין{" "}
               {suitabilitySettings.minCloudCover}% ל-
               {suitabilitySettings.maxCloudCover}% · גשם ≤{" "}
               {suitabilitySettings.maxRainProb}% · שמש בין{" "}
@@ -2574,52 +2689,44 @@ const App = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className={`text-sm font-semibold ${settingsTheme.label}`}>
-                  מקסימום רוח (מ"ש)
+                  מקסימום רוח {renderWindUnitToggle("align-middle")}
                 </label>
                 <input
                   type="number"
                   min="0"
-                  max="40"
-                  step="0.5"
-                  value={suitabilitySettings.maxWind}
-                  onChange={(e) =>
-                    updateSuitabilitySetting(
-                      "maxWind",
-                      Number(e.target.value) || 0,
-                    )
-                  }
+                  max={windUnitLimits.maxWind}
+                  step={windUnitStep}
+                  value={getWindInputValue(suitabilitySettings.maxWind)}
+                  onChange={handleWindSettingChange("maxWind")}
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
                   className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.maxWind} מ"ש.
+                  ברירת מחדל:{" "}
+                  {formatWindValue(Config.DEFAULT_SUITABILITY.maxWind)}.
                 </p>
               </div>
               <div className="space-y-1">
                 <label className={`text-sm font-semibold ${settingsTheme.label}`}>
-                  מקסימום משבי רוח (מ"ש)
+                  מקסימום משבי רוח {renderWindUnitToggle("align-middle")}
                 </label>
                 <input
                   type="number"
                   min="0"
-                  max="50"
-                  step="0.5"
-                  value={suitabilitySettings.maxGust}
-                  onChange={(e) =>
-                    updateSuitabilitySetting(
-                      "maxGust",
-                      Number(e.target.value) || 0,
-                    )
-                  }
+                  max={windUnitLimits.maxGust}
+                  step={windUnitStep}
+                  value={getWindInputValue(suitabilitySettings.maxGust)}
+                  onChange={handleWindSettingChange("maxGust")}
                   onFocus={enableSettingsEditing}
                   onClick={enableSettingsEditing}
                   className={`input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`}
                   readOnly={settingsReadOnly}
                 />
                 <p className={`text-xs ${settingsTheme.helperText}`}>
-                  ברירת מחדל: {Config.DEFAULT_SUITABILITY.maxGust} מ"ש.
+                  ברירת מחדל:{" "}
+                  {formatWindValue(Config.DEFAULT_SUITABILITY.maxGust)}.
                 </p>
               </div>
               <div className="space-y-1">

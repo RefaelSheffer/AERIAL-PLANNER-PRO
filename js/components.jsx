@@ -205,6 +205,7 @@ const TimelineBoard = ({
   onEnableNotifications,
   onDisableNotifications,
   suitabilitySettings,
+  formatWindValue,
 }) => {
   if (!show) return null;
 
@@ -422,6 +423,15 @@ const TimelineBoard = ({
         !
       </span>
     ) : null;
+  const formatWind = (value) => {
+    if (typeof formatWindValue === "function") {
+      return formatWindValue(value);
+    }
+    if (value === null || value === undefined || Number.isNaN(value)) {
+      return "-";
+    }
+    return `${value.toFixed(1)} m/s`;
+  };
 
   const displayedSlots = selectedDay
     ? filterFlyableOnly && !showAllSlots
@@ -709,15 +719,12 @@ const TimelineBoard = ({
                           {renderRiskIndicator(slot.riskScore ?? 0)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.wind)}>
-                          🌬 רוח: {slot.wind?.toFixed(1) ?? "-"} m/s
+                          🌬 רוח: {formatWind(slot.wind)}
                           {renderAlertBadge(slotAlerts.wind)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.gust)}>
                           💨 משבים:{" "}
-                          {slot.gust?.toFixed(1) ??
-                            slot.wind?.toFixed(1) ??
-                            "-"}{" "}
-                          m/s
+                          {formatWind(slot.gust ?? slot.wind)}
                           {renderAlertBadge(slotAlerts.gust)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.rain)}>
