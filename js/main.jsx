@@ -2283,14 +2283,25 @@ const App = () => {
   // --- Map Rendering ---
   useEffect(() => {
     if (!mapRef.current) {
+      layersRef.current.renderer = L.canvas({ padding: 0.5 });
       const esriImagery = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        { attribution: "Esri" },
+        {
+          attribution: "Esri",
+          updateWhenIdle: true,
+          updateWhenZooming: false,
+          keepBuffer: 4,
+        },
       );
 
       const osmFallback = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        { attribution: "&copy; OpenStreetMap contributors" },
+        {
+          attribution: "&copy; OpenStreetMap contributors",
+          updateWhenIdle: true,
+          updateWhenZooming: false,
+          keepBuffer: 4,
+        },
       );
 
       layersRef.current.baseLayers = {
@@ -2312,6 +2323,10 @@ const App = () => {
           mapStyle === "street" ? osmFallback : esriImagery,
         ],
         zoomControl: false,
+        preferCanvas: true,
+        zoomAnimation: false,
+        fadeAnimation: false,
+        markerZoomAnimation: false,
       });
       mapRef.current.on("click", (e) => {
         if (!ENABLE_MISSION_PLANNING) return;
@@ -2342,6 +2357,7 @@ const App = () => {
     if (!mapRef.current) return;
     const map = mapRef.current;
     const Lr = layersRef.current;
+    const vectorRenderer = Lr.renderer;
 
     if (Lr.poly) map.removeLayer(Lr.poly);
     if (Lr.path) map.removeLayer(Lr.path);
@@ -2354,21 +2370,29 @@ const App = () => {
         color: "yellow",
         weight: 2,
         fillOpacity: 0.1,
+        renderer: vectorRenderer,
       }).addTo(map);
     }
 
     if (ENABLE_MISSION_PLANNING && polygon?.length > 2) {
       const pathPoints = generatePath();
-      Lr.path = L.polyline(pathPoints, { color: "#3b82f6", weight: 3 }).addTo(
-        map,
-      );
+      Lr.path = L.polyline(pathPoints, {
+        color: "#3b82f6",
+        weight: 3,
+        renderer: vectorRenderer,
+      }).addTo(map);
     }
 
     if (ENABLE_MISSION_PLANNING && terrainShadows?.length > 0) {
       // Draw Shadows
       Lr.shadows = L.layerGroup(
         terrainShadows.map((l) =>
-          L.polyline(l, { color: "black", weight: 4, opacity: 0.6 }),
+          L.polyline(l, {
+            color: "black",
+            weight: 4,
+            opacity: 0.6,
+            renderer: vectorRenderer,
+          }),
         ),
       ).addTo(map);
     }
@@ -2441,6 +2465,7 @@ const App = () => {
 
     const map = mapRef.current;
     const Lr = layersRef.current;
+    const vectorRenderer = Lr.renderer;
 
     if (!userLocation) {
       if (Lr.userMarker) {
@@ -2463,6 +2488,7 @@ const App = () => {
         weight: 2,
         fillColor: "#60a5fa",
         fillOpacity: 0.9,
+        renderer: vectorRenderer,
       }).addTo(map);
     } else {
       Lr.userMarker.setLatLng(latlng);
@@ -2478,6 +2504,7 @@ const App = () => {
           fillColor: "#bfdbfe",
           fillOpacity: 0.2,
           interactive: false,
+          renderer: vectorRenderer,
         }).addTo(map);
       } else {
         Lr.userAccuracy.setLatLng(latlng);
