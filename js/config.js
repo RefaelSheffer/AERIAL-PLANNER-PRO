@@ -16,6 +16,7 @@ const buildPlannerConfig = () => {
     SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY || "",
     APP_BASE_PATH: env.APP_BASE_PATH || "",
     APP_ORIGIN: env.APP_ORIGIN || "",
+    OPEN_METEO_MODELS: env.OPEN_METEO_MODELS || "best_match",
     DEFAULT_SUITABILITY: {
       maxWind: 20,
       maxGust: 25,

@@ -212,6 +212,8 @@ const fetchWeatherSlots = async (
   hourFrom: number,
   hourTo: number,
 ): Promise<WeatherSlot[]> => {
+  const openMeteoModels = Deno.env.get("OPEN_METEO_MODELS") ?? "best_match";
+  const timezone = "UTC";
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", String(lat));
   url.searchParams.set("longitude", String(lon));
@@ -227,11 +229,44 @@ const fetchWeatherSlots = async (
   );
   url.searchParams.set("start_date", startDate);
   url.searchParams.set("end_date", endDate);
-  url.searchParams.set("timezone", "UTC");
+  url.searchParams.set("timezone", timezone);
+  url.searchParams.set("windspeed_unit", "ms");
+  url.searchParams.set("models", openMeteoModels);
+
+  console.info(
+    JSON.stringify({
+      provider: "open-meteo",
+      endpoint: "/v1/forecast",
+      models: openMeteoModels,
+      latitude: lat,
+      longitude: lon,
+      start_date: startDate,
+      end_date: endDate,
+      timezone,
+    }),
+  );
+  console.info(
+    JSON.stringify({
+      provider: "open-meteo",
+      event: "request_url",
+      url: url.toString(),
+    }),
+  );
 
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Weather API error ${res.status}`);
   const data = await res.json();
+  if (data?.timezone || data?.hourly_units || data?.generationtime_ms) {
+    console.info(
+      JSON.stringify({
+        provider: "open-meteo",
+        event: "response_metadata",
+        timezone: data?.timezone,
+        hourly_units: data?.hourly_units,
+        generationtime_ms: data?.generationtime_ms,
+      }),
+    );
+  }
   const hourly = data?.hourly;
   if (!hourly?.time?.length) return [];
 
