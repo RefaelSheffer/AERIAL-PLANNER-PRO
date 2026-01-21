@@ -253,31 +253,42 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
 const buildWindTimeline = (hourlyForecast, weatherLocation) => {
   if (!hourlyForecast?.time) return [];
   const days = new Map();
+  const formatLocalDayKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   hourlyForecast.time.forEach((t, i) => {
-    const hour = Number(t.slice(11, 13));
+    const slotDate = new Date(`${t}Z`);
+    if (Number.isNaN(slotDate.getTime())) return;
+    const hour = slotDate.getHours();
     if (hour % 3 !== 0) return; // כל 3 שעות
 
-    const dayKey = t.slice(0, 10);
-    if (!days.has(dayKey)) days.set(dayKey, { day: dayKey, slots: [] });
-
-    const slotDate = `${t.slice(0, 13)}:00`;
+    const dayKey = formatLocalDayKey(slotDate);
+    if (!days.has(dayKey)) {
+      days.set(dayKey, { day: dayKey, date: slotDate, slots: [] });
+    }
 
     days.get(dayKey).slots.push({
       key: t,
-      time: t.slice(11, 16),
+      time: slotDate.toLocaleTimeString("he-IL", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       wind: hourlyForecast.wind_speed_10m?.[i],
       gust: hourlyForecast.wind_gusts_10m?.[i],
       clouds: hourlyForecast.cloud_cover?.[i],
       rainProb: hourlyForecast.precipitation_probability?.[i],
       isMajor: hour % 6 === 0,
-      sunAlt: computeSunAltitudeDeg(weatherLocation, slotDate),
+      sunAlt: computeSunAltitudeDeg(weatherLocation, slotDate.toISOString()),
     });
   });
 
   return Array.from(days.values()).map((day) => ({
     ...day,
-    label: new Date(day.day).toLocaleDateString("he-IL", {
+    label: day.date.toLocaleDateString("he-IL", {
       weekday: "short",
       day: "2-digit",
       month: "2-digit",
