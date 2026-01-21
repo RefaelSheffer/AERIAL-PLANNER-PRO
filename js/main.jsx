@@ -246,12 +246,21 @@ const calculateSlotRisk = (slot, suitabilitySettings) => {
 
 /**
  * Build a condensed wind timeline grouped by day, sampling every 3 hours with sun altitude enrichment.
- * @param {object|null} hourlyForecast - Weather API response containing hourly arrays.
+ * @param {{hourly: object, hourly_units?: object}|object|null} hourlyForecast - Weather API response containing hourly arrays.
  * @param {[number, number]|null} weatherLocation - Current location used for sun angle enrichment.
  * @returns {{day: string, label: string, slots: object[]}[]} Timeline structure for TimelineBoard consumption.
  */
 const buildWindTimeline = (hourlyForecast, weatherLocation) => {
-  if (!hourlyForecast?.time) return [];
+  const hourly = hourlyForecast?.hourly || hourlyForecast;
+  const hourlyUnits = hourlyForecast?.hourly_units || {};
+  if (!hourly?.time) return [];
+  const windUnit = hourlyUnits.wind_speed_10m;
+  const gustUnit = hourlyUnits.wind_gusts_10m;
+  const normalizeWindValue = (value, unit) => {
+    if (typeof value !== "number" || Number.isNaN(value)) return value;
+    if (unit === "m/s" || unit === "ms") return value * 3.6;
+    return value;
+  };
   const days = new Map();
   const formatLocalDayKey = (date) => {
     const year = date.getFullYear();
@@ -260,7 +269,7 @@ const buildWindTimeline = (hourlyForecast, weatherLocation) => {
     return `${year}-${month}-${day}`;
   };
 
-  hourlyForecast.time.forEach((t, i) => {
+  hourly.time.forEach((t, i) => {
     const slotDate = new Date(`${t}Z`);
     if (Number.isNaN(slotDate.getTime())) return;
     const hour = slotDate.getHours();
@@ -277,10 +286,10 @@ const buildWindTimeline = (hourlyForecast, weatherLocation) => {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      wind: hourlyForecast.wind_speed_10m?.[i],
-      gust: hourlyForecast.wind_gusts_10m?.[i],
-      clouds: hourlyForecast.cloud_cover?.[i],
-      rainProb: hourlyForecast.precipitation_probability?.[i],
+      wind: normalizeWindValue(hourly.wind_speed_10m?.[i], windUnit),
+      gust: normalizeWindValue(hourly.wind_gusts_10m?.[i], gustUnit),
+      clouds: hourly.cloud_cover?.[i],
+      rainProb: hourly.precipitation_probability?.[i],
       isMajor: hour % 6 === 0,
       sunAlt: computeSunAltitudeDeg(weatherLocation, slotDate.toISOString()),
     });

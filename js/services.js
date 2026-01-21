@@ -7,7 +7,7 @@
   /**
    * Fetch hourly weather forecast data from Open-Meteo for a specific location.
    * @param {[number, number]} location - Tuple of [latitude, longitude] in decimal degrees.
-   * @returns {Promise<object|null>} Promise resolving to the hourly forecast payload or null when unavailable.
+   * @returns {Promise<{hourly: object, hourly_units?: object}|null>} Promise resolving to the hourly forecast payload or null when unavailable.
    */
   const fetchWeather = async (location) => {
     try {
@@ -44,7 +44,11 @@
       }
       const res = await fetch(url.toString());
       const data = await res.json();
-      return data?.hourly || null;
+      if (!data?.hourly) return null;
+      return {
+        hourly: data.hourly,
+        hourly_units: data.hourly_units || {},
+      };
     } catch (e) {
       console.warn("Weather API unavailable", e);
       return null;
