@@ -13,8 +13,34 @@
     try {
       if (!location) return null;
       const [lat, lng] = location;
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,precipitation_probability&windspeed_unit=ms&timezone=auto&forecast_days=7`;
-      const res = await fetch(url);
+      const models =
+        window.AerialPlannerConfig?.OPEN_METEO_MODELS || "best_match";
+      const url = new URL("https://api.open-meteo.com/v1/forecast");
+      url.searchParams.set("latitude", String(lat));
+      url.searchParams.set("longitude", String(lng));
+      url.searchParams.set(
+        "hourly",
+        [
+          "temperature_2m",
+          "cloud_cover",
+          "wind_speed_10m",
+          "wind_gusts_10m",
+          "precipitation_probability",
+        ].join(","),
+      );
+      url.searchParams.set("windspeed_unit", "ms");
+      url.searchParams.set("timezone", "UTC");
+      url.searchParams.set("forecast_days", "7");
+      url.searchParams.set("models", models);
+      console.info(
+        JSON.stringify({
+          provider: "open-meteo",
+          event: "request_url",
+          url: url.toString(),
+          models,
+        }),
+      );
+      const res = await fetch(url.toString());
       const data = await res.json();
       return data?.hourly || null;
     } catch (e) {
