@@ -212,6 +212,13 @@ const fetchWeatherSlots = async (
   hourFrom: number,
   hourTo: number,
 ): Promise<WeatherSlot[]> => {
+  const parseOpenMeteoTime = (time: string): Date | null => {
+    const trimmed = time.trim();
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(trimmed)) return null;
+    const hasTimezone = /([zZ]|[+-]\d{2}:\d{2})$/.test(trimmed);
+    const date = new Date(hasTimezone ? trimmed : `${trimmed}Z`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
   const openMeteoModels = Deno.env.get("OPEN_METEO_MODELS") ?? "best_match";
   const timezone = "UTC";
   const url = new URL("https://api.open-meteo.com/v1/forecast");
@@ -229,6 +236,7 @@ const fetchWeatherSlots = async (
   );
   url.searchParams.set("start_date", startDate);
   url.searchParams.set("end_date", endDate);
+  url.searchParams.set("timeformat", "iso8601");
   url.searchParams.set("timezone", timezone);
   url.searchParams.set("windspeed_unit", "ms");
   url.searchParams.set("models", openMeteoModels);
@@ -274,7 +282,8 @@ const fetchWeatherSlots = async (
     .map((time: string, index: number) => {
       const hour = Number(time.slice(11, 13));
       if (Number.isNaN(hour) || hour < hourFrom || hour > hourTo) return null;
-      const slotDate = new Date(`${time}Z`);
+      const slotDate = parseOpenMeteoTime(time);
+      if (!slotDate) return null;
       const sunAlt =
         slotDate && SunCalc
           ? (SunCalc.getPosition(slotDate, lat, lon)?.altitude ?? null) *
