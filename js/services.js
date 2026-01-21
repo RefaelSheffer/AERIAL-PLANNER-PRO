@@ -13,7 +13,7 @@
     try {
       if (!location) return null;
       const [lat, lng] = location;
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,precipitation_probability&timezone=auto&forecast_days=7`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,cloud_cover,wind_speed_10m,wind_gusts_10m,precipitation_probability&windspeed_unit=ms&timezone=auto&forecast_days=7`;
       const res = await fetch(url);
       const data = await res.json();
       return data?.hourly || null;
