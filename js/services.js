@@ -28,7 +28,7 @@
           "precipitation_probability",
         ].join(","),
       );
-      url.searchParams.set("windspeed_unit", "ms");
+      url.searchParams.set("windspeed_unit", "kmh");
       url.searchParams.set("timezone", "UTC");
       url.searchParams.set("forecast_days", "7");
       url.searchParams.set("models", models);

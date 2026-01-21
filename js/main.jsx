@@ -104,10 +104,10 @@ const WIND_UNIT_STORAGE_KEY = "plannerWindUnit";
 const PUSH_SUBSCRIPTION_STORAGE_KEY = "plannerPushSubscription";
 const DAY_QUERY_PARAM = "day";
 const WIND_UNITS = [
-  { id: "mps", label: 'מ"ש', suffix: 'מ"ש', factor: 1 },
-  { id: "kmh", label: 'קמ"ש', suffix: 'קמ"ש', factor: 3.6 },
-  { id: "kt", label: "קשר", suffix: "קשר", factor: 1.94384 },
-  { id: "mph", label: "mph", suffix: "mph", factor: 2.23694 },
+  { id: "kmh", label: 'קמ"ש', suffix: 'קמ"ש', factor: 1 },
+  { id: "mps", label: 'מ"ש', suffix: 'מ"ש', factor: 0.27778 },
+  { id: "kt", label: "קשר", suffix: "קשר", factor: 0.539957 },
+  { id: "mph", label: "mph", suffix: "mph", factor: 0.621371 },
 ];
 
 /**
@@ -457,7 +457,7 @@ const App = () => {
         : null,
     [windUnitMeta],
   );
-  const convertWindToMs = useCallback(
+  const convertWindToBase = useCallback(
     (value) =>
       typeof value === "number" && !Number.isNaN(value)
         ? value / windUnitMeta.factor
@@ -1025,9 +1025,9 @@ const App = () => {
   const handleWindSettingChange = useCallback(
     (key) => (event) => {
       const raw = Number(event.target.value);
-      updateSuitabilitySetting(key, convertWindToMs(raw));
+      updateSuitabilitySetting(key, convertWindToBase(raw));
     },
-    [convertWindToMs, updateSuitabilitySetting],
+    [convertWindToBase, updateSuitabilitySetting],
   );
 
   const resetSuitabilitySettings = () => {
