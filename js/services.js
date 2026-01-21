@@ -32,14 +32,16 @@
       url.searchParams.set("timezone", "UTC");
       url.searchParams.set("forecast_days", "7");
       url.searchParams.set("models", models);
-      console.info(
-        JSON.stringify({
-          provider: "open-meteo",
-          event: "request_url",
-          url: url.toString(),
-          models,
-        }),
-      );
+      if (window.AerialPlannerConfig?.DEBUG_WEATHER) {
+        console.info(
+          JSON.stringify({
+            provider: "open-meteo",
+            event: "request_url",
+            url: url.toString(),
+            models,
+          }),
+        );
+      }
       const res = await fetch(url.toString());
       const data = await res.json();
       return data?.hourly || null;

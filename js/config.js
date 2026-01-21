@@ -8,6 +8,12 @@ const readPlannerEnv = () => window.APP_ENV || window.AERIAL_PLANNER_ENV || {};
 const buildPlannerConfig = () => {
   const env = readPlannerEnv();
 
+  const debugWeather =
+    env.DEBUG_WEATHER === true ||
+    env.DEBUG_WEATHER === "true" ||
+    env.DEBUG_WEATHER === 1 ||
+    env.DEBUG_WEATHER === "1";
+
   return {
     DRONE_PRESETS: window.DRONE_PRESETS || {},
     DEFAULT_MAP_CENTER: [32.0853, 34.7818],
@@ -17,6 +23,7 @@ const buildPlannerConfig = () => {
     APP_BASE_PATH: env.APP_BASE_PATH || "",
     APP_ORIGIN: env.APP_ORIGIN || "",
     OPEN_METEO_MODELS: env.OPEN_METEO_MODELS || "best_match",
+    DEBUG_WEATHER: debugWeather,
     DEFAULT_SUITABILITY: {
       maxWind: 20,
       maxGust: 25,
