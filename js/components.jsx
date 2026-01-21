@@ -430,7 +430,7 @@ const TimelineBoard = ({
     if (value === null || value === undefined || Number.isNaN(value)) {
       return "-";
     }
-    return `${value.toFixed(1)} m/s`;
+    return `${value.toFixed(1)} קמ"ש`;
   };
 
   const displayedSlots = selectedDay

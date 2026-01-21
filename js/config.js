@@ -39,25 +39,25 @@ const buildPlannerConfig = () => {
     helpers: {
       /**
        * Convert a wind speed value to an HSL-based color string for heatmap-style visualization.
-       * @param {number|null|undefined} speed - Wind speed in m/s. Nullish or NaN values fall back to a neutral color.
+       * @param {number|null|undefined} speed - Wind speed in km/h. Nullish or NaN values fall back to a neutral color.
        * @returns {string} A CSS color string representing the wind intensity.
        */
       windSpeedToColor: (speed) => {
         if (speed === null || speed === undefined || Number.isNaN(speed))
           return "#cbd5e1";
-        const clamped = Math.max(0, Math.min(speed, 25));
-        const hue = 240 - (clamped / 25) * 240;
+        const clamped = Math.max(0, Math.min(speed, 90));
+        const hue = 240 - (clamped / 90) * 240;
         return `hsl(${hue}, 85%, 55%)`;
       },
       /**
        * Choose a contrasting text color for wind tiles based on the provided speed.
-       * @param {number|null|undefined} speed - Wind speed in m/s. Nullish or NaN values get a dark text color.
+       * @param {number|null|undefined} speed - Wind speed in km/h. Nullish or NaN values get a dark text color.
        * @returns {string} Tailwind text color class suitable for rendering the value over the wind background.
        */
       windTextColor: (speed) => {
         if (speed === null || speed === undefined || Number.isNaN(speed))
           return "text-slate-800";
-        return speed >= 18 ? "text-white" : "text-slate-800";
+        return speed >= 65 ? "text-white" : "text-slate-800";
       },
     },
 
