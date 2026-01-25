@@ -1535,10 +1535,6 @@ const App = () => {
       pushToast("חסר מפתח VAPID ציבורי בהגדרות.", "warning");
       return;
     }
-    if (!selectedDay?.day) {
-      pushToast("בחר תאריך תחזית תחילה.", "warning");
-      return;
-    }
 
     setIsPushWorking(true);
     try {
@@ -1587,11 +1583,56 @@ const App = () => {
         console.info("Push subscription endpoint", {
           endpoint: subscription?.endpoint,
         });
-        await callEdgeFunction(
+        const subscribeResponse = await callEdgeFunction(
           typeof subscription?.toJSON === "function"
             ? subscription.toJSON()
             : subscription,
         );
+        const subscriptionId = subscribeResponse?.subscription_id;
+        if (!subscriptionId) {
+          throw new Error("Missing subscription_id from subscribe response.");
+        }
+        const [ruleLat, ruleLon] =
+          weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+        const ruleDate =
+          selectedDay?.day || new Date().toISOString().slice(0, 10);
+        const ruleCriteria = {
+          maxWind: 20,
+          maxGust: 25,
+          maxRainProb: 40,
+          minSunAltitude: 5,
+          maxSunAltitude: 85,
+          minCloudCover: 0,
+          maxCloudCover: 100,
+          includeNightFlights: false,
+        };
+        try {
+          const ruleResponse = await Services.upsertNotificationRule({
+            subscriptionId,
+            lat: ruleLat,
+            lon: ruleLon,
+            startDate: ruleDate,
+            endDate: ruleDate,
+            hourFrom: 8,
+            hourTo: 20,
+            criteria: ruleCriteria,
+            notifyOn: "status_change",
+          });
+          console.info("Notification rule upserted", {
+            rule_id: ruleResponse?.rule_id,
+            subscription_id: subscriptionId,
+          });
+        } catch (err) {
+          console.error("Notification rule upsert failed", {
+            error: err,
+            subscription_id: subscriptionId,
+          });
+          pushToast(
+            err?.message || "כשל בעדכון כללי התראות — נסה שוב",
+            "warning",
+          );
+          return;
+        }
       } catch (err) {
         console.error("Push subscription save failed", err);
         pushToast(
@@ -1611,11 +1652,13 @@ const App = () => {
     }
   }, [
     callEdgeFunction,
+    mapCenter,
     pushSupported,
     pushToast,
     selectedDay,
     vapidPublicKey,
     appBasePath,
+    weatherLocation,
   ]);
 
   const handleDisableNotifications = useCallback(async () => {
