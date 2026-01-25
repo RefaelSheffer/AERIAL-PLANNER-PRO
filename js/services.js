@@ -270,6 +270,14 @@
     if (!Config.SUPABASE_ANON_KEY) {
       throw new Error("Missing SUPABASE_ANON_KEY in configuration.");
     }
+    const appBasePath = Config.APP_BASE_PATH || "/AERIAL-PLANNER-PRO";
+    if (!appBasePath.startsWith("/")) {
+      console.warn(
+        "Expected appBasePath to start with '/'.",
+        "Received:",
+        appBasePath,
+      );
+    }
     const res = await fetch(
       `${Config.SUPABASE_FUNCTIONS_URL}/rules-upsert`,
       {
@@ -290,7 +298,7 @@
             hour_to: hourTo,
             criteria: {
               ...(criteria || {}),
-              appBasePath: Config.APP_BASE_PATH,
+              appBasePath,
             },
             notify_on: notifyOn,
           },
