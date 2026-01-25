@@ -238,11 +238,84 @@
       .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
   };
 
+  /**
+   * Create or update a notification rule for a push subscription.
+   * @param {object} params - Rule upsert payload inputs.
+   * @param {string} params.subscriptionId - Subscription identifier returned from the subscribe edge function.
+   * @param {number} params.lat - Latitude for the rule target.
+   * @param {number} params.lon - Longitude for the rule target.
+   * @param {string} params.startDate - Rule start date (YYYY-MM-DD).
+   * @param {string} params.endDate - Rule end date (YYYY-MM-DD).
+   * @param {number} params.hourFrom - Start hour (0-23).
+   * @param {number} params.hourTo - End hour (0-23).
+   * @param {object} params.criteria - Suitability criteria for the rule.
+   * @param {string} params.notifyOn - Notify condition name.
+   * @returns {Promise<object>} Parsed JSON response payload.
+   */
+  const upsertNotificationRule = async ({
+    subscriptionId,
+    lat,
+    lon,
+    startDate,
+    endDate,
+    hourFrom,
+    hourTo,
+    criteria,
+    notifyOn,
+  }) => {
+    const Config = window.AerialPlannerConfig || {};
+    if (!Config.SUPABASE_FUNCTIONS_URL) {
+      throw new Error("Missing SUPABASE_FUNCTIONS_URL in configuration.");
+    }
+    if (!Config.SUPABASE_ANON_KEY) {
+      throw new Error("Missing SUPABASE_ANON_KEY in configuration.");
+    }
+    const res = await fetch(
+      `${Config.SUPABASE_FUNCTIONS_URL}/rules-upsert`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: Config.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${Config.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          subscription_id: subscriptionId,
+          rule: {
+            lat,
+            lon,
+            start_date: startDate,
+            end_date: endDate,
+            hour_from: hourFrom,
+            hour_to: hourTo,
+            criteria: {
+              ...(criteria || {}),
+              appBasePath: Config.APP_BASE_PATH,
+            },
+            notify_on: notifyOn,
+          },
+        }),
+      },
+    );
+    const responseText = await res.text();
+    if (!res.ok) {
+      throw new Error(responseText || res.statusText);
+    }
+    if (!responseText) return {};
+    try {
+      return JSON.parse(responseText);
+    } catch (err) {
+      console.warn("Failed to parse rules-upsert response", err);
+      return {};
+    }
+  };
+
   window.AerialPlannerServices = {
     fetchWeather,
     fetchRainRadar,
     fetchAircraft,
     fetchDTM,
     fetchLocationSuggestions,
+    upsertNotificationRule,
   };
 })();
