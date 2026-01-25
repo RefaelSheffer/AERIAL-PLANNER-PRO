@@ -20,7 +20,7 @@ const buildPlannerConfig = () => {
     VAPID_PUBLIC_KEY: env.VAPID_PUBLIC_KEY || "",
     SUPABASE_FUNCTIONS_URL: env.SUPABASE_FUNCTIONS_URL || "",
     SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY || "",
-    APP_BASE_PATH: env.APP_BASE_PATH || "",
+    APP_BASE_PATH: env.APP_BASE_PATH || "/AERIAL-PLANNER-PRO",
     APP_ORIGIN: env.APP_ORIGIN || "",
     OPEN_METEO_MODELS: env.OPEN_METEO_MODELS || "best_match",
     DEBUG_WEATHER: debugWeather,
