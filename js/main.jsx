@@ -102,6 +102,7 @@ const AerialPlanner = {
 const SUITABILITY_STORAGE_KEY = "plannerSuitabilitySettings";
 const WIND_UNIT_STORAGE_KEY = "plannerWindUnit";
 const PUSH_SUBSCRIPTION_STORAGE_KEY = "plannerPushSubscription";
+const PUSH_SUBSCRIPTION_ID_STORAGE_KEY = "ap_push_subscription_id";
 const DAY_QUERY_PARAM = "day";
 const WIND_UNITS = [
   { id: "kmh", label: 'קמ"ש', suffix: 'קמ"ש', factor: 1 },
@@ -437,6 +438,16 @@ const App = () => {
     if (!stored) return null;
     try {
       return JSON.parse(stored);
+    } catch (e) {
+      return null;
+    }
+  });
+  const [pushSubscriptionId, setPushSubscriptionId] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return (
+        window.localStorage.getItem(PUSH_SUBSCRIPTION_ID_STORAGE_KEY) || null
+      );
     } catch (e) {
       return null;
     }
@@ -814,6 +825,22 @@ const App = () => {
       console.warn("Failed to persist push subscription state", e);
     }
   }, [pushSubscriptionState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (pushSubscriptionId) {
+        window.localStorage.setItem(
+          PUSH_SUBSCRIPTION_ID_STORAGE_KEY,
+          pushSubscriptionId,
+        );
+      } else {
+        window.localStorage.removeItem(PUSH_SUBSCRIPTION_ID_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn("Failed to persist push subscription id", e);
+    }
+  }, [pushSubscriptionId]);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -1526,6 +1553,40 @@ const App = () => {
     [subscribeEndpoint, supabaseAnonKey],
   );
 
+  const upsertNotificationRule = useCallback(
+    async (subscriptionId) => {
+      const [ruleLat, ruleLon] =
+        weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+      const ruleDate = selectedDay?.day || new Date().toISOString().slice(0, 10);
+      const ruleCriteria = {
+        maxWind: 20,
+        maxGust: 25,
+        maxRainProb: 40,
+        minSunAltitude: 5,
+        maxSunAltitude: 85,
+        minCloudCover: 0,
+        maxCloudCover: 100,
+        includeNightFlights: false,
+      };
+      const ruleResponse = await Services.upsertNotificationRule({
+        subscriptionId,
+        lat: ruleLat,
+        lon: ruleLon,
+        startDate: ruleDate,
+        endDate: ruleDate,
+        hourFrom: 8,
+        hourTo: 20,
+        criteria: ruleCriteria,
+        notifyOn: "status_change",
+      });
+      console.info("Notification rule upserted", {
+        rule_id: ruleResponse?.rule_id,
+        subscription_id: subscriptionId,
+      });
+    },
+    [mapCenter, selectedDay, weatherLocation],
+  );
+
   const handleEnableNotifications = useCallback(async () => {
     if (!pushSupported) {
       pushToast("הדפדפן לא תומך בהתראות.", "warning");
@@ -1563,6 +1624,24 @@ const App = () => {
       let subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         setPushSubscriptionState({ endpoint: subscription.endpoint });
+        if (pushSubscriptionId) {
+          try {
+            await upsertNotificationRule(pushSubscriptionId);
+          } catch (err) {
+            console.error("Notification rule upsert failed", {
+              error: err,
+              subscription_id: pushSubscriptionId,
+            });
+            pushToast(
+              err?.message || "כשל בעדכון כללי התראות — נסה שוב",
+              "warning",
+            );
+          }
+        } else {
+          console.warn(
+            "Missing stored push subscription id; skipping rules-upsert.",
+          );
+        }
         pushToast("התראות כבר פעילות.", "success");
         return;
       }
@@ -1590,38 +1669,14 @@ const App = () => {
         );
         const subscriptionId = subscribeResponse?.subscription_id;
         if (!subscriptionId) {
-          throw new Error("Missing subscription_id from subscribe response.");
+          console.warn("Missing subscription_id from subscribe response.", {
+            response: subscribeResponse,
+          });
+          return;
         }
-        const [ruleLat, ruleLon] =
-          weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
-        const ruleDate =
-          selectedDay?.day || new Date().toISOString().slice(0, 10);
-        const ruleCriteria = {
-          maxWind: 20,
-          maxGust: 25,
-          maxRainProb: 40,
-          minSunAltitude: 5,
-          maxSunAltitude: 85,
-          minCloudCover: 0,
-          maxCloudCover: 100,
-          includeNightFlights: false,
-        };
+        setPushSubscriptionId(subscriptionId);
         try {
-          const ruleResponse = await Services.upsertNotificationRule({
-            subscriptionId,
-            lat: ruleLat,
-            lon: ruleLon,
-            startDate: ruleDate,
-            endDate: ruleDate,
-            hourFrom: 8,
-            hourTo: 20,
-            criteria: ruleCriteria,
-            notifyOn: "status_change",
-          });
-          console.info("Notification rule upserted", {
-            rule_id: ruleResponse?.rule_id,
-            subscription_id: subscriptionId,
-          });
+          await upsertNotificationRule(subscriptionId);
         } catch (err) {
           console.error("Notification rule upsert failed", {
             error: err,
@@ -1652,13 +1707,12 @@ const App = () => {
     }
   }, [
     callEdgeFunction,
-    mapCenter,
+    pushSubscriptionId,
     pushSupported,
     pushToast,
-    selectedDay,
+    upsertNotificationRule,
     vapidPublicKey,
     appBasePath,
-    weatherLocation,
   ]);
 
   const handleDisableNotifications = useCallback(async () => {
@@ -1673,6 +1727,7 @@ const App = () => {
         }
       }
       setPushSubscriptionState(null);
+      setPushSubscriptionId(null);
       pushToast("התראות בוטלו.", "success");
     } catch (err) {
       console.error("Push disable failed", err);
