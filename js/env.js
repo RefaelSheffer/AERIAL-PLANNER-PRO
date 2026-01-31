@@ -8,7 +8,7 @@ window.APP_ENV = window.APP_ENV || {
   SUPABASE_ANON_KEY:
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwbXhhYWR6c3h4eXloaHBzeXdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5ODQxNDcsImV4cCI6MjA4MjU2MDE0N30.6zeMfb6g88E1FYishNZZADrKKAZ8JO2cocrCKynU7XE",
   VAPID_PUBLIC_KEY:
-    "BJm9BtX9mJ3nA40ngBy5ct1agNC5Fzvxam6pppjYCJvcrx0ICdx_4kJM3gNP8zpcrixTnugmSr4BlpIwMT2XZuc",
+    "BHjXjqBNEHddW4Jx253akku2RLXvaJd9lP0Wz5BDlIA8t4C_XY-0OrrKZDm-Mq6kh2Y9qYLo8n7ivP4tPU-xaO4",
   APP_BASE_PATH: "/AERIAL-PLANNER-PRO",
   APP_ORIGIN: "https://refaelsheffer.github.io",
 };
