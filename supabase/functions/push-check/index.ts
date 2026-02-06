@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import webPush from "https://esm.sh/web-push@3.6.7?target=deno";
+import webPush from "npm:web-push@3.6.7";
 import SunCalc from "https://esm.sh/suncalc@1.9.0?target=deno";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -397,6 +397,8 @@ Deno.serve(async (req) => {
     let status = "no-fly";
     let percent = 0;
     let riskScore = 0;
+    let relevantSlots: WeatherSlot[] = [];
+    let flyableSlots: WeatherSlot[] = [];
 
     try {
       const slots = await getWeatherSlots(
@@ -407,7 +409,7 @@ Deno.serve(async (req) => {
         hourFrom,
         hourTo,
       );
-      const relevantSlots = slots.filter((slot) => {
+      relevantSlots = slots.filter((slot) => {
         if (criteria.includeNightFlights) return true;
         if (slot.sunAlt === null || slot.sunAlt === undefined) return true;
         return (
@@ -415,7 +417,7 @@ Deno.serve(async (req) => {
           slot.sunAlt <= criteria.maxSunAltitude
         );
       });
-      const flyableSlots = relevantSlots.filter((slot) =>
+      flyableSlots = relevantSlots.filter((slot) =>
         slotIsFlyable(slot, criteria)
       );
       percent =
@@ -458,16 +460,42 @@ Deno.serve(async (req) => {
     if (shouldNotify && subscription?.endpoint) {
       const dayQuery = encodeURIComponent(rule.start_date);
       const url = `${appBasePath}/?${DAY_QUERY_PARAM}=${dayQuery}`;
+
+      const formatDate = (d: string) => {
+        const [y, m, dd] = d.split("-");
+        return `${dd}/${m}`;
+      };
+      const dateLabel = rule.start_date === rule.end_date
+        ? formatDate(rule.start_date)
+        : `${formatDate(rule.start_date)}–${formatDate(rule.end_date)}`;
+
+      let summaryLine = "";
+      if (status !== "no-data" && relevantSlots.length > 0) {
+        const maxWind = Math.round(
+          relevantSlots.reduce((m, s) => Math.max(m, s.wind ?? 0), 0),
+        );
+        const maxGust = Math.round(
+          relevantSlots.reduce((m, s) => Math.max(m, s.gust ?? 0), 0),
+        );
+        const maxRain = Math.round(
+          relevantSlots.reduce((m, s) => Math.max(m, s.rainProb ?? 0), 0),
+        );
+        summaryLine =
+          `\nרוח: עד ${maxWind} קמ״ש | משבים: עד ${maxGust} קמ״ש | גשם: ${maxRain}%`;
+      }
+
+      const statusLine =
+        status === "fly"
+          ? `✅ ${percent}% שעות מתאימות לטיסה (${flyableSlots.length}/${relevantSlots.length})`
+          : status === "risk"
+            ? `⚠️ ${percent}% שעות מתאימות לטיסה (${flyableSlots.length}/${relevantSlots.length})`
+            : status === "no-fly"
+              ? `❌ אין שעות מתאימות לטיסה (0/${relevantSlots.length})`
+              : "לא הצלחנו לחשב תחזית מדויקת כרגע.";
+
       const payload = {
-        title: "עדכון תחזית לטיסה",
-        body:
-          status === "fly"
-            ? "נפתח חלון טיסה יציב לתאריך שבחרת."
-            : status === "risk"
-              ? "יש שינוי בסיכון לטיסה בתאריך שבחרת."
-              : status === "no-fly"
-                ? "התנאים אינם מתאימים לטיסה בתאריך שבחרת."
-                : "לא הצלחנו לחשב תחזית מדויקת כרגע.",
+        title: `עדכון תחזית — ${dateLabel} | ${String(hourFrom).padStart(2, "0")}:00–${String(hourTo).padStart(2, "0")}:00`,
+        body: `${statusLine}${summaryLine}`,
         url,
       };
       try {
