@@ -3160,6 +3160,13 @@ const App = () => {
             style={geolocateButtonStyle}
           >
             <button
+              onClick={() => setShowInfoModal(true)}
+              className="w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
+              aria-label="מדריך שימוש"
+            >
+              <Icon name="info" size={18} />
+            </button>
+            <button
               onClick={recenterOnUser}
               className="w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
               aria-label="מרכז למיקום הנוכחי"
@@ -3173,13 +3180,6 @@ const App = () => {
             >
               <Icon name="map" size={16} className="text-slate-500" />
               {mapStyle === "satellite" ? "מפה רגילה" : "תצלום לווין"}
-            </button>
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
-              aria-label="מדריך שימוש"
-            >
-              <Icon name="info" size={18} />
             </button>
           </div>
           {timelineBoard}
