@@ -3156,7 +3156,7 @@ const App = () => {
             </div>
           )}
           <div
-            className="absolute z-[930] pointer-events-auto flex flex-col items-end gap-2"
+            className="absolute z-[930] pointer-events-auto flex flex-col items-start gap-2"
             style={geolocateButtonStyle}
           >
             <button
