@@ -144,6 +144,13 @@ const Icon = ({
         <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82 1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
       </svg>
     ),
+    info: (
+      <svg {...baseProps}>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12.01" y2="8" />
+      </svg>
+    ),
   };
 
   return icons[name] || null;
@@ -164,6 +171,191 @@ const DockButton = ({ icon, label, active, onClick, compact = false }) => (
     <span className="sr-only">{label}</span>
   </button>
 );
+
+// Info / Help modal with full app guide
+const InfoHelpModal = ({ show, onClose, theme }) => {
+  if (!show) return null;
+
+  const isDark = theme === "dark";
+  const t = {
+    overlay:
+      "fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4",
+    modal: isDark
+      ? "bg-slate-900 text-slate-100"
+      : "bg-white text-slate-900",
+    closeBtn: isDark
+      ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+      : "border-slate-200 bg-white/95 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+    sectionTitle: isDark ? "text-blue-400" : "text-blue-700",
+    text: isDark ? "text-slate-300" : "text-slate-600",
+    card: isDark
+      ? "bg-slate-800 border-slate-700"
+      : "bg-slate-50 border-slate-200",
+  };
+
+  const Section = ({ icon, title, children }) => (
+    <div className={`border rounded-xl p-4 space-y-2 ${t.card}`}>
+      <h3
+        className={`text-lg font-bold flex items-center gap-2 ${t.sectionTitle}`}
+      >
+        <Icon name={icon} size={20} />
+        {title}
+      </h3>
+      <div className={`text-sm leading-relaxed space-y-1 ${t.text}`}>
+        {children}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className={t.overlay} onClick={onClose}>
+      <div
+        className={`relative rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4 ${t.modal}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className={`absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`}
+          aria-label="סגור מדריך"
+        >
+          <Icon name="close" size={16} />
+        </button>
+
+        <div className="pr-8 md:pr-0">
+          <div className="text-blue-600 font-bold text-sm uppercase tracking-widest">
+            מדריך שימוש
+          </div>
+          <h2
+            className={`text-2xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}`}
+          >
+            AERIAL PLANNER PRO
+          </h2>
+          <p className={`text-sm ${t.text}`}>
+            כל מה שצריך לדעת על השימוש באפליקציה לתכנון טיסות רחפן לפי מזג
+            אוויר.
+          </p>
+        </div>
+
+        <Section icon="drone" title="סקירה כללית">
+          <p>
+            אפליקציית תכנון טיסות אוויריות המציגה תחזית מזג אוויר מפורטת לימים
+            הקרובים.
+          </p>
+          <p>
+            המערכת בודקת באופן אוטומטי האם תנאי מזג האוויר מתאימים לטיסה
+            בהתבסס על ספי יציבות מוגדרים.
+          </p>
+        </Section>
+
+        <Section icon="map" title="שימוש במפה">
+          <p>
+            לחצו על כל נקודה במפה כדי לבחור מיקום ולקבל תחזית מזג אוויר
+            ספציפית.
+          </p>
+          <p>
+            ניתן לחפש כתובת דרך שורת החיפוש בראש המפה, או ללחוץ על כפתור
+            המיקום כדי להתמרכז במיקומכם הנוכחי.
+          </p>
+          <p>
+            החלפת תצוגה בין מפה רגילה לתצלום לווין זמינה בלחיצה על כפתור
+            תצוגת המפה.
+          </p>
+        </Section>
+
+        <Section icon="calendar" title="ציר זמן מזג אוויר">
+          <p>
+            לוח הימים מציג כרטיסיות לימים הקרובים עם סיכום יומי: אחוז התאמה
+            לטיסה, טווח טמפרטורות, וסטטוס כללי.
+          </p>
+          <p>
+            לחיצה על כרטיס יום פותחת תצוגת שעות מפורטת עם קידוד צבעים:
+          </p>
+          <ul className="list-disc pr-5 space-y-1">
+            <li>
+              <span className="font-semibold text-green-600">ירוק</span> —
+              תנאים מתאימים לטיסה
+            </li>
+            <li>
+              <span className="font-semibold text-amber-500">כתום</span> —
+              תנאים על הגבול
+            </li>
+            <li>
+              <span className="font-semibold text-red-500">אדום</span> —
+              תנאים לא מתאימים
+            </li>
+            <li>
+              <span className="font-semibold text-slate-400">אפור</span> —
+              שעות לילה (כשטיסות לילה מושבתות)
+            </li>
+          </ul>
+        </Section>
+
+        <Section icon="settings" title="ספי יציבות / התאמה לטיסה">
+          <p>המערכת מחשבת התאמה לטיסה לפי הפרמטרים הבאים:</p>
+          <ul className="list-disc pr-5 space-y-1">
+            <li>
+              <span className="font-semibold">מהירות רוח</span> — ברירת מחדל:
+              עד 20 קמ״ש
+            </li>
+            <li>
+              <span className="font-semibold">משבי רוח</span> — ברירת מחדל: עד
+              25 קמ״ש
+            </li>
+            <li>
+              <span className="font-semibold">הסתברות גשם</span> — ברירת מחדל:
+              עד 40%
+            </li>
+            <li>
+              <span className="font-semibold">כיסוי עננים</span> — ברירת מחדל:
+              0%–100%
+            </li>
+            <li>
+              <span className="font-semibold">גובה שמש</span> — ברירת מחדל:
+              5°–85°
+            </li>
+          </ul>
+          <p>
+            ניתן לשנות ערכים אלו דרך מסך ההגדרות. הגדרה מותאמת אישית משפיעה
+            על חישוב אחוז ההתאמה וסימון השעות.
+          </p>
+        </Section>
+
+        <Section icon="clock" title="התראות Push">
+          <p>
+            המערכת יכולה לשלוח התראות כאשר תנאי מזג האוויר משתנים ביום שנבחר.
+          </p>
+          <p>
+            הבדיקה מתבצעת כל 30 דקות. התראה נשלחת כאשר הסטטוס משתנה — למשל:
+            רוח עולה מעל הסף, גשם צפוי מתחיל או נעלם, או חלון טיסה חדש נפתח.
+          </p>
+          <p>
+            להפעלה: לחצו על כפתור ההתראות בכרטיס היום. הדפדפן יבקש אישור
+            לקבלת התראות.
+          </p>
+          <p>
+            לביטול: לחצו שוב על אותו כפתור כדי לבטל מעקב על יום ספציפי.
+          </p>
+          <p>
+            ההתראה כוללת: תאריך, טווח שעות, אחוז שעות מתאימות, ונתוני רוח/משבים/גשם מרביים.
+          </p>
+        </Section>
+
+        <Section icon="settings" title="הגדרות מערכת">
+          <p>מסך ההגדרות מאפשר:</p>
+          <ul className="list-disc pr-5 space-y-1">
+            <li>
+              עריכת ספי יציבות לטיסה (רוח, משבים, גשם, עננים, שמש)
+            </li>
+            <li>הפעלת/כיבוי טיסות לילה בחישוב ההתאמה</li>
+            <li>החלפה בין מצב תצוגה בהיר וכהה</li>
+            <li>איפוס כל הפרמטרים לברירת מחדל</li>
+          </ul>
+        </Section>
+      </div>
+    </div>
+  );
+};
 
 // Planning sidebar wrapper
 const Sidebar = ({ open, className = "", children, containerRef }) => {
@@ -978,5 +1170,6 @@ window.AerialPlannerComponents = {
   Dock,
   Icon,
   DockButton,
+  InfoHelpModal,
 };
 })();

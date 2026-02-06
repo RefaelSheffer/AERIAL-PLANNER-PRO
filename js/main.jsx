@@ -93,6 +93,7 @@ const {
   Dock,
   Icon,
   DockButton,
+  InfoHelpModal,
 } = window.AerialPlannerComponents;
 const AerialPlanner = {
   config: Config,
@@ -409,6 +410,7 @@ const App = () => {
     new Date().toISOString().slice(0, 16),
   );
   const [showSettings, setShowSettings] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [showDayDetails, setShowDayDetails] = useState(false);
   const [filterFlyableOnly, setFilterFlyableOnly] = useState(false);
@@ -3070,6 +3072,12 @@ const App = () => {
         </div>
       )}
 
+      <InfoHelpModal
+        show={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+        theme={theme}
+      />
+
       {WEATHER_ONLY_MODE ? (
         <MapView
           className="flex-1 relative h-full bg-black box-border"
@@ -3166,6 +3174,13 @@ const App = () => {
               {mapStyle === "satellite" ? "מפה רגילה" : "תצלום לווין"}
             </button>
           </div>
+          <button
+            onClick={() => setShowInfoModal(true)}
+            className="absolute bottom-20 left-6 z-[940] w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
+            aria-label="מדריך שימוש"
+          >
+            <Icon name="info" size={18} />
+          </button>
           {timelineBoard}
         </MapView>
       ) : (
