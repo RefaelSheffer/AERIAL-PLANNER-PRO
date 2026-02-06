@@ -79,7 +79,6 @@
           const missingDeps = [];
           if (typeof React === "undefined") missingDeps.push("React");
           if (typeof ReactDOM === "undefined") missingDeps.push("ReactDOM");
-          if (typeof Babel === "undefined") missingDeps.push("Babel");
           if (typeof L === "undefined") missingDeps.push("Leaflet");
 
           if (missingDeps.length) {
@@ -95,7 +94,6 @@
     <!-- Vendor bundles from CDN (jsDelivr) -->
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.7/babel.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.min.js" defer></script>
@@ -107,7 +105,7 @@
     <script src="js/config.js" defer></script>
     <script src="js/services.js" defer></script>
 
-    <script type="text/babel" src="js/components.jsx" data-presets="env,react" defer></script>
-    <script type="text/babel" src="js/main.jsx" data-presets="env,react" defer></script>
+    <script src="js/components.js" defer></script>
+    <script src="js/main.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,10 @@
+{
+  "name": "aerial-planner-pro",
+  "private": true,
+  "scripts": {
+    "build": "esbuild js/components.jsx js/main.jsx --outdir=js --jsx=transform --jsx-factory=React.createElement --jsx-fragment=React.Fragment --target=es2020 --charset=utf8 --allow-overwrite"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
