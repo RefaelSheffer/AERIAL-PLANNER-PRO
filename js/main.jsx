@@ -3078,6 +3078,14 @@ const App = () => {
         theme={theme}
       />
 
+      <button
+        onClick={() => setShowInfoModal(true)}
+        className="fixed bottom-[230px] left-4 z-[950] w-11 h-11 rounded-full bg-white/95 text-slate-700 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
+        aria-label="מדריך שימוש"
+      >
+        <Icon name="info" size={18} />
+      </button>
+
       {WEATHER_ONLY_MODE ? (
         <MapView
           className="flex-1 relative h-full bg-black box-border"
@@ -3174,13 +3182,6 @@ const App = () => {
               {mapStyle === "satellite" ? "מפה רגילה" : "תצלום לווין"}
             </button>
           </div>
-          <button
-            onClick={() => setShowInfoModal(true)}
-            className="absolute bottom-20 left-6 z-[940] w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
-            aria-label="מדריך שימוש"
-          >
-            <Icon name="info" size={18} />
-          </button>
           {timelineBoard}
         </MapView>
       ) : (
