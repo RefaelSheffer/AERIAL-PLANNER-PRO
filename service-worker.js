@@ -5,6 +5,11 @@ const DEFAULT_TITLE = "AERIAL-PLANNER-PRO";
 const DEFAULT_BODY = "Forecast update";
 const DEFAULT_TAG = "aerial-planner-pro";
 
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) =>
+  event.waitUntil(self.clients.claim()),
+);
+
 const toAbsoluteUrl = (input) => {
   if (!input) {
     return APP_ROOT;

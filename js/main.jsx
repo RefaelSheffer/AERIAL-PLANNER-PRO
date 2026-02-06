@@ -1616,6 +1616,19 @@ const App = () => {
       let registration;
       try {
         registration = await navigator.serviceWorker.register(swUrl, { scope });
+        // Wait for the service worker to become active before using pushManager
+        if (!registration.active) {
+          await new Promise((resolve) => {
+            const sw = registration.installing || registration.waiting;
+            if (!sw) { resolve(); return; }
+            sw.addEventListener("statechange", function onChange() {
+              if (this.state === "activated") {
+                sw.removeEventListener("statechange", onChange);
+                resolve();
+              }
+            });
+          });
+        }
       } catch (err) {
         console.error("Service worker registration failed", err);
         pushToast("כשל ברישום שירות התראות", "warning");
