@@ -36,7 +36,6 @@ const renderDependencyError =
 const missingDeps = [];
 if (typeof React === "undefined") missingDeps.push("React");
 if (typeof ReactDOM === "undefined") missingDeps.push("ReactDOM");
-if (typeof Babel === "undefined") missingDeps.push("Babel");
 if (typeof L === "undefined") missingDeps.push("Leaflet");
 
 if (missingDeps.length) {
