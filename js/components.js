@@ -43,7 +43,8 @@
       "chevron-right": /* @__PURE__ */ React.createElement("svg", { ...baseProps }, /* @__PURE__ */ React.createElement("path", { d: "M9 6l6 6-6 6" })),
       export: /* @__PURE__ */ React.createElement("svg", { ...baseProps }, /* @__PURE__ */ React.createElement("path", { d: "M9 14l-6 6m0 0h7m-7 0v-7" }), /* @__PURE__ */ React.createElement("path", { d: "M15 10h6m0 0V4m0 6l-9 9" })),
       settings: /* @__PURE__ */ React.createElement("svg", { ...baseProps }, /* @__PURE__ */ React.createElement("path", { d: "M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" }), /* @__PURE__ */ React.createElement("path", { d: "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82 1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" })),
-      info: /* @__PURE__ */ React.createElement("svg", { ...baseProps }, /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "12", r: "10" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "16", x2: "12", y2: "12" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "8", x2: "12.01", y2: "8" }))
+      info: /* @__PURE__ */ React.createElement("svg", { ...baseProps }, /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "12", r: "10" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "16", x2: "12", y2: "12" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "8", x2: "12.01", y2: "8" })),
+      bell: /* @__PURE__ */ React.createElement("svg", { ...baseProps }, /* @__PURE__ */ React.createElement("path", { d: "M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" }), /* @__PURE__ */ React.createElement("path", { d: "M13.73 21a2 2 0 01-3.46 0" }))
     };
     return icons[name] || null;
   };
@@ -137,8 +138,10 @@
     notificationsSupported = false,
     notificationsEnabled = false,
     notificationsLoading = false,
+    isSelectedDayTracked = false,
     onEnableNotifications,
     onDisableNotifications,
+    onOpenNotificationManager,
     suitabilitySettings,
     formatWindValue
   }) => {
@@ -424,16 +427,24 @@
           className: "px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         },
         "התאמת ספים"
-      ), !notificationsSupported ? /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[11px] text-slate-600" }, "הדפדפן לא תומך בהתראות.") : /* @__PURE__ */ React.createElement(React.Fragment, null, notificationsEnabled && /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700" }, "התראות פעילות"), /* @__PURE__ */ React.createElement(
+      ), !notificationsSupported ? /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[11px] text-slate-600" }, "הדפדפן לא תומך בהתראות.") : isSelectedDayTracked ? /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700" }, "יום זה במעקב ✓"), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
-          onClick: notificationsEnabled ? onDisableNotifications : onEnableNotifications,
-          disabled: notificationsLoading,
-          className: `px-3 py-1 rounded-full border text-[11px] font-semibold transition ${notificationsEnabled ? "bg-amber-500 text-white border-amber-500" : "bg-blue-600 text-white border-blue-600"} ${notificationsLoading ? "opacity-60 cursor-wait" : ""}`
+          onClick: onOpenNotificationManager,
+          className: "px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] text-slate-600 hover:bg-slate-50"
         },
-        notificationsLoading ? "מעבד בקשה..." : notificationsEnabled ? "בטל התראות" : "הפעל התראות לתאריך הנבחר"
-      ))))),
+        "ניהול התראות"
+      )) : /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onEnableNotifications,
+          disabled: notificationsLoading,
+          className: `px-3 py-1 rounded-full border text-[11px] font-semibold transition bg-blue-600 text-white border-blue-600 ${notificationsLoading ? "opacity-60 cursor-wait" : ""}`
+        },
+        notificationsLoading ? "מעבד בקשה..." : "הפעל התראות לתאריך הנבחר"
+      )))),
       /* @__PURE__ */ React.createElement("div", { className: "flex-1 overflow-y-auto p-5 space-y-3 custom-scroll" }, displayedSlots.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "text-center text-sm text-slate-500 border border-dashed border-slate-300 rounded-xl py-6" }, "אין חלונות מתאימים להצגה כרגע.") : displayedSlots.map((slot) => {
         const slotKey = `${selectedDay.day}T${slot.time}`;
         const isActive = slotKey === selectedSlotKey;
@@ -573,6 +584,124 @@
     },
     children
   );
+  const NotificationManagerModal = ({
+    show,
+    onClose,
+    theme,
+    rules = [],
+    isLoading = false,
+    onDeleteRule,
+    onRefresh,
+    onDisableAll
+  }) => {
+    if (!show) return null;
+    const isDark = theme === "dark";
+    const [confirmDeleteId, setConfirmDeleteId] = React.useState(null);
+    const t = {
+      overlay: "fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4",
+      modal: isDark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-900",
+      closeBtn: isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white" : "border-slate-200 bg-white/95 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+      card: isDark ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200",
+      text: isDark ? "text-slate-300" : "text-slate-600"
+    };
+    const formatDateShort = (dateStr) => {
+      if (!dateStr) return "";
+      const parts = dateStr.split("-");
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
+      return dateStr;
+    };
+    const handleDeleteClick = (ruleId) => {
+      if (confirmDeleteId === ruleId) {
+        onDeleteRule(ruleId);
+        setConfirmDeleteId(null);
+      } else {
+        setConfirmDeleteId(ruleId);
+      }
+    };
+    return /* @__PURE__ */ React.createElement("div", { className: t.overlay, onClick: onClose }, /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: `relative rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4 ${t.modal}`,
+        onClick: (e) => e.stopPropagation()
+      },
+      /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onClose,
+          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          "aria-label": "סגור ניהול התראות"
+        },
+        /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
+      ),
+      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, "ניהול התראות"), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, rules.length > 0 ? `${rules.length} כללים פעילים` : "אין כללים פעילים")),
+      isLoading ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-8" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, "טוען כללי התראות...")) : rules.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center py-8 border border-dashed rounded-xl ${isDark ? "border-slate-700" : "border-slate-300"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-center mb-3" }, /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 32, className: isDark ? "text-slate-600" : "text-slate-300" })), /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, "אין התראות פעילות כרגע."), /* @__PURE__ */ React.createElement("div", { className: `text-xs mt-1 ${t.text}` }, "הפעל התראות מתוך תצוגת פרטי יום כדי לעקוב אחרי תחזית.")) : /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, rules.map((rule) => {
+        const locationName = rule.criteria?.locationName || "מיקום לא ידוע";
+        const dateRange = rule.start_date === rule.end_date ? formatDateShort(rule.start_date) : `${formatDateShort(rule.start_date)} – ${formatDateShort(rule.end_date)}`;
+        const hourFrom = rule.hour_from ?? 0;
+        const hourTo = rule.hour_to ?? 23;
+        const hoursLabel = `${String(hourFrom).padStart(2, "0")}:00–${String(hourTo).padStart(2, "0")}:00`;
+        const lastChecked = rule.last_checked_at ? new Date(rule.last_checked_at).toLocaleString("he-IL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          day: "2-digit",
+          month: "2-digit"
+        }) : null;
+        const isConfirming = confirmDeleteId === rule.id;
+        return /* @__PURE__ */ React.createElement(
+          "div",
+          {
+            key: rule.id,
+            className: `border rounded-xl p-3 space-y-2 ${t.card}`
+          },
+          /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 flex-1" }, /* @__PURE__ */ React.createElement("div", { className: `font-bold text-sm ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, dateRange), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, hoursLabel), lastChecked && /* @__PURE__ */ React.createElement("span", { className: `text-[10px] ${t.text}` }, "נבדק: ", lastChecked))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, isConfirming ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+            "button",
+            {
+              type: "button",
+              onClick: () => handleDeleteClick(rule.id),
+              className: "px-2 py-1 rounded-lg bg-red-600 text-white text-[11px] font-semibold hover:bg-red-500"
+            },
+            "מחק"
+          ), /* @__PURE__ */ React.createElement(
+            "button",
+            {
+              type: "button",
+              onClick: () => setConfirmDeleteId(null),
+              className: `px-2 py-1 rounded-lg text-[11px] font-semibold ${isDark ? "bg-slate-700 text-slate-200" : "bg-slate-200 text-slate-700"}`
+            },
+            "ביטול"
+          )) : /* @__PURE__ */ React.createElement(
+            "button",
+            {
+              type: "button",
+              onClick: () => handleDeleteClick(rule.id),
+              className: `p-1.5 rounded-lg transition ${isDark ? "text-slate-400 hover:text-red-400 hover:bg-slate-700" : "text-slate-400 hover:text-red-600 hover:bg-slate-100"}`,
+              "aria-label": "מחק כלל"
+            },
+            /* @__PURE__ */ React.createElement(Icon, { name: "trash", size: 14 })
+          )))
+        );
+      })),
+      /* @__PURE__ */ React.createElement("div", { className: `flex flex-wrap items-center justify-between gap-2 pt-2 border-t ${isDark ? "border-slate-700" : "border-slate-200"}` }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onRefresh,
+          disabled: isLoading,
+          className: `px-3 py-2 rounded-lg border text-[11px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${isLoading ? "opacity-60 cursor-wait" : ""}`
+        },
+        /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { name: "rotate", size: 12 }), "רענן")
+      ), rules.length > 0 && /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onDisableAll,
+          className: "px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-[11px] font-semibold hover:bg-red-100 transition"
+        },
+        "בטל את כל ההתראות"
+      ))
+    ));
+  };
   window.AerialPlannerComponents = {
     Sidebar,
     MapView,
@@ -582,6 +711,7 @@
     Dock,
     Icon,
     DockButton,
-    InfoHelpModal
+    InfoHelpModal,
+    NotificationManagerModal
   };
 })();

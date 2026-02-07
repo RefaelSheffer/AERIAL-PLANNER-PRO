@@ -318,6 +318,143 @@
     }
   };
 
+  // In-memory cache for reverse geocode results
+  const _reverseGeocodeCache = new Map();
+  let _lastNominatimCall = 0;
+
+  /**
+   * Reverse-geocode coordinates to a short Hebrew location label using Nominatim.
+   * @param {number} lat - Latitude in decimal degrees.
+   * @param {number} lon - Longitude in decimal degrees.
+   * @returns {Promise<string>} Short Hebrew label (e.g. "רמת אביב, תל אביב-יפו").
+   */
+  const reverseGeocode = async (lat, lon) => {
+    // Round to 3 decimals (~100m precision) for cache key
+    const roundedLat = Math.round(lat * 1000) / 1000;
+    const roundedLon = Math.round(lon * 1000) / 1000;
+    const cacheKey = `${roundedLat},${roundedLon}`;
+
+    if (_reverseGeocodeCache.has(cacheKey)) {
+      return _reverseGeocodeCache.get(cacheKey);
+    }
+
+    // Respect Nominatim 1 req/sec rate limit
+    const now = Date.now();
+    const elapsed = now - _lastNominatimCall;
+    if (elapsed < 1100) {
+      await new Promise((resolve) => setTimeout(resolve, 1100 - elapsed));
+    }
+    _lastNominatimCall = Date.now();
+
+    try {
+      const url = new URL("https://nominatim.openstreetmap.org/reverse");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("lat", String(roundedLat));
+      url.searchParams.set("lon", String(roundedLon));
+      url.searchParams.set("zoom", "14");
+      url.searchParams.set("accept-language", "he");
+
+      const res = await fetch(url.toString(), {
+        headers: { "Accept-Language": "he" },
+      });
+      if (!res.ok) throw new Error(`Reverse geocode failed: ${res.status}`);
+      const data = await res.json();
+
+      const address = data?.address || {};
+      const parts = [
+        address.suburb || address.neighbourhood || address.quarter || "",
+        address.city || address.town || address.village || address.municipality || "",
+      ].filter(Boolean);
+
+      const label = parts.length > 0 ? parts.join(", ") : (data?.display_name || "").split(",").slice(0, 2).join(",").trim();
+      const result = label || "מיקום לא ידוע";
+
+      _reverseGeocodeCache.set(cacheKey, result);
+      return result;
+    } catch (e) {
+      console.warn("Reverse geocode failed", e);
+      return "מיקום לא ידוע";
+    }
+  };
+
+  /**
+   * List all active notification rules for a subscription.
+   * @param {string} subscriptionId - Subscription ID from localStorage.
+   * @returns {Promise<object[]>} Array of rule objects.
+   */
+  const listNotificationRules = async (subscriptionId) => {
+    const Config = window.AerialPlannerConfig || {};
+    if (!Config.SUPABASE_FUNCTIONS_URL) {
+      throw new Error("Missing SUPABASE_FUNCTIONS_URL in configuration.");
+    }
+    if (!Config.SUPABASE_ANON_KEY) {
+      throw new Error("Missing SUPABASE_ANON_KEY in configuration.");
+    }
+    const res = await fetch(
+      `${Config.SUPABASE_FUNCTIONS_URL}/rules-manage`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: Config.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${Config.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: "list",
+          subscription_id: subscriptionId,
+        }),
+      },
+    );
+    const responseText = await res.text();
+    if (!res.ok) {
+      throw new Error(responseText || res.statusText);
+    }
+    if (!responseText) return [];
+    try {
+      const parsed = JSON.parse(responseText);
+      return parsed?.rules || [];
+    } catch (err) {
+      console.warn("Failed to parse rules-manage list response", err);
+      return [];
+    }
+  };
+
+  /**
+   * Delete a specific notification rule.
+   * @param {string} subscriptionId - Subscription ID from localStorage.
+   * @param {string} ruleId - ID of the rule to delete.
+   * @returns {Promise<void>}
+   */
+  const deleteNotificationRule = async (subscriptionId, ruleId) => {
+    const Config = window.AerialPlannerConfig || {};
+    if (!Config.SUPABASE_FUNCTIONS_URL) {
+      throw new Error("Missing SUPABASE_FUNCTIONS_URL in configuration.");
+    }
+    if (!Config.SUPABASE_ANON_KEY) {
+      throw new Error("Missing SUPABASE_ANON_KEY in configuration.");
+    }
+    const res = await fetch(
+      `${Config.SUPABASE_FUNCTIONS_URL}/rules-manage`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: Config.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${Config.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: "delete",
+          subscription_id: subscriptionId,
+          rule_id: ruleId,
+        }),
+      },
+    );
+    const responseText = await res.text();
+    if (!res.ok) {
+      throw new Error(responseText || res.statusText);
+    }
+  };
+
   window.AerialPlannerServices = {
     fetchWeather,
     fetchRainRadar,
@@ -325,5 +462,8 @@
     fetchDTM,
     fetchLocationSuggestions,
     upsertNotificationRule,
+    reverseGeocode,
+    listNotificationRules,
+    deleteNotificationRule,
   };
 })();

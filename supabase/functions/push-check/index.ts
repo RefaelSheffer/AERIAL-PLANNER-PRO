@@ -364,6 +364,15 @@ Deno.serve(async (req) => {
     return request;
   };
 
+  // Auto-cleanup: delete all expired rules
+  const { error: cleanupError } = await supabase
+    .from("rules")
+    .delete()
+    .lt("expires_at", nowIso);
+  if (cleanupError) {
+    console.warn("Cleanup of expired rules failed", cleanupError);
+  }
+
   const { data: rules, error } = await supabase
     .from("rules")
     .select(
@@ -391,6 +400,10 @@ Deno.serve(async (req) => {
     const appBasePath = normalizeBasePath(
       (criteriaRaw as { appBasePath?: unknown }).appBasePath,
     );
+    const locationName =
+      typeof (criteriaRaw as { locationName?: unknown }).locationName === "string"
+        ? ((criteriaRaw as { locationName: string }).locationName).trim()
+        : "";
     const hourFrom = rule.hour_from ?? 0;
     const hourTo = rule.hour_to ?? 23;
 
@@ -477,24 +490,26 @@ Deno.serve(async (req) => {
         ? `${flyableHours[0]}–${flyableHours[flyableHours.length - 1]}`
         : "";
 
+      const locationPrefix = locationName ? `${locationName} — ` : "";
       let title: string;
       let body: string;
 
       if (status === "fly") {
-        title = `🟢 מתאים לטיסה — ${dateLabel}`;
+        title = `🟢 ${locationPrefix}מתאים לטיסה — ${dateLabel}`;
         body = `התחזית השתנתה. שעות טיסה מתאימות: ${flyableRange}`;
       } else if (status === "risk") {
-        title = `🟠 שינוי בתחזית — ${dateLabel}`;
+        title = `🟠 ${locationPrefix}שינוי בתחזית — ${dateLabel}`;
         body = `חלק מהשעות מתאימות לטיסה: ${flyableRange}`;
       } else if (status === "no-fly") {
-        title = `🔴 לא מתאים לטיסה — ${dateLabel}`;
+        title = `🔴 ${locationPrefix}לא מתאים לטיסה — ${dateLabel}`;
         body = "התחזית השתנתה. אין שעות מתאימות לטיסה ביום זה.";
       } else {
-        title = `עדכון תחזית — ${dateLabel}`;
+        title = `${locationPrefix}עדכון תחזית — ${dateLabel}`;
         body = "לא הצלחנו לקבל תחזית עדכנית. נסה שוב מאוחר יותר.";
       }
 
-      const payload = { title, body, url, icon: "icons/notification-icon.png" };
+      const tag = `rule-${rule.id}`;
+      const payload = { title, body, tag, url, icon: "icons/notification-icon.png" };
       try {
         await webPush.sendNotification(
           {

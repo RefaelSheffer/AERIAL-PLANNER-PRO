@@ -148,6 +148,10 @@ Deno.serve(async (req) => {
     appBasePathRaw && appBasePathRaw.startsWith("/")
       ? appBasePathRaw.replace(/\/$/, "")
       : "";
+  const locationNameRaw =
+    typeof criteriaRaw.locationName === "string"
+      ? criteriaRaw.locationName.trim().slice(0, 120)
+      : "";
   const criteria = {
     maxWind: clampNumber(criteriaRaw.maxWind, DEFAULT_CRITERIA.maxWind),
     maxGust: clampNumber(criteriaRaw.maxGust, DEFAULT_CRITERIA.maxGust),
@@ -173,6 +177,7 @@ Deno.serve(async (req) => {
     ),
     includeNightFlights: Boolean(criteriaRaw.includeNightFlights),
     appBasePath,
+    ...(locationNameRaw ? { locationName: locationNameRaw } : {}),
   };
 
   const notifyOn = typeof rule.notify_on === "string"
@@ -210,6 +215,24 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, serviceKey);
+
+  // Enforce max 20 non-expired rules per subscription
+  const now = new Date().toISOString();
+  const { count: existingCount, error: countError } = await supabase
+    .from("rules")
+    .select("id", { count: "exact", head: true })
+    .eq("subscription_id", subscriptionId)
+    .gt("expires_at", now);
+
+  if (!countError && typeof existingCount === "number" && existingCount >= 20) {
+    return new Response(
+      JSON.stringify({ error: "Maximum of 20 active rules reached. Delete existing rules before adding new ones." }),
+      {
+        status: 400,
+        headers: { ...originCorsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
 
   const { data, error } = await supabase
     .from("rules")

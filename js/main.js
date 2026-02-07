@@ -62,7 +62,8 @@ const ensurePlannerEnvReady = async () => {
     Dock,
     Icon,
     DockButton,
-    InfoHelpModal
+    InfoHelpModal,
+    NotificationManagerModal
   } = window.AerialPlannerComponents;
   const AerialPlanner = {
     config: Config,
@@ -324,6 +325,18 @@ const ensurePlannerEnvReady = async () => {
       }
     });
     const [isPushWorking, setIsPushWorking] = useState(false);
+    const NOTIFICATION_RULES_STORAGE_KEY = "plannerNotificationRules";
+    const [notificationRules, setNotificationRules] = useState(() => {
+      if (typeof window === "undefined") return [];
+      try {
+        const stored = window.localStorage.getItem(NOTIFICATION_RULES_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    });
+    const [showNotificationManager, setShowNotificationManager] = useState(false);
+    const [isLoadingRules, setIsLoadingRules] = useState(false);
     const queryDay = useMemo(() => getQueryDayParam(), []);
     const queryDayAppliedRef = useRef(false);
     const windUnitMeta = useMemo(
@@ -600,6 +613,23 @@ const ensurePlannerEnvReady = async () => {
         setToastItems((prev) => prev.filter((item) => item.id !== id));
       }, 4500);
     }, []);
+    const fetchRules = useCallback(async () => {
+      if (!pushSubscriptionId) return;
+      setIsLoadingRules(true);
+      try {
+        const rules = await Services.listNotificationRules(pushSubscriptionId);
+        setNotificationRules(rules);
+      } catch (err) {
+        console.warn("Failed to fetch notification rules", err);
+      } finally {
+        setIsLoadingRules(false);
+      }
+    }, [pushSubscriptionId]);
+    useEffect(() => {
+      if (pushSubscriptionId) {
+        fetchRules();
+      }
+    }, [pushSubscriptionId]);
     useEffect(() => {
       if (typeof window === "undefined") return;
       try {
@@ -630,6 +660,17 @@ const ensurePlannerEnvReady = async () => {
         console.warn("Failed to persist push subscription id", e);
       }
     }, [pushSubscriptionId]);
+    useEffect(() => {
+      if (typeof window === "undefined") return;
+      try {
+        window.localStorage.setItem(
+          NOTIFICATION_RULES_STORAGE_KEY,
+          JSON.stringify(notificationRules)
+        );
+      } catch (e) {
+        console.warn("Failed to persist notification rules", e);
+      }
+    }, [notificationRules]);
     useEffect(() => {
       if (typeof document !== "undefined") {
         document.body.dataset.theme = theme;
@@ -1237,18 +1278,20 @@ const ensurePlannerEnvReady = async () => {
       [subscribeEndpoint, supabaseAnonKey]
     );
     const upsertNotificationRule = useCallback(
-      async (subscriptionId) => {
-        const [ruleLat, ruleLon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
-        const ruleDate = selectedDay?.day || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      async (subscriptionId, overrides = {}) => {
+        const [ruleLat, ruleLon] = overrides.location || weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+        const ruleDate = overrides.day || selectedDay?.day || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+        const locationName = overrides.locationName || "";
         const ruleCriteria = {
-          maxWind: 20,
-          maxGust: 25,
-          maxRainProb: 40,
-          minSunAltitude: 5,
-          maxSunAltitude: 85,
-          minCloudCover: 0,
-          maxCloudCover: 100,
-          includeNightFlights: false
+          maxWind: suitabilitySettings.maxWind,
+          maxGust: suitabilitySettings.maxGust,
+          maxRainProb: suitabilitySettings.maxRainProb,
+          minSunAltitude: suitabilitySettings.minSunAltitude,
+          maxSunAltitude: suitabilitySettings.maxSunAltitude,
+          minCloudCover: suitabilitySettings.minCloudCover,
+          maxCloudCover: suitabilitySettings.maxCloudCover,
+          includeNightFlights: suitabilitySettings.includeNightFlights,
+          ...locationName ? { locationName } : {}
         };
         const ruleResponse = await Services.upsertNotificationRule({
           subscriptionId,
@@ -1256,8 +1299,8 @@ const ensurePlannerEnvReady = async () => {
           lon: ruleLon,
           startDate: ruleDate,
           endDate: ruleDate,
-          hourFrom: 8,
-          hourTo: 20,
+          hourFrom: suitabilitySettings.includeNightFlights ? 0 : 6,
+          hourTo: suitabilitySettings.includeNightFlights ? 23 : 20,
           criteria: ruleCriteria,
           notifyOn: "status_change"
         });
@@ -1265,8 +1308,10 @@ const ensurePlannerEnvReady = async () => {
           rule_id: ruleResponse?.rule_id,
           subscription_id: subscriptionId
         });
+        await fetchRules();
+        return ruleResponse;
       },
-      [mapCenter, selectedDay, weatherLocation]
+      [mapCenter, selectedDay, weatherLocation, suitabilitySettings, fetchRules]
     );
     const handleEnableNotifications = useCallback(async () => {
       if (!pushSupported) {
@@ -1287,11 +1332,6 @@ const ensurePlannerEnvReady = async () => {
         }
         const swUrl = `${appBasePath}/service-worker.js`;
         const scope = `${appBasePath}/`;
-        console.info("Service worker registration details", {
-          appBasePath,
-          swUrl,
-          scope
-        });
         let registration;
         try {
           registration = await navigator.serviceWorker.register(swUrl, { scope });
@@ -1316,79 +1356,58 @@ const ensurePlannerEnvReady = async () => {
           return;
         }
         let subscription = await registration.pushManager.getSubscription();
-        if (subscription) {
-          setPushSubscriptionState({ endpoint: subscription.endpoint });
-          if (pushSubscriptionId) {
-            try {
-              await upsertNotificationRule(pushSubscriptionId);
-            } catch (err) {
-              console.error("Notification rule upsert failed", {
-                error: err,
-                subscription_id: pushSubscriptionId
-              });
-              pushToast(
-                err?.message || "כשל בעדכון כללי התראות — נסה שוב",
-                "warning"
-              );
-            }
-          } else {
-            console.warn(
-              "Missing stored push subscription id; skipping rules-upsert."
-            );
-          }
-          pushToast("התראות כבר פעילות.", "success");
-          return;
-        }
-        try {
-          if (!subscription) {
+        let currentSubId = pushSubscriptionId;
+        if (!subscription) {
+          try {
             subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
               applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
             });
-          }
-        } catch (err) {
-          console.error("Push subscription failed", err);
-          pushToast("כשל ביצירת הרשמה להתראות", "warning");
-          return;
-        }
-        try {
-          console.info("Push subscription endpoint", {
-            endpoint: subscription?.endpoint
-          });
-          const subscribeResponse = await callEdgeFunction(
-            typeof subscription?.toJSON === "function" ? subscription.toJSON() : subscription
-          );
-          const subscriptionId = subscribeResponse?.subscription_id;
-          if (!subscriptionId) {
-            console.warn("Missing subscription_id from subscribe response.", {
-              response: subscribeResponse
-            });
-            return;
-          }
-          setPushSubscriptionId(subscriptionId);
-          try {
-            await upsertNotificationRule(subscriptionId);
           } catch (err) {
-            console.error("Notification rule upsert failed", {
-              error: err,
-              subscription_id: subscriptionId
-            });
-            pushToast(
-              err?.message || "כשל בעדכון כללי התראות — נסה שוב",
-              "warning"
-            );
+            console.error("Push subscription failed", err);
+            pushToast("כשל ביצירת הרשמה להתראות", "warning");
             return;
           }
-        } catch (err) {
-          console.error("Push subscription save failed", err);
-          pushToast(
-            err?.message || "כשל בשמירת הרשמה להתראות — נסה שוב",
-            "warning"
-          );
-          return;
+        }
+        if (!currentSubId) {
+          try {
+            const subscribeResponse = await callEdgeFunction(
+              typeof subscription?.toJSON === "function" ? subscription.toJSON() : subscription
+            );
+            currentSubId = subscribeResponse?.subscription_id;
+            if (!currentSubId) {
+              console.warn("Missing subscription_id from subscribe response.");
+              pushToast("כשל בשמירת הרשמה להתראות", "warning");
+              return;
+            }
+            setPushSubscriptionId(currentSubId);
+          } catch (err) {
+            console.error("Push subscription save failed", err);
+            pushToast(err?.message || "כשל בשמירת הרשמה להתראות — נסה שוב", "warning");
+            return;
+          }
         }
         setPushSubscriptionState({ endpoint: subscription.endpoint });
-        pushToast("התראות פעילות.", "success");
+        const [currentLat, currentLon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+        let locationName = "";
+        try {
+          locationName = await Services.reverseGeocode(currentLat, currentLon);
+        } catch (err) {
+          console.warn("Reverse geocode failed, proceeding without name", err);
+        }
+        try {
+          await upsertNotificationRule(currentSubId, {
+            location: [currentLat, currentLon],
+            locationName
+          });
+        } catch (err) {
+          console.error("Notification rule upsert failed", err);
+          pushToast(err?.message || "כשל בעדכון כללי התראות — נסה שוב", "warning");
+          return;
+        }
+        const ruleDate = selectedDay?.day || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+        const displayLabel = locationName || "מיקום נוכחי";
+        pushToast(`התראות פעילות: ${displayLabel} — ${ruleDate}`, "success");
       } catch (err) {
         console.error("Push enable failed", err);
         pushToast(err?.message || "לא הצלחנו להפעיל התראות.", "warning");
@@ -1397,16 +1416,39 @@ const ensurePlannerEnvReady = async () => {
       }
     }, [
       callEdgeFunction,
+      mapCenter,
       pushSubscriptionId,
       pushSupported,
       pushToast,
+      selectedDay,
       upsertNotificationRule,
       vapidPublicKey,
+      weatherLocation,
       appBasePath
     ]);
-    const handleDisableNotifications = useCallback(async () => {
+    const handleDeleteRule = useCallback(async (ruleId) => {
+      if (!pushSubscriptionId) return;
+      try {
+        await Services.deleteNotificationRule(pushSubscriptionId, ruleId);
+        setNotificationRules((prev) => prev.filter((r) => r.id !== ruleId));
+        pushToast("כלל התראה נמחק.", "success");
+      } catch (err) {
+        console.error("Failed to delete rule", err);
+        pushToast(err?.message || "כשל במחיקת כלל התראה.", "warning");
+      }
+    }, [pushSubscriptionId, pushToast]);
+    const handleDisableAllNotifications = useCallback(async () => {
       setIsPushWorking(true);
       try {
+        if (pushSubscriptionId && notificationRules.length > 0) {
+          await Promise.all(
+            notificationRules.map(
+              (rule) => Services.deleteNotificationRule(pushSubscriptionId, rule.id).catch(
+                (err) => console.warn("Failed to delete rule", rule.id, err)
+              )
+            )
+          );
+        }
         const scope = `${appBasePath}/`;
         const registration = await navigator.serviceWorker.getRegistration(scope);
         if (registration) {
@@ -1417,15 +1459,27 @@ const ensurePlannerEnvReady = async () => {
         }
         setPushSubscriptionState(null);
         setPushSubscriptionId(null);
-        pushToast("התראות בוטלו.", "success");
+        setNotificationRules([]);
+        setShowNotificationManager(false);
+        pushToast("כל ההתראות בוטלו.", "success");
       } catch (err) {
         console.error("Push disable failed", err);
         pushToast(err?.message || "לא הצלחנו לבטל התראות.", "warning");
       } finally {
         setIsPushWorking(false);
       }
-    }, [appBasePath, pushToast]);
-    const isSelectedDayPushEnabled = Boolean(pushSubscriptionState?.endpoint);
+    }, [appBasePath, pushToast, pushSubscriptionId, notificationRules]);
+    const isSelectedDayTracked = useMemo(() => {
+      if (!selectedDay || !notificationRules.length) return false;
+      const [currentLat, currentLon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+      return notificationRules.some((rule) => {
+        const dayMatch = rule.start_date <= selectedDay.day && rule.end_date >= selectedDay.day;
+        if (!dayMatch) return false;
+        const latDiff = Math.abs(rule.lat - currentLat);
+        const lonDiff = Math.abs(rule.lon - currentLon);
+        return latDiff < 0.01 && lonDiff < 0.01;
+      });
+    }, [selectedDay, notificationRules, weatherLocation, mapCenter]);
     const sanitizeDataUrl = (dataUrl, mimeType) => {
       if (typeof dataUrl !== "string") return null;
       const expectedPrefix = `data:${mimeType}`;
@@ -2226,10 +2280,15 @@ const ensurePlannerEnvReady = async () => {
         onOpenSettings: openSuitabilitySettings,
         showSettingsButton: true,
         notificationsSupported: pushSupported,
-        notificationsEnabled: isSelectedDayPushEnabled,
+        notificationsEnabled: notificationRules.length > 0,
         notificationsLoading: isPushWorking,
+        isSelectedDayTracked,
         onEnableNotifications: handleEnableNotifications,
-        onDisableNotifications: handleDisableNotifications,
+        onDisableNotifications: handleDisableAllNotifications,
+        onOpenNotificationManager: () => {
+          setShowNotificationManager(true);
+          fetchRules();
+        },
         suitabilitySettings,
         formatWindValue
       }
@@ -2461,6 +2520,18 @@ const ensurePlannerEnvReady = async () => {
         onClose: () => setShowInfoModal(false),
         theme
       }
+    ), /* @__PURE__ */ React.createElement(
+      NotificationManagerModal,
+      {
+        show: showNotificationManager,
+        onClose: () => setShowNotificationManager(false),
+        theme,
+        rules: notificationRules,
+        isLoading: isLoadingRules,
+        onDeleteRule: handleDeleteRule,
+        onRefresh: fetchRules,
+        onDisableAll: handleDisableAllNotifications
+      }
     ), WEATHER_ONLY_MODE ? /* @__PURE__ */ React.createElement(
       MapView,
       {
@@ -2525,6 +2596,19 @@ const ensurePlannerEnvReady = async () => {
             "aria-label": "מדריך שימוש"
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "info", size: 18 })
+        ),
+        /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            onClick: () => {
+              setShowNotificationManager(true);
+              fetchRules();
+            },
+            className: "relative w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition",
+            "aria-label": "ניהול התראות"
+          },
+          /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 18 }),
+          notificationRules.length > 0 && /* @__PURE__ */ React.createElement("span", { className: "absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1" }, notificationRules.length)
         ),
         /* @__PURE__ */ React.createElement(
           "button",
