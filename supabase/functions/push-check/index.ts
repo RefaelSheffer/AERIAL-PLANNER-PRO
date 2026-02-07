@@ -494,7 +494,7 @@ Deno.serve(async (req) => {
         body = "לא הצלחנו לקבל תחזית עדכנית. נסה שוב מאוחר יותר.";
       }
 
-      const payload = { title, body, url };
+      const payload = { title, body, url, icon: "icons/notification-icon.png" };
       try {
         await webPush.sendNotification(
           {
