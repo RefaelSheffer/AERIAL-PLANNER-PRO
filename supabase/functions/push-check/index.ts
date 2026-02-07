@@ -469,35 +469,32 @@ Deno.serve(async (req) => {
         ? formatDate(rule.start_date)
         : `${formatDate(rule.start_date)}–${formatDate(rule.end_date)}`;
 
-      let summaryLine = "";
-      if (status !== "no-data" && relevantSlots.length > 0) {
-        const maxWind = Math.round(
-          relevantSlots.reduce((m, s) => Math.max(m, s.wind ?? 0), 0),
-        );
-        const maxGust = Math.round(
-          relevantSlots.reduce((m, s) => Math.max(m, s.gust ?? 0), 0),
-        );
-        const maxRain = Math.round(
-          relevantSlots.reduce((m, s) => Math.max(m, s.rainProb ?? 0), 0),
-        );
-        summaryLine =
-          `\nרוח: עד ${maxWind} קמ״ש | משבים: עד ${maxGust} קמ״ש | גשם: ${maxRain}%`;
+      // Build flyable hours string from actual slot times
+      const flyableHours = flyableSlots
+        .map((s) => s.time.slice(11, 16))
+        .filter(Boolean);
+      const flyableRange = flyableHours.length > 0
+        ? `${flyableHours[0]}–${flyableHours[flyableHours.length - 1]}`
+        : "";
+
+      let title: string;
+      let body: string;
+
+      if (status === "fly") {
+        title = `🟢 מתאים לטיסה — ${dateLabel}`;
+        body = `התחזית השתנתה. שעות טיסה מתאימות: ${flyableRange}`;
+      } else if (status === "risk") {
+        title = `🟠 שינוי בתחזית — ${dateLabel}`;
+        body = `חלק מהשעות מתאימות לטיסה: ${flyableRange}`;
+      } else if (status === "no-fly") {
+        title = `🔴 לא מתאים לטיסה — ${dateLabel}`;
+        body = "התחזית השתנתה. אין שעות מתאימות לטיסה ביום זה.";
+      } else {
+        title = `עדכון תחזית — ${dateLabel}`;
+        body = "לא הצלחנו לקבל תחזית עדכנית. נסה שוב מאוחר יותר.";
       }
 
-      const statusLine =
-        status === "fly"
-          ? `✅ ${percent}% שעות מתאימות לטיסה (${flyableSlots.length}/${relevantSlots.length})`
-          : status === "risk"
-            ? `⚠️ ${percent}% שעות מתאימות לטיסה (${flyableSlots.length}/${relevantSlots.length})`
-            : status === "no-fly"
-              ? `❌ אין שעות מתאימות לטיסה (0/${relevantSlots.length})`
-              : "לא הצלחנו לחשב תחזית מדויקת כרגע.";
-
-      const payload = {
-        title: `עדכון תחזית — ${dateLabel} | ${String(hourFrom).padStart(2, "0")}:00–${String(hourTo).padStart(2, "0")}:00`,
-        body: `${statusLine}${summaryLine}`,
-        url,
-      };
+      const payload = { title, body, url };
       try {
         await webPush.sendNotification(
           {
