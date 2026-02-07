@@ -16,6 +16,7 @@ type RuleRecord = {
   notify_on: string | null;
   expires_at: string | null;
   last_state_hash: string | null;
+  last_checked_at: string | null;
   subscriptions?: {
     endpoint: string;
     p256dh: string;
@@ -376,7 +377,7 @@ Deno.serve(async (req) => {
   const { data: rules, error } = await supabase
     .from("rules")
     .select(
-      "id, subscription_id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_state_hash, subscriptions (endpoint, p256dh, auth, disabled_at)",
+      "id, subscription_id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_state_hash, last_checked_at, subscriptions (endpoint, p256dh, auth, disabled_at)",
     )
     .gt("expires_at", nowIso);
 
@@ -394,6 +395,27 @@ Deno.serve(async (req) => {
     const subscription = rule.subscriptions;
     if (!subscription || subscription.disabled_at) return;
     if (rule.notify_on === "disabled") return;
+
+    // Smart check frequency based on how far out the rule's date is.
+    // Weather models update ~every 6h, so checking more often is wasteful.
+    // 0-1 days out: every 6 hours | 2-4 days: every 12 hours | 5+ days: every 24 hours
+    if (rule.last_checked_at) {
+      const msSinceLastCheck = Date.now() - new Date(rule.last_checked_at).getTime();
+      const hoursSinceLastCheck = msSinceLastCheck / (1000 * 60 * 60);
+      const startDateMs = new Date(rule.start_date + "T00:00:00Z").getTime();
+      const daysUntilStart = Math.max(0, (startDateMs - Date.now()) / (1000 * 60 * 60 * 24));
+      let minIntervalHours: number;
+      if (daysUntilStart <= 1) {
+        minIntervalHours = 6;
+      } else if (daysUntilStart <= 4) {
+        minIntervalHours = 12;
+      } else {
+        minIntervalHours = 24;
+      }
+      if (hoursSinceLastCheck < minIntervalHours) {
+        return; // Skip — checked recently enough for this date proximity
+      }
+    }
 
     const criteriaRaw = rule.criteria ?? {};
     const criteria = normalizeCriteria(criteriaRaw);
