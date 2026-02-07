@@ -457,13 +457,16 @@ Deno.serve(async (req) => {
       status = "no-data";
     }
 
+    // Hash is based on which specific hours are flyable/not-flyable.
+    // This ensures notifications only fire when hours actually open or close,
+    // not on minor weather value fluctuations within thresholds.
     const stateHash = await toHash(
-      JSON.stringify({
-        status,
-        percent,
-        riskScore: Number(riskScore.toFixed(2)),
-        dateRange: `${rule.start_date}:${rule.end_date}`,
-      }),
+      JSON.stringify(
+        relevantSlots.map((slot) => ({
+          t: slot.time,
+          f: slotIsFlyable(slot, criteria),
+        })),
+      ),
     );
 
     const stateChanged = stateHash !== rule.last_state_hash;
