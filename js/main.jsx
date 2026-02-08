@@ -94,6 +94,7 @@ const {
   DockButton,
   InfoHelpModal,
   NotificationManagerModal,
+  FutureDateTrackingModal,
 } = window.AerialPlannerComponents;
 const AerialPlanner = {
   config: Config,
@@ -467,8 +468,9 @@ const App = () => {
   });
   const [showNotificationManager, setShowNotificationManager] = useState(false);
   const [isLoadingRules, setIsLoadingRules] = useState(false);
-  const [showFutureDatePicker, setShowFutureDatePicker] = useState(false);
+  const [showFutureDateModal, setShowFutureDateModal] = useState(false);
   const [futureDateInput, setFutureDateInput] = useState("");
+  const [futureDateLocationName, setFutureDateLocationName] = useState("");
   const queryDay = useMemo(() => getQueryDayParam(), []);
   const queryDayAppliedRef = useRef(false);
   const windUnitMeta = useMemo(
@@ -1826,6 +1828,20 @@ const App = () => {
     return { minDate: pad(min), maxDate: pad(max) };
   }, []);
 
+  const openFutureDateModal = useCallback(async () => {
+    setFutureDateLocationName("");
+    setFutureDateInput("");
+    setShowFutureDateModal(true);
+    const [lat, lon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+    try {
+      const name = await Services.reverseGeocode(lat, lon);
+      setFutureDateLocationName(name);
+    } catch (err) {
+      console.warn("Reverse geocode for future date modal failed", err);
+      setFutureDateLocationName(`${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+    }
+  }, [weatherLocation, mapCenter]);
+
   const isSelectedDayTracked = useMemo(() => {
     if (!selectedDay || !notificationRules.length) return false;
     const [currentLat, currentLon] =
@@ -1923,12 +1939,7 @@ const App = () => {
 
       const [currentLat, currentLon] =
         weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
-      let locationName = "";
-      try {
-        locationName = await Services.reverseGeocode(currentLat, currentLon);
-      } catch (err) {
-        console.warn("Reverse geocode failed, proceeding without name", err);
-      }
+      const locationName = futureDateLocationName || "";
 
       try {
         await upsertNotificationRule(currentSubId, {
@@ -1945,8 +1956,9 @@ const App = () => {
 
       const displayLabel = locationName || "מיקום נוכחי";
       pushToast(`מעקב הופעל: ${displayLabel} — ${futureDateInput}`, "success");
-      setShowFutureDatePicker(false);
+      setShowFutureDateModal(false);
       setFutureDateInput("");
+      setFutureDateLocationName("");
     } catch (err) {
       console.error("Future date tracking failed", err);
       pushToast(err?.message || "לא הצלחנו להפעיל מעקב.", "warning");
@@ -1955,6 +1967,7 @@ const App = () => {
     }
   }, [
     futureDateInput,
+    futureDateLocationName,
     callEdgeFunction,
     mapCenter,
     pushSubscriptionId,
@@ -2971,6 +2984,7 @@ const App = () => {
       }}
       suitabilitySettings={suitabilitySettings}
       formatWindValue={formatWindValue}
+      onTrackFutureDate={pushSupported ? openFutureDateModal : undefined}
     />
   );
 
@@ -3297,30 +3311,30 @@ const App = () => {
 
       <NotificationManagerModal
         show={showNotificationManager}
-        onClose={() => {
-          setShowNotificationManager(false);
-          setShowFutureDatePicker(false);
-          setFutureDateInput("");
-        }}
+        onClose={() => setShowNotificationManager(false)}
         theme={theme}
         rules={notificationRules}
         isLoading={isLoadingRules}
         onDeleteRule={handleDeleteRule}
         onRefresh={fetchRules}
         onDisableAll={handleDisableAllNotifications}
-        onTrackFutureDate={() => setShowFutureDatePicker(true)}
-        futureDatePicker={{
-          show: showFutureDatePicker,
-          value: futureDateInput,
-          minDate: futureDateBounds.minDate,
-          maxDate: futureDateBounds.maxDate,
-          onChange: setFutureDateInput,
-          onConfirm: handleTrackFutureDate,
-          onCancel: () => {
-            setShowFutureDatePicker(false);
-            setFutureDateInput("");
-          },
+      />
+
+      <FutureDateTrackingModal
+        show={showFutureDateModal}
+        onClose={() => {
+          setShowFutureDateModal(false);
+          setFutureDateInput("");
+          setFutureDateLocationName("");
         }}
+        theme={theme}
+        locationName={futureDateLocationName}
+        futureDateValue={futureDateInput}
+        futureDateMin={futureDateBounds.minDate}
+        futureDateMax={futureDateBounds.maxDate}
+        onDateChange={setFutureDateInput}
+        onConfirm={handleTrackFutureDate}
+        isLoading={isPushWorking}
       />
 
 

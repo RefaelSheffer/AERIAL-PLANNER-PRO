@@ -372,7 +372,7 @@ const InfoHelpModal = ({ show, onClose, theme }) => {
           </p>
           <p>
             <span className="font-semibold">מעקב תאריך עתידי:</span> תכננתם
-            משימה בעוד חודשיים? לחצו על "מעקב תאריך עתידי" במנהל ההתראות
+            משימה בעוד חודשיים? לחצו על כרטיס ה-"+" בסוף ציר הזמן
             ובחרו תאריך עד שנה קדימה. המערכת תעקוב בשקט ברקע — וכשהתאריך
             ייכנס לטווח התחזית (~16 ימים לפני), תקבלו התראה מיוחדת עם סטטוס
             ההתאמה לטיסה. לאחר מכן, הכלל ימשיך לעקוב כרגיל עם עדכונים שוטפים.
@@ -432,6 +432,7 @@ const TimelineBoard = ({
   panelWidth,
   onOpenSettings,
   showSettingsButton = false,
+  onTrackFutureDate,
   notificationsSupported = false,
   notificationsEnabled = false,
   notificationsLoading = false,
@@ -758,6 +759,25 @@ const TimelineBoard = ({
                   </button>
                 );
               })}
+              {onTrackFutureDate && (
+                <button
+                  type="button"
+                  onClick={onTrackFutureDate}
+                  className="min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50/80 hover:bg-blue-50/60 transition flex flex-col items-center justify-center gap-2 md:gap-3 text-center snap-start"
+                >
+                  <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <Icon name="calendar" size={20} />
+                  </span>
+                  <div className="space-y-1">
+                    <div className="text-sm font-bold text-slate-700">
+                      תאריך עתידי?
+                    </div>
+                    <div className="text-[10px] md:text-[11px] text-slate-500 leading-snug">
+                      עקוב אחר תאריך מעבר לטווח התחזית
+                    </div>
+                  </div>
+                </button>
+              )}
             </div>
             {!isMobile && (
               <>
@@ -1210,8 +1230,6 @@ const NotificationManagerModal = ({
   onDeleteRule,
   onRefresh,
   onDisableAll,
-  onTrackFutureDate,
-  futureDatePicker = {},
 }) => {
   if (!show) return null;
 
@@ -1274,42 +1292,6 @@ const NotificationManagerModal = ({
               : "אין כללים פעילים"}
           </h2>
         </div>
-
-        {futureDatePicker.show && (
-          <div className={`border rounded-xl p-4 space-y-3 ${isDark ? "bg-blue-900/30 border-blue-700" : "bg-blue-50 border-blue-200"}`}>
-            <div className={`text-sm font-semibold ${isDark ? "text-blue-300" : "text-blue-800"}`}>
-              מעקב אחר תאריך עתידי
-            </div>
-            <p className={`text-[12px] leading-relaxed ${t.text}`}>
-              בחרו תאריך מעבר לטווח התחזית. המערכת תעקוב ותתריע אוטומטית כשהתאריך ייכנס לטווח ותחזית תהיה זמינה.
-            </p>
-            <input
-              type="date"
-              min={futureDatePicker.minDate || ""}
-              max={futureDatePicker.maxDate || ""}
-              value={futureDatePicker.value || ""}
-              onChange={(e) => futureDatePicker.onChange?.(e.target.value)}
-              className={`w-full px-3 py-2 rounded-lg border text-sm ${isDark ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-white border-slate-300 text-slate-800"}`}
-            />
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => futureDatePicker.onConfirm?.()}
-                disabled={!futureDatePicker.value}
-                className={`flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold transition ${futureDatePicker.value ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
-              >
-                הפעל מעקב
-              </button>
-              <button
-                type="button"
-                onClick={() => futureDatePicker.onCancel?.()}
-                className={`px-3 py-2 rounded-lg border text-[12px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        )}
 
         {isLoading ? (
           <div className="text-center py-8">
@@ -1414,31 +1396,17 @@ const NotificationManagerModal = ({
         )}
 
         <div className={`flex flex-wrap items-center justify-between gap-2 pt-2 border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={isLoading}
-              className={`px-3 py-2 rounded-lg border text-[11px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${isLoading ? "opacity-60 cursor-wait" : ""}`}
-            >
-              <span className="flex items-center gap-1">
-                <Icon name="rotate" size={12} />
-                רענן
-              </span>
-            </button>
-            {onTrackFutureDate && !futureDatePicker.show && (
-              <button
-                type="button"
-                onClick={onTrackFutureDate}
-                className="px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-[11px] font-semibold hover:bg-blue-100 transition"
-              >
-                <span className="flex items-center gap-1">
-                  <Icon name="calendar" size={12} />
-                  מעקב תאריך עתידי
-                </span>
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isLoading}
+            className={`px-3 py-2 rounded-lg border text-[11px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${isLoading ? "opacity-60 cursor-wait" : ""}`}
+          >
+            <span className="flex items-center gap-1">
+              <Icon name="rotate" size={12} />
+              רענן
+            </span>
+          </button>
           {rules.length > 0 && (
             <button
               type="button"
@@ -1448,6 +1416,134 @@ const NotificationManagerModal = ({
               בטל את כל ההתראות
             </button>
           )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Future date tracking modal (standalone, opened from timeline "+" card)
+const FutureDateTrackingModal = ({
+  show,
+  onClose,
+  theme,
+  locationName,
+  futureDateValue,
+  futureDateMin,
+  futureDateMax,
+  onDateChange,
+  onConfirm,
+  isLoading,
+}) => {
+  if (!show) return null;
+
+  const isDark = theme === "dark";
+  const t = {
+    overlay:
+      "fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4",
+    modal: isDark
+      ? "bg-slate-900 text-slate-100"
+      : "bg-white text-slate-900",
+    closeBtn: isDark
+      ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white"
+      : "border-slate-200 bg-white/95 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+    card: isDark
+      ? "bg-slate-800 border-slate-700"
+      : "bg-slate-50 border-slate-200",
+    text: isDark ? "text-slate-300" : "text-slate-600",
+  };
+
+  const formattedDate = futureDateValue
+    ? (() => {
+        const parts = futureDateValue.split("-");
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : futureDateValue;
+      })()
+    : "";
+
+  const confirmText =
+    futureDateValue && locationName
+      ? `עקוב אחר ${locationName} ב-${formattedDate}`
+      : futureDateValue
+        ? `עקוב אחר תאריך ${formattedDate}`
+        : "בחרו תאריך להפעלת מעקב";
+
+  return (
+    <div className={t.overlay} onClick={onClose}>
+      <div
+        className={`relative rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 ${t.modal}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className={`absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`}
+          aria-label="סגור"
+        >
+          <Icon name="close" size={16} />
+        </button>
+
+        <div className="pr-8 md:pr-0">
+          <div className="text-blue-600 font-bold text-sm uppercase tracking-widest">
+            מעקב תאריך עתידי
+          </div>
+          <h2 className={`text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+            תכנון טיסה מראש
+          </h2>
+        </div>
+
+        <div className={`border rounded-xl p-4 space-y-2 ${t.card}`}>
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+              <Icon name="gps" size={16} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className={`text-sm font-bold truncate ${isDark ? "text-slate-100" : "text-slate-900"}`}>
+                {locationName || "טוען מיקום..."}
+              </div>
+              <div className={`text-[11px] ${t.text}`}>
+                המיקום נקבע לפי מרכז המפה
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className={`text-sm font-semibold block ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+            בחרו תאריך
+          </label>
+          <input
+            type="date"
+            min={futureDateMin || ""}
+            max={futureDateMax || ""}
+            value={futureDateValue || ""}
+            onChange={(e) => onDateChange(e.target.value)}
+            className={`w-full px-3 py-2.5 rounded-lg border text-sm ${isDark ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-white border-slate-300 text-slate-800"}`}
+          />
+          <p className={`text-[11px] leading-relaxed ${t.text}`}>
+            המערכת תעקוב ברקע ותתריע כשהתאריך ייכנס לטווח התחזית (~16 ימים לפני).
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!futureDateValue || isLoading}
+            className={`w-full px-4 py-3 rounded-xl text-sm font-bold transition ${
+              futureDateValue && !isLoading
+                ? "bg-blue-600 text-white hover:bg-blue-500 shadow-sm"
+                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+            }`}
+          >
+            {isLoading ? "מפעיל מעקב..." : confirmText}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`w-full px-4 py-2.5 rounded-xl border text-sm font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+          >
+            ביטול
+          </button>
         </div>
       </div>
     </div>
@@ -1465,5 +1561,6 @@ window.AerialPlannerComponents = {
   DockButton,
   InfoHelpModal,
   NotificationManagerModal,
+  FutureDateTrackingModal,
 };
 })();

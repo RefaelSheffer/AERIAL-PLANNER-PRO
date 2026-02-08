@@ -63,7 +63,8 @@ const ensurePlannerEnvReady = async () => {
     Icon,
     DockButton,
     InfoHelpModal,
-    NotificationManagerModal
+    NotificationManagerModal,
+    FutureDateTrackingModal
   } = window.AerialPlannerComponents;
   const AerialPlanner = {
     config: Config,
@@ -337,8 +338,9 @@ const ensurePlannerEnvReady = async () => {
     });
     const [showNotificationManager, setShowNotificationManager] = useState(false);
     const [isLoadingRules, setIsLoadingRules] = useState(false);
-    const [showFutureDatePicker, setShowFutureDatePicker] = useState(false);
+    const [showFutureDateModal, setShowFutureDateModal] = useState(false);
     const [futureDateInput, setFutureDateInput] = useState("");
+    const [futureDateLocationName, setFutureDateLocationName] = useState("");
     const queryDay = useMemo(() => getQueryDayParam(), []);
     const queryDayAppliedRef = useRef(false);
     const windUnitMeta = useMemo(
@@ -1482,6 +1484,19 @@ const ensurePlannerEnvReady = async () => {
       max.setDate(max.getDate() + 365);
       return { minDate: pad(min), maxDate: pad(max) };
     }, []);
+    const openFutureDateModal = useCallback(async () => {
+      setFutureDateLocationName("");
+      setFutureDateInput("");
+      setShowFutureDateModal(true);
+      const [lat, lon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+      try {
+        const name = await Services.reverseGeocode(lat, lon);
+        setFutureDateLocationName(name);
+      } catch (err) {
+        console.warn("Reverse geocode for future date modal failed", err);
+        setFutureDateLocationName(`${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+      }
+    }, [weatherLocation, mapCenter]);
     const isSelectedDayTracked = useMemo(() => {
       if (!selectedDay || !notificationRules.length) return false;
       const [currentLat, currentLon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
@@ -1568,12 +1583,7 @@ const ensurePlannerEnvReady = async () => {
         }
         setPushSubscriptionState({ endpoint: subscription.endpoint });
         const [currentLat, currentLon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
-        let locationName = "";
-        try {
-          locationName = await Services.reverseGeocode(currentLat, currentLon);
-        } catch (err) {
-          console.warn("Reverse geocode failed, proceeding without name", err);
-        }
+        const locationName = futureDateLocationName || "";
         try {
           await upsertNotificationRule(currentSubId, {
             location: [currentLat, currentLon],
@@ -1588,8 +1598,9 @@ const ensurePlannerEnvReady = async () => {
         }
         const displayLabel = locationName || "מיקום נוכחי";
         pushToast(`מעקב הופעל: ${displayLabel} — ${futureDateInput}`, "success");
-        setShowFutureDatePicker(false);
+        setShowFutureDateModal(false);
         setFutureDateInput("");
+        setFutureDateLocationName("");
       } catch (err) {
         console.error("Future date tracking failed", err);
         pushToast(err?.message || "לא הצלחנו להפעיל מעקב.", "warning");
@@ -1598,6 +1609,7 @@ const ensurePlannerEnvReady = async () => {
       }
     }, [
       futureDateInput,
+      futureDateLocationName,
       callEdgeFunction,
       mapCenter,
       pushSubscriptionId,
@@ -2418,7 +2430,8 @@ const ensurePlannerEnvReady = async () => {
           fetchRules();
         },
         suitabilitySettings,
-        formatWindValue
+        formatWindValue,
+        onTrackFutureDate: pushSupported ? openFutureDateModal : void 0
       }
     );
     return /* @__PURE__ */ React.createElement(React.Fragment, null, toastItems.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "fixed top-4 right-4 z-[2100] flex flex-col gap-2" }, toastItems.map((toast) => {
@@ -2652,30 +2665,31 @@ const ensurePlannerEnvReady = async () => {
       NotificationManagerModal,
       {
         show: showNotificationManager,
-        onClose: () => {
-          setShowNotificationManager(false);
-          setShowFutureDatePicker(false);
-          setFutureDateInput("");
-        },
+        onClose: () => setShowNotificationManager(false),
         theme,
         rules: notificationRules,
         isLoading: isLoadingRules,
         onDeleteRule: handleDeleteRule,
         onRefresh: fetchRules,
-        onDisableAll: handleDisableAllNotifications,
-        onTrackFutureDate: () => setShowFutureDatePicker(true),
-        futureDatePicker: {
-          show: showFutureDatePicker,
-          value: futureDateInput,
-          minDate: futureDateBounds.minDate,
-          maxDate: futureDateBounds.maxDate,
-          onChange: setFutureDateInput,
-          onConfirm: handleTrackFutureDate,
-          onCancel: () => {
-            setShowFutureDatePicker(false);
-            setFutureDateInput("");
-          }
-        }
+        onDisableAll: handleDisableAllNotifications
+      }
+    ), /* @__PURE__ */ React.createElement(
+      FutureDateTrackingModal,
+      {
+        show: showFutureDateModal,
+        onClose: () => {
+          setShowFutureDateModal(false);
+          setFutureDateInput("");
+          setFutureDateLocationName("");
+        },
+        theme,
+        locationName: futureDateLocationName,
+        futureDateValue: futureDateInput,
+        futureDateMin: futureDateBounds.minDate,
+        futureDateMax: futureDateBounds.maxDate,
+        onDateChange: setFutureDateInput,
+        onConfirm: handleTrackFutureDate,
+        isLoading: isPushWorking
       }
     ), WEATHER_ONLY_MODE ? /* @__PURE__ */ React.createElement(
       MapView,

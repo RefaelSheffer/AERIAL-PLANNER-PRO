@@ -110,7 +110,7 @@
       /* @__PURE__ */ React.createElement(Section, { icon: "map", title: "שימוש במפה" }, /* @__PURE__ */ React.createElement("p", null, "לחצו על כל נקודה במפה כדי לבחור מיקום ולקבל תחזית מזג אוויר ספציפית."), /* @__PURE__ */ React.createElement("p", null, "ניתן לחפש כתובת דרך שורת החיפוש בראש המפה, או ללחוץ על כפתור המיקום כדי להתמרכז במיקומכם הנוכחי."), /* @__PURE__ */ React.createElement("p", null, "החלפת תצוגה בין מפה רגילה לתצלום לווין זמינה בלחיצה על כפתור תצוגת המפה.")),
       /* @__PURE__ */ React.createElement(Section, { icon: "calendar", title: "ציר זמן מזג אוויר" }, /* @__PURE__ */ React.createElement("p", null, "לוח הימים מציג כרטיסיות לימים הקרובים עם סיכום יומי: אחוז התאמה לטיסה, טווח טמפרטורות, וסטטוס כללי."), /* @__PURE__ */ React.createElement("p", null, "לחיצה על כרטיס יום פותחת תצוגת שעות מפורטת עם קידוד צבעים:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-green-600" }, "ירוק"), " — תנאים מתאימים לטיסה"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-amber-500" }, "כתום"), " — תנאים על הגבול"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-red-500" }, "אדום"), " — תנאים לא מתאימים"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-slate-400" }, "אפור"), " — שעות לילה (כשטיסות לילה מושבתות)"))),
       /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: "ספי יציבות / התאמה לטיסה" }, /* @__PURE__ */ React.createElement("p", null, "המערכת מחשבת התאמה לטיסה לפי הפרמטרים הבאים:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מהירות רוח"), " — ברירת מחדל: עד 20 קמ״ש"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "משבי רוח"), " — ברירת מחדל: עד 25 קמ״ש"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "הסתברות גשם"), " — ברירת מחדל: עד 40%"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "כיסוי עננים"), " — ברירת מחדל: 0%–100%"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "גובה שמש"), " — ברירת מחדל: 5°–85°")), /* @__PURE__ */ React.createElement("p", null, "ניתן לשנות ערכים אלו דרך מסך ההגדרות. הגדרה מותאמת אישית משפיעה על חישוב אחוז ההתאמה וסימון השעות.")),
-      /* @__PURE__ */ React.createElement(Section, { icon: "bell", title: "התראות Push — מעקב מרובה" }, /* @__PURE__ */ React.createElement("p", null, "ניתן להפעיל התראות על מספר ימים ומיקומים במקביל (עד 20 כללים פעילים). כל כלל עוקב אחרי יום + מיקום ספציפי ומתריע כשחלונות טיסה נפתחים או נסגרים."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "הפעלה:"), ' בחרו יום בלוח הימים ולחצו על "הפעל התראות לתאריך הנבחר". המערכת תזהה אוטומטית את שם המיקום לפי המפה. ניתן להפעיל התראות על ימים נוספים ומיקומים שונים — כל הפעלה מוסיפה כלל חדש.'), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "ניהול:"), " לחצו על כפתור הפעמון בפינת המפה כדי לפתוח את מנהל ההתראות. שם תוכלו לראות את כל הכללים הפעילים, למחוק כלל בודד, או לבטל את כל ההתראות בבת אחת."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "תדירות בדיקה חכמה:"), " מודלים מטאורולוגיים מתעדכנים כל ~6 שעות. המערכת מתאימה את תדירות הבדיקה לפי קרבת התאריך:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "היום/מחר"), " — בדיקה כל 6 שעות"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "2–4 ימים קדימה"), " — בדיקה כל 12 שעות"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "5–16 ימים קדימה"), " — בדיקה פעם ביום"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "16+ ימים קדימה"), " — בדיקה כל 48 שעות")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מתי נשלחת התראה?"), " רק כאשר שעות טיסה בפועל נפתחות או נסגרות — שינויים קטנים במזג האוויר שלא משפיעים על ההתאמה לא יפעילו התראה מיותרת."), /* @__PURE__ */ React.createElement("p", null, "ההתראה כוללת: שם מיקום, תאריך, סטטוס (מתאים/חלקי/לא מתאים), וטווח השעות המתאימות לטיסה."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מעקב תאריך עתידי:"), ' תכננתם משימה בעוד חודשיים? לחצו על "מעקב תאריך עתידי" במנהל ההתראות ובחרו תאריך עד שנה קדימה. המערכת תעקוב בשקט ברקע — וכשהתאריך ייכנס לטווח התחזית (~16 ימים לפני), תקבלו התראה מיוחדת עם סטטוס ההתאמה לטיסה. לאחר מכן, הכלל ימשיך לעקוב כרגיל עם עדכונים שוטפים.'), /* @__PURE__ */ React.createElement("p", null, 'כללים עתידיים מסומנים בתג סגול "ממתין לתחזית" במנהל ההתראות.')),
+      /* @__PURE__ */ React.createElement(Section, { icon: "bell", title: "התראות Push — מעקב מרובה" }, /* @__PURE__ */ React.createElement("p", null, "ניתן להפעיל התראות על מספר ימים ומיקומים במקביל (עד 20 כללים פעילים). כל כלל עוקב אחרי יום + מיקום ספציפי ומתריע כשחלונות טיסה נפתחים או נסגרים."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "הפעלה:"), ' בחרו יום בלוח הימים ולחצו על "הפעל התראות לתאריך הנבחר". המערכת תזהה אוטומטית את שם המיקום לפי המפה. ניתן להפעיל התראות על ימים נוספים ומיקומים שונים — כל הפעלה מוסיפה כלל חדש.'), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "ניהול:"), " לחצו על כפתור הפעמון בפינת המפה כדי לפתוח את מנהל ההתראות. שם תוכלו לראות את כל הכללים הפעילים, למחוק כלל בודד, או לבטל את כל ההתראות בבת אחת."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "תדירות בדיקה חכמה:"), " מודלים מטאורולוגיים מתעדכנים כל ~6 שעות. המערכת מתאימה את תדירות הבדיקה לפי קרבת התאריך:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "היום/מחר"), " — בדיקה כל 6 שעות"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "2–4 ימים קדימה"), " — בדיקה כל 12 שעות"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "5–16 ימים קדימה"), " — בדיקה פעם ביום"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "16+ ימים קדימה"), " — בדיקה כל 48 שעות")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מתי נשלחת התראה?"), " רק כאשר שעות טיסה בפועל נפתחות או נסגרות — שינויים קטנים במזג האוויר שלא משפיעים על ההתאמה לא יפעילו התראה מיותרת."), /* @__PURE__ */ React.createElement("p", null, "ההתראה כוללת: שם מיקום, תאריך, סטטוס (מתאים/חלקי/לא מתאים), וטווח השעות המתאימות לטיסה."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מעקב תאריך עתידי:"), ' תכננתם משימה בעוד חודשיים? לחצו על כרטיס ה-"+" בסוף ציר הזמן ובחרו תאריך עד שנה קדימה. המערכת תעקוב בשקט ברקע — וכשהתאריך ייכנס לטווח התחזית (~16 ימים לפני), תקבלו התראה מיוחדת עם סטטוס ההתאמה לטיסה. לאחר מכן, הכלל ימשיך לעקוב כרגיל עם עדכונים שוטפים.'), /* @__PURE__ */ React.createElement("p", null, 'כללים עתידיים מסומנים בתג סגול "ממתין לתחזית" במנהל ההתראות.')),
       /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: "הגדרות מערכת" }, /* @__PURE__ */ React.createElement("p", null, "מסך ההגדרות מאפשר:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, "עריכת ספי יציבות לטיסה (רוח, משבים, גשם, עננים, שמש)"), /* @__PURE__ */ React.createElement("li", null, "הפעלת/כיבוי טיסות לילה בחישוב ההתאמה"), /* @__PURE__ */ React.createElement("li", null, "החלפה בין מצב תצוגה בהיר וכהה"), /* @__PURE__ */ React.createElement("li", null, "איפוס כל הפרמטרים לברירת מחדל")))
     ));
   };
@@ -135,6 +135,7 @@
     panelWidth,
     onOpenSettings,
     showSettingsButton = false,
+    onTrackFutureDate,
     notificationsSupported = false,
     notificationsEnabled = false,
     notificationsLoading = false,
@@ -354,7 +355,17 @@
           ), hasFlyableHours && /* @__PURE__ */ React.createElement("div", { className: "text-[10px] md:text-[11px] font-semibold text-slate-500" }, "חלון טיסה")),
           /* @__PURE__ */ React.createElement("div", { className: "text-[10px] md:text-[11px] font-semibold text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("span", null, riskIndicator), /* @__PURE__ */ React.createElement("span", null, "הצג פירוט →"))
         );
-      })
+      }),
+      onTrackFutureDate && /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onTrackFutureDate,
+          className: "min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50/80 hover:bg-blue-50/60 transition flex flex-col items-center justify-center gap-2 md:gap-3 text-center snap-start"
+        },
+        /* @__PURE__ */ React.createElement("span", { className: "w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center" }, /* @__PURE__ */ React.createElement(Icon, { name: "calendar", size: 20 })),
+        /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "text-sm font-bold text-slate-700" }, "תאריך עתידי?"), /* @__PURE__ */ React.createElement("div", { className: "text-[10px] md:text-[11px] text-slate-500 leading-snug" }, "עקוב אחר תאריך מעבר לטווח התחזית"))
+      )
     ), !isMobile && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
       "button",
       {
@@ -592,9 +603,7 @@
     isLoading = false,
     onDeleteRule,
     onRefresh,
-    onDisableAll,
-    onTrackFutureDate,
-    futureDatePicker = {}
+    onDisableAll
   }) => {
     if (!show) return null;
     const isDark = theme === "dark";
@@ -637,34 +646,6 @@
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
       /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, "ניהול התראות"), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, rules.length > 0 ? `${rules.length} כללים פעילים` : "אין כללים פעילים")),
-      futureDatePicker.show && /* @__PURE__ */ React.createElement("div", { className: `border rounded-xl p-4 space-y-3 ${isDark ? "bg-blue-900/30 border-blue-700" : "bg-blue-50 border-blue-200"}` }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-semibold ${isDark ? "text-blue-300" : "text-blue-800"}` }, "מעקב אחר תאריך עתידי"), /* @__PURE__ */ React.createElement("p", { className: `text-[12px] leading-relaxed ${t.text}` }, "בחרו תאריך מעבר לטווח התחזית. המערכת תעקוב ותתריע אוטומטית כשהתאריך ייכנס לטווח ותחזית תהיה זמינה."), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "date",
-          min: futureDatePicker.minDate || "",
-          max: futureDatePicker.maxDate || "",
-          value: futureDatePicker.value || "",
-          onChange: (e) => futureDatePicker.onChange?.(e.target.value),
-          className: `w-full px-3 py-2 rounded-lg border text-sm ${isDark ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-white border-slate-300 text-slate-800"}`
-        }
-      ), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          onClick: () => futureDatePicker.onConfirm?.(),
-          disabled: !futureDatePicker.value,
-          className: `flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold transition ${futureDatePicker.value ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`
-        },
-        "הפעל מעקב"
-      ), /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          onClick: () => futureDatePicker.onCancel?.(),
-          className: `px-3 py-2 rounded-lg border text-[12px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`
-        },
-        "ביטול"
-      ))),
       isLoading ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-8" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, "טוען כללי התראות...")) : rules.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center py-8 border border-dashed rounded-xl ${isDark ? "border-slate-700" : "border-slate-300"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-center mb-3" }, /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 32, className: isDark ? "text-slate-600" : "text-slate-300" })), /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, "אין התראות פעילות כרגע."), /* @__PURE__ */ React.createElement("div", { className: `text-xs mt-1 ${t.text}` }, "הפעל התראות מתוך תצוגת פרטי יום כדי לעקוב אחרי תחזית.")) : /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, rules.map((rule) => {
         const locationName = rule.criteria?.locationName || "מיקום לא ידוע";
         const dateRange = rule.start_date === rule.end_date ? formatDateShort(rule.start_date) : `${formatDateShort(rule.start_date)} – ${formatDateShort(rule.end_date)}`;
@@ -712,7 +693,7 @@
           )))
         );
       })),
-      /* @__PURE__ */ React.createElement("div", { className: `flex flex-wrap items-center justify-between gap-2 pt-2 border-t ${isDark ? "border-slate-700" : "border-slate-200"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: `flex flex-wrap items-center justify-between gap-2 pt-2 border-t ${isDark ? "border-slate-700" : "border-slate-200"}` }, /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -721,15 +702,7 @@
           className: `px-3 py-2 rounded-lg border text-[11px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${isLoading ? "opacity-60 cursor-wait" : ""}`
         },
         /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { name: "rotate", size: 12 }), "רענן")
-      ), onTrackFutureDate && !futureDatePicker.show && /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          onClick: onTrackFutureDate,
-          className: "px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-[11px] font-semibold hover:bg-blue-100 transition"
-        },
-        /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { name: "calendar", size: 12 }), "מעקב תאריך עתידי")
-      )), rules.length > 0 && /* @__PURE__ */ React.createElement(
+      ), rules.length > 0 && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -737,6 +710,81 @@
           className: "px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-[11px] font-semibold hover:bg-red-100 transition"
         },
         "בטל את כל ההתראות"
+      ))
+    ));
+  };
+  const FutureDateTrackingModal = ({
+    show,
+    onClose,
+    theme,
+    locationName,
+    futureDateValue,
+    futureDateMin,
+    futureDateMax,
+    onDateChange,
+    onConfirm,
+    isLoading
+  }) => {
+    if (!show) return null;
+    const isDark = theme === "dark";
+    const t = {
+      overlay: "fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4",
+      modal: isDark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-900",
+      closeBtn: isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white" : "border-slate-200 bg-white/95 text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+      card: isDark ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200",
+      text: isDark ? "text-slate-300" : "text-slate-600"
+    };
+    const formattedDate = futureDateValue ? (() => {
+      const parts = futureDateValue.split("-");
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : futureDateValue;
+    })() : "";
+    const confirmText = futureDateValue && locationName ? `עקוב אחר ${locationName} ב-${formattedDate}` : futureDateValue ? `עקוב אחר תאריך ${formattedDate}` : "בחרו תאריך להפעלת מעקב";
+    return /* @__PURE__ */ React.createElement("div", { className: t.overlay, onClick: onClose }, /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: `relative rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 ${t.modal}`,
+        onClick: (e) => e.stopPropagation()
+      },
+      /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onClose,
+          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          "aria-label": "סגור"
+        },
+        /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
+      ),
+      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, "מעקב תאריך עתידי"), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, "תכנון טיסה מראש")),
+      /* @__PURE__ */ React.createElement("div", { className: `border rounded-xl p-4 space-y-2 ${t.card}` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 16 })), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-bold truncate ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName || "טוען מיקום..."), /* @__PURE__ */ React.createElement("div", { className: `text-[11px] ${t.text}` }, "המיקום נקבע לפי מרכז המפה")))),
+      /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold block ${isDark ? "text-slate-200" : "text-slate-700"}` }, "בחרו תאריך"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          type: "date",
+          min: futureDateMin || "",
+          max: futureDateMax || "",
+          value: futureDateValue || "",
+          onChange: (e) => onDateChange(e.target.value),
+          className: `w-full px-3 py-2.5 rounded-lg border text-sm ${isDark ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-white border-slate-300 text-slate-800"}`
+        }
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-[11px] leading-relaxed ${t.text}` }, "המערכת תעקוב ברקע ותתריע כשהתאריך ייכנס לטווח התחזית (~16 ימים לפני).")),
+      /* @__PURE__ */ React.createElement("div", { className: "flex flex-col gap-2" }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onConfirm,
+          disabled: !futureDateValue || isLoading,
+          className: `w-full px-4 py-3 rounded-xl text-sm font-bold transition ${futureDateValue && !isLoading ? "bg-blue-600 text-white hover:bg-blue-500 shadow-sm" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`
+        },
+        isLoading ? "מפעיל מעקב..." : confirmText
+      ), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onClose,
+          className: `w-full px-4 py-2.5 rounded-xl border text-sm font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`
+        },
+        "ביטול"
       ))
     ));
   };
@@ -750,6 +798,7 @@
     Icon,
     DockButton,
     InfoHelpModal,
-    NotificationManagerModal
+    NotificationManagerModal,
+    FutureDateTrackingModal
   };
 })();
