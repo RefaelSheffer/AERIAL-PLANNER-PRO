@@ -1912,8 +1912,11 @@ const ensurePlannerEnvReady = async () => {
         }
       });
     };
-    const geolocateButtonStyle = {
-      bottom: timelineVisible ? isMobile ? `calc(${timelineDockHeight}px + env(safe-area-inset-bottom, 0px) + 1rem)` : "calc(55vh + 1rem)" : "1.5rem",
+    const geolocateButtonStyle = isMobile ? {
+      bottom: timelineVisible ? `calc(${timelineDockHeight}px + env(safe-area-inset-bottom, 0px) + 1rem)` : "1.5rem",
+      right: "calc(env(safe-area-inset-right, 0px) + 1.5rem)"
+    } : {
+      top: "4.5rem",
       right: "calc(env(safe-area-inset-right, 0px) + 1.5rem)"
     };
     const computeSidebarWidthPx = useCallback(() => {
