@@ -1479,7 +1479,7 @@ const ensurePlannerEnvReady = async () => {
       const pad = (d) => d.toISOString().slice(0, 10);
       const now = /* @__PURE__ */ new Date();
       const min = new Date(now);
-      min.setDate(min.getDate() + 8);
+      min.setDate(min.getDate() + 17);
       const max = new Date(now);
       max.setDate(max.getDate() + 365);
       return { minDate: pad(min), maxDate: pad(max) };

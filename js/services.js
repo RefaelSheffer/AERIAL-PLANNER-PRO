@@ -30,7 +30,7 @@
       );
       url.searchParams.set("windspeed_unit", "kmh");
       url.searchParams.set("timezone", "UTC");
-      url.searchParams.set("forecast_days", "7");
+      url.searchParams.set("forecast_days", "16");
       url.searchParams.set("models", models);
       if (window.AerialPlannerConfig?.DEBUG_WEATHER) {
         console.info(
