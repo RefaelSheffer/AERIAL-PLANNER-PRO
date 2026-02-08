@@ -355,7 +355,10 @@ const InfoHelpModal = ({ show, onClose, theme }) => {
               <span className="font-semibold">2–4 ימים קדימה</span> — בדיקה כל 12 שעות
             </li>
             <li>
-              <span className="font-semibold">5+ ימים קדימה</span> — בדיקה פעם ביום
+              <span className="font-semibold">5–16 ימים קדימה</span> — בדיקה פעם ביום
+            </li>
+            <li>
+              <span className="font-semibold">16+ ימים קדימה</span> — בדיקה כל 48 שעות
             </li>
           </ul>
           <p>
@@ -366,6 +369,16 @@ const InfoHelpModal = ({ show, onClose, theme }) => {
           <p>
             ההתראה כוללת: שם מיקום, תאריך, סטטוס (מתאים/חלקי/לא מתאים),
             וטווח השעות המתאימות לטיסה.
+          </p>
+          <p>
+            <span className="font-semibold">מעקב תאריך עתידי:</span> תכננתם
+            משימה בעוד חודשיים? לחצו על "מעקב תאריך עתידי" במנהל ההתראות
+            ובחרו תאריך עד שנה קדימה. המערכת תעקוב בשקט ברקע — וכשהתאריך
+            ייכנס לטווח התחזית (~16 ימים לפני), תקבלו התראה מיוחדת עם סטטוס
+            ההתאמה לטיסה. לאחר מכן, הכלל ימשיך לעקוב כרגיל עם עדכונים שוטפים.
+          </p>
+          <p>
+            כללים עתידיים מסומנים בתג סגול "ממתין לתחזית" במנהל ההתראות.
           </p>
         </Section>
 
@@ -1197,6 +1210,8 @@ const NotificationManagerModal = ({
   onDeleteRule,
   onRefresh,
   onDisableAll,
+  onTrackFutureDate,
+  futureDatePicker = {},
 }) => {
   if (!show) return null;
 
@@ -1260,6 +1275,42 @@ const NotificationManagerModal = ({
           </h2>
         </div>
 
+        {futureDatePicker.show && (
+          <div className={`border rounded-xl p-4 space-y-3 ${isDark ? "bg-blue-900/30 border-blue-700" : "bg-blue-50 border-blue-200"}`}>
+            <div className={`text-sm font-semibold ${isDark ? "text-blue-300" : "text-blue-800"}`}>
+              מעקב אחר תאריך עתידי
+            </div>
+            <p className={`text-[12px] leading-relaxed ${t.text}`}>
+              בחרו תאריך מעבר לטווח התחזית. המערכת תעקוב ותתריע אוטומטית כשהתאריך ייכנס לטווח ותחזית תהיה זמינה.
+            </p>
+            <input
+              type="date"
+              min={futureDatePicker.minDate || ""}
+              max={futureDatePicker.maxDate || ""}
+              value={futureDatePicker.value || ""}
+              onChange={(e) => futureDatePicker.onChange?.(e.target.value)}
+              className={`w-full px-3 py-2 rounded-lg border text-sm ${isDark ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-white border-slate-300 text-slate-800"}`}
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => futureDatePicker.onConfirm?.()}
+                disabled={!futureDatePicker.value}
+                className={`flex-1 px-3 py-2 rounded-lg text-[12px] font-semibold transition ${futureDatePicker.value ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
+              >
+                הפעל מעקב
+              </button>
+              <button
+                type="button"
+                onClick={() => futureDatePicker.onCancel?.()}
+                className={`px-3 py-2 rounded-lg border text-[12px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="text-center py-8">
             <div className={`text-sm ${t.text}`}>טוען כללי התראות...</div>
@@ -1314,6 +1365,11 @@ const NotificationManagerModal = ({
                         <span className={`px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}`}>
                           {hoursLabel}
                         </span>
+                        {rule.criteria?.ruleType === "future" && (
+                          <span className="px-2 py-0.5 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-semibold">
+                            ממתין לתחזית
+                          </span>
+                        )}
                         {lastChecked && (
                           <span className={`text-[10px] ${t.text}`}>
                             נבדק: {lastChecked}
@@ -1358,17 +1414,31 @@ const NotificationManagerModal = ({
         )}
 
         <div className={`flex flex-wrap items-center justify-between gap-2 pt-2 border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}>
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={isLoading}
-            className={`px-3 py-2 rounded-lg border text-[11px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${isLoading ? "opacity-60 cursor-wait" : ""}`}
-          >
-            <span className="flex items-center gap-1">
-              <Icon name="rotate" size={12} />
-              רענן
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={isLoading}
+              className={`px-3 py-2 rounded-lg border text-[11px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${isLoading ? "opacity-60 cursor-wait" : ""}`}
+            >
+              <span className="flex items-center gap-1">
+                <Icon name="rotate" size={12} />
+                רענן
+              </span>
+            </button>
+            {onTrackFutureDate && !futureDatePicker.show && (
+              <button
+                type="button"
+                onClick={onTrackFutureDate}
+                className="px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 text-[11px] font-semibold hover:bg-blue-100 transition"
+              >
+                <span className="flex items-center gap-1">
+                  <Icon name="calendar" size={12} />
+                  מעקב תאריך עתידי
+                </span>
+              </button>
+            )}
+          </div>
           {rules.length > 0 && (
             <button
               type="button"

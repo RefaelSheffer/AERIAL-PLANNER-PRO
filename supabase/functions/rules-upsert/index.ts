@@ -152,6 +152,26 @@ Deno.serve(async (req) => {
     typeof criteriaRaw.locationName === "string"
       ? criteriaRaw.locationName.trim().slice(0, 120)
       : "";
+  const ruleTypeRaw =
+    typeof criteriaRaw.ruleType === "string" ? criteriaRaw.ruleType : "standard";
+  const ruleType = ruleTypeRaw === "future" ? "future" : "standard";
+
+  // Validate future date distance (max 365 days from today)
+  if (ruleType === "future") {
+    const todayMs = Date.now();
+    const startDateMs = startDate.getTime();
+    const daysFromNow = Math.floor((startDateMs - todayMs) / (24 * 60 * 60 * 1000));
+    if (daysFromNow > 365) {
+      return new Response(
+        JSON.stringify({ error: "Future date tracking is limited to 365 days from today." }),
+        {
+          status: 400,
+          headers: { ...originCorsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+  }
+
   const criteria = {
     maxWind: clampNumber(criteriaRaw.maxWind, DEFAULT_CRITERIA.maxWind),
     maxGust: clampNumber(criteriaRaw.maxGust, DEFAULT_CRITERIA.maxGust),
@@ -178,6 +198,7 @@ Deno.serve(async (req) => {
     includeNightFlights: Boolean(criteriaRaw.includeNightFlights),
     appBasePath,
     ...(locationNameRaw ? { locationName: locationNameRaw } : {}),
+    ...(ruleType === "future" ? { ruleType: "future" } : {}),
   };
 
   const notifyOn = typeof rule.notify_on === "string"
@@ -234,21 +255,28 @@ Deno.serve(async (req) => {
     );
   }
 
+  const upsertRow: Record<string, unknown> = {
+    subscription_id: subscriptionId,
+    lat,
+    lon,
+    start_date: rule.start_date,
+    end_date: rule.end_date,
+    hour_from: hourFrom,
+    hour_to: hourTo,
+    criteria,
+    notify_on: notifyOn,
+    expires_at: expiresAt?.toISOString(),
+  };
+
+  // For future rules, set sentinel hash to prevent premature notifications
+  if (ruleType === "future") {
+    upsertRow.last_state_hash = "__awaiting_forecast__";
+  }
+
   const { data, error } = await supabase
     .from("rules")
     .upsert(
-      {
-        subscription_id: subscriptionId,
-        lat,
-        lon,
-        start_date: rule.start_date,
-        end_date: rule.end_date,
-        hour_from: hourFrom,
-        hour_to: hourTo,
-        criteria,
-        notify_on: notifyOn,
-        expires_at: expiresAt?.toISOString(),
-      },
+      upsertRow,
       { onConflict: "subscription_id,lat,lon,start_date,end_date,hour_from,hour_to" },
     )
     .select("id")

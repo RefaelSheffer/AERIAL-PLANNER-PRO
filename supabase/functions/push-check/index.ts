@@ -409,8 +409,10 @@ Deno.serve(async (req) => {
         minIntervalHours = 6;
       } else if (daysUntilStart <= 4) {
         minIntervalHours = 12;
-      } else {
+      } else if (daysUntilStart <= 16) {
         minIntervalHours = 24;
+      } else {
+        minIntervalHours = 48;
       }
       if (hoursSinceLastCheck < minIntervalHours) {
         return; // Skip — checked recently enough for this date proximity
@@ -426,6 +428,8 @@ Deno.serve(async (req) => {
       typeof (criteriaRaw as { locationName?: unknown }).locationName === "string"
         ? ((criteriaRaw as { locationName: string }).locationName).trim()
         : "";
+    const ruleType =
+      (criteriaRaw as { ruleType?: string }).ruleType === "future" ? "future" : "standard";
     const hourFrom = rule.hour_from ?? 0;
     const hourTo = rule.hour_to ?? 23;
 
@@ -479,6 +483,23 @@ Deno.serve(async (req) => {
       status = "no-data";
     }
 
+    // Guard clause: future rules with no forecast data yet — skip notification, just update check time
+    if (ruleType === "future" && relevantSlots.length === 0 && status !== "no-data") {
+      updates.push(
+        supabase
+          .from("rules")
+          .update({ last_checked_at: new Date().toISOString() })
+          .eq("id", rule.id),
+      );
+      results.push({
+        rule_id: rule.id,
+        status: "awaiting-forecast",
+        percent: 0,
+        state_changed: false,
+      });
+      return;
+    }
+
     // Hash is based on which specific hours are flyable/not-flyable.
     // This ensures notifications only fire when hours actually open or close,
     // not on minor weather value fluctuations within thresholds.
@@ -491,9 +512,15 @@ Deno.serve(async (req) => {
       ),
     );
 
+    // Detect "entered forecast range" — future rule that just got its first real data
+    const isEnteringForecast =
+      rule.last_state_hash === "__awaiting_forecast__" && relevantSlots.length > 0;
+
     const stateChanged = stateHash !== rule.last_state_hash;
     const shouldNotify =
-      rule.notify_on === "always" || (stateChanged && rule.notify_on !== "disabled");
+      isEnteringForecast ||
+      rule.notify_on === "always" ||
+      (stateChanged && rule.notify_on !== "disabled");
 
     if (shouldNotify && subscription?.endpoint) {
       const dayQuery = encodeURIComponent(rule.start_date);
@@ -519,7 +546,16 @@ Deno.serve(async (req) => {
       let title: string;
       let body: string;
 
-      if (status === "fly") {
+      if (isEnteringForecast) {
+        // Special "forecast now available" notification
+        if (flyableSlots.length > 0) {
+          title = `🟢 ${locationPrefix}תחזית זמינה — ${dateLabel}`;
+          body = `התאריך נכנס לטווח התחזית! שעות מתאימות: ${flyableRange}`;
+        } else {
+          title = `🔴 ${locationPrefix}תחזית זמינה — ${dateLabel}`;
+          body = "התאריך נכנס לטווח התחזית. אין שעות מתאימות.";
+        }
+      } else if (status === "fly") {
         title = `🟢 ${locationPrefix}מתאים לטיסה — ${dateLabel}`;
         body = `התחזית השתנתה. שעות טיסה מתאימות: ${flyableRange}`;
       } else if (status === "risk") {
@@ -570,12 +606,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Transition future rule to standard after first real data check
+    const updatedCriteria = isEnteringForecast
+      ? { ...criteriaRaw, ruleType: "standard" }
+      : undefined;
+
     updates.push(
       supabase
         .from("rules")
         .update({
           last_state_hash: stateHash,
           last_checked_at: new Date().toISOString(),
+          ...(updatedCriteria ? { criteria: updatedCriteria } : {}),
         })
         .eq("id", rule.id),
     );

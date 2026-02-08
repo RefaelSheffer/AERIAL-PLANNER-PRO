@@ -337,6 +337,8 @@ const ensurePlannerEnvReady = async () => {
     });
     const [showNotificationManager, setShowNotificationManager] = useState(false);
     const [isLoadingRules, setIsLoadingRules] = useState(false);
+    const [showFutureDatePicker, setShowFutureDatePicker] = useState(false);
+    const [futureDateInput, setFutureDateInput] = useState("");
     const queryDay = useMemo(() => getQueryDayParam(), []);
     const queryDayAppliedRef = useRef(false);
     const windUnitMeta = useMemo(
@@ -1282,6 +1284,7 @@ const ensurePlannerEnvReady = async () => {
         const [ruleLat, ruleLon] = overrides.location || weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
         const ruleDate = overrides.day || selectedDay?.day || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
         const locationName = overrides.locationName || "";
+        const ruleType = overrides.ruleType || "standard";
         const ruleCriteria = {
           maxWind: suitabilitySettings.maxWind,
           maxGust: suitabilitySettings.maxGust,
@@ -1291,7 +1294,8 @@ const ensurePlannerEnvReady = async () => {
           minCloudCover: suitabilitySettings.minCloudCover,
           maxCloudCover: suitabilitySettings.maxCloudCover,
           includeNightFlights: suitabilitySettings.includeNightFlights,
-          ...locationName ? { locationName } : {}
+          ...locationName ? { locationName } : {},
+          ...ruleType === "future" ? { ruleType: "future" } : {}
         };
         const ruleResponse = await Services.upsertNotificationRule({
           subscriptionId,
@@ -1469,6 +1473,15 @@ const ensurePlannerEnvReady = async () => {
         setIsPushWorking(false);
       }
     }, [appBasePath, pushToast, pushSubscriptionId, notificationRules]);
+    const futureDateBounds = useMemo(() => {
+      const pad = (d) => d.toISOString().slice(0, 10);
+      const now = /* @__PURE__ */ new Date();
+      const min = new Date(now);
+      min.setDate(min.getDate() + 8);
+      const max = new Date(now);
+      max.setDate(max.getDate() + 365);
+      return { minDate: pad(min), maxDate: pad(max) };
+    }, []);
     const isSelectedDayTracked = useMemo(() => {
       if (!selectedDay || !notificationRules.length) return false;
       const [currentLat, currentLon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
@@ -1480,6 +1493,121 @@ const ensurePlannerEnvReady = async () => {
         return latDiff < 0.01 && lonDiff < 0.01;
       });
     }, [selectedDay, notificationRules, weatherLocation, mapCenter]);
+    const handleTrackFutureDate = useCallback(async () => {
+      if (!futureDateInput) return;
+      if (!pushSupported) {
+        pushToast("הדפדפן לא תומך בהתראות.", "warning");
+        return;
+      }
+      if (!vapidPublicKey) {
+        pushToast("חסר מפתח VAPID ציבורי בהגדרות.", "warning");
+        return;
+      }
+      setIsPushWorking(true);
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          pushToast("לא ניתן להפעיל התראות בלי הרשאה.", "warning");
+          return;
+        }
+        const swUrl = `${appBasePath}/service-worker.js`;
+        const scope = `${appBasePath}/`;
+        let registration;
+        try {
+          registration = await navigator.serviceWorker.register(swUrl, { scope });
+          if (!registration.active) {
+            await new Promise((resolve) => {
+              const sw = registration.installing || registration.waiting;
+              if (!sw) {
+                resolve();
+                return;
+              }
+              sw.addEventListener("statechange", function onChange() {
+                if (this.state === "activated") {
+                  sw.removeEventListener("statechange", onChange);
+                  resolve();
+                }
+              });
+            });
+          }
+        } catch (err) {
+          console.error("Service worker registration failed", err);
+          pushToast("כשל ברישום שירות התראות", "warning");
+          return;
+        }
+        let subscription = await registration.pushManager.getSubscription();
+        let currentSubId = pushSubscriptionId;
+        if (!subscription) {
+          try {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+            });
+          } catch (err) {
+            console.error("Push subscription failed", err);
+            pushToast("כשל ביצירת הרשמה להתראות", "warning");
+            return;
+          }
+        }
+        if (!currentSubId) {
+          try {
+            const subscribeResponse = await callEdgeFunction(
+              typeof subscription?.toJSON === "function" ? subscription.toJSON() : subscription
+            );
+            currentSubId = subscribeResponse?.subscription_id;
+            if (!currentSubId) {
+              pushToast("כשל בשמירת הרשמה להתראות", "warning");
+              return;
+            }
+            setPushSubscriptionId(currentSubId);
+          } catch (err) {
+            console.error("Push subscription save failed", err);
+            pushToast(err?.message || "כשל בשמירת הרשמה להתראות — נסה שוב", "warning");
+            return;
+          }
+        }
+        setPushSubscriptionState({ endpoint: subscription.endpoint });
+        const [currentLat, currentLon] = weatherLocation || mapCenter || Config.DEFAULT_MAP_CENTER;
+        let locationName = "";
+        try {
+          locationName = await Services.reverseGeocode(currentLat, currentLon);
+        } catch (err) {
+          console.warn("Reverse geocode failed, proceeding without name", err);
+        }
+        try {
+          await upsertNotificationRule(currentSubId, {
+            location: [currentLat, currentLon],
+            locationName,
+            day: futureDateInput,
+            ruleType: "future"
+          });
+        } catch (err) {
+          console.error("Future date rule upsert failed", err);
+          pushToast(err?.message || "כשל ביצירת מעקב תאריך עתידי", "warning");
+          return;
+        }
+        const displayLabel = locationName || "מיקום נוכחי";
+        pushToast(`מעקב הופעל: ${displayLabel} — ${futureDateInput}`, "success");
+        setShowFutureDatePicker(false);
+        setFutureDateInput("");
+      } catch (err) {
+        console.error("Future date tracking failed", err);
+        pushToast(err?.message || "לא הצלחנו להפעיל מעקב.", "warning");
+      } finally {
+        setIsPushWorking(false);
+      }
+    }, [
+      futureDateInput,
+      callEdgeFunction,
+      mapCenter,
+      pushSubscriptionId,
+      pushSupported,
+      pushToast,
+      upsertNotificationRule,
+      vapidPublicKey,
+      weatherLocation,
+      appBasePath
+    ]);
     const sanitizeDataUrl = (dataUrl, mimeType) => {
       if (typeof dataUrl !== "string") return null;
       const expectedPrefix = `data:${mimeType}`;
@@ -2524,13 +2652,30 @@ const ensurePlannerEnvReady = async () => {
       NotificationManagerModal,
       {
         show: showNotificationManager,
-        onClose: () => setShowNotificationManager(false),
+        onClose: () => {
+          setShowNotificationManager(false);
+          setShowFutureDatePicker(false);
+          setFutureDateInput("");
+        },
         theme,
         rules: notificationRules,
         isLoading: isLoadingRules,
         onDeleteRule: handleDeleteRule,
         onRefresh: fetchRules,
-        onDisableAll: handleDisableAllNotifications
+        onDisableAll: handleDisableAllNotifications,
+        onTrackFutureDate: () => setShowFutureDatePicker(true),
+        futureDatePicker: {
+          show: showFutureDatePicker,
+          value: futureDateInput,
+          minDate: futureDateBounds.minDate,
+          maxDate: futureDateBounds.maxDate,
+          onChange: setFutureDateInput,
+          onConfirm: handleTrackFutureDate,
+          onCancel: () => {
+            setShowFutureDatePicker(false);
+            setFutureDateInput("");
+          }
+        }
       }
     ), WEATHER_ONLY_MODE ? /* @__PURE__ */ React.createElement(
       MapView,
