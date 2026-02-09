@@ -2717,7 +2717,7 @@ const ensurePlannerEnvReady = async () => {
           className: "absolute top-4 right-6 z-[940] w-[320px] max-w-[85vw] pointer-events-auto",
           ref: addressSearchRef
         },
-        /* @__PURE__ */ React.createElement("form", { onSubmit: handleAddressSubmit }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 rounded-full bg-white/95 border border-slate-200 px-3 py-2 shadow-lg focus-within:ring-2 focus-within:ring-blue-500" }, /* @__PURE__ */ React.createElement(Icon, { name: "map", size: 16, className: "text-slate-500" }), /* @__PURE__ */ React.createElement(
+        /* @__PURE__ */ React.createElement("form", { onSubmit: handleAddressSubmit }, /* @__PURE__ */ React.createElement("div", { className: `flex items-center gap-2 rounded-full border px-3 py-2 shadow-lg focus-within:ring-2 focus-within:ring-blue-500 ${theme === "dark" ? "bg-slate-800/95 border-slate-600" : "bg-white/95 border-slate-200"}` }, /* @__PURE__ */ React.createElement(Icon, { name: "map", size: 16, className: theme === "dark" ? "text-slate-400" : "text-slate-500" }), /* @__PURE__ */ React.createElement(
           "input",
           {
             type: "text",
@@ -2742,7 +2742,7 @@ const ensurePlannerEnvReady = async () => {
               }
             },
             placeholder: "חיפוש כתובת להצגת מזג אוויר",
-            className: "w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+            className: `w-full bg-transparent text-sm focus:outline-none ${theme === "dark" ? "text-slate-100 placeholder:text-slate-500" : "text-slate-800 placeholder:text-slate-400"}`
           }
         ), addressQuery ? /* @__PURE__ */ React.createElement(
           "button",
@@ -2754,12 +2754,12 @@ const ensurePlannerEnvReady = async () => {
               setIsAddressOpen(false);
               setAddressStatus("idle");
             },
-            className: "w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 transition-colors flex-shrink-0",
+            className: `w-5 h-5 flex items-center justify-center rounded-full transition-colors flex-shrink-0 ${theme === "dark" ? "bg-slate-600 hover:bg-slate-500 text-slate-300" : "bg-slate-200 hover:bg-slate-300 text-slate-500"}`,
             "aria-label": "נקה חיפוש"
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 12 })
         ) : null)),
-        isAddressOpen && addressQuery.trim().length > 0 && /* @__PURE__ */ React.createElement("div", { className: "absolute top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-xl z-[1000] overflow-hidden max-h-[240px] overflow-y-auto" },
+        isAddressOpen && addressQuery.trim().length > 0 && /* @__PURE__ */ React.createElement("div", { className: `absolute top-full mt-1 w-full rounded-xl border shadow-xl z-[1000] overflow-hidden max-h-[240px] overflow-y-auto ${theme === "dark" ? "bg-slate-800 border-slate-600" : "bg-white border-slate-200"}` },
           addressStatus === "loading" && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-2 text-[12px] text-slate-500 text-center" },
             /* @__PURE__ */ React.createElement("span", { className: "inline-block w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-1 align-middle" }),
             "מחפש..."
@@ -2772,14 +2772,14 @@ const ensurePlannerEnvReady = async () => {
             key: item.id,
             type: "button",
             onClick: () => handleAddressSelect(item),
-            className: "w-full text-right px-3 py-2.5 text-sm border-b border-slate-100 last:border-0 transition " + (index === activeSuggestionIndex
-              ? "bg-blue-50 text-blue-800"
-              : "hover:bg-slate-50 text-slate-700")
+            className: "w-full text-right px-3 py-2.5 text-sm last:border-0 transition " + (theme === "dark"
+              ? "border-b border-slate-700 " + (index === activeSuggestionIndex ? "bg-blue-900/50 text-blue-300" : "hover:bg-slate-700 text-slate-200")
+              : "border-b border-slate-100 " + (index === activeSuggestionIndex ? "bg-blue-50 text-blue-800" : "hover:bg-slate-50 text-slate-700"))
           },
           /* @__PURE__ */ React.createElement("div", { className: "truncate" }, item.label)
         )))
       ),
-      locationMessage && /* @__PURE__ */ React.createElement("div", { className: "absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none" }, locationMessage),
+      locationMessage && /* @__PURE__ */ React.createElement("div", { className: `absolute bottom-28 left-6 z-[930] px-4 py-2 rounded-full shadow-lg border text-xs pointer-events-none ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}` }, locationMessage),
       /* @__PURE__ */ React.createElement(
         "div",
         {
@@ -2790,7 +2790,7 @@ const ensurePlannerEnvReady = async () => {
           "button",
           {
             onClick: () => setShowInfoModal(true),
-            className: "w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition",
+            className: `w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
             "aria-label": "מדריך שימוש"
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "info", size: 18 })
@@ -2802,7 +2802,7 @@ const ensurePlannerEnvReady = async () => {
               setShowNotificationManager(true);
               fetchRules();
             },
-            className: "relative w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition",
+            className: `relative w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
             "aria-label": "ניהול התראות"
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 18 }),
@@ -2812,7 +2812,7 @@ const ensurePlannerEnvReady = async () => {
           "button",
           {
             onClick: recenterOnUser,
-            className: "w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition",
+            className: `w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
             "aria-label": "מרכז למיקום הנוכחי"
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 18 })
@@ -3042,7 +3042,7 @@ const ensurePlannerEnvReady = async () => {
         style: { paddingBottom: mapBottomPadding }
       },
       /* @__PURE__ */ React.createElement("div", { id: "map" }),
-      locationMessage && /* @__PURE__ */ React.createElement("div", { className: "absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none" }, locationMessage),
+      locationMessage && /* @__PURE__ */ React.createElement("div", { className: `absolute bottom-28 left-6 z-[930] px-4 py-2 rounded-full shadow-lg border text-xs pointer-events-none ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}` }, locationMessage),
       /* @__PURE__ */ React.createElement(
         "div",
         {
@@ -3053,7 +3053,7 @@ const ensurePlannerEnvReady = async () => {
           "button",
           {
             onClick: recenterOnUser,
-            className: "w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition",
+            className: `w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
             "aria-label": "מרכז למיקום הנוכחי"
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 18 })
@@ -3341,7 +3341,8 @@ const ensurePlannerEnvReady = async () => {
               icon: "mission",
               label: "תוכנית טיסה",
               active: sidebarOpen,
-              onClick: () => toggleExclusivePanel("sidebar")
+              onClick: () => toggleExclusivePanel("sidebar"),
+              theme
             }
           ), ENABLE_REALTIME_PANEL && /* @__PURE__ */ React.createElement(
             DockButton,
@@ -3349,7 +3350,8 @@ const ensurePlannerEnvReady = async () => {
               icon: "radar",
               label: "זמן אמת",
               active: realtimePanelOpen,
-              onClick: () => toggleExclusivePanel("realtime")
+              onClick: () => toggleExclusivePanel("realtime"),
+              theme
             }
           ), /* @__PURE__ */ React.createElement(
             DockButton,
@@ -3357,7 +3359,8 @@ const ensurePlannerEnvReady = async () => {
               icon: "calendar",
               label: "לוח מזג אוויר",
               active: showTimeline,
-              onClick: () => toggleExclusivePanel("timeline")
+              onClick: () => toggleExclusivePanel("timeline"),
+              theme
             }
           ), ENABLE_DOCUMENTATION && /* @__PURE__ */ React.createElement(
             DockButton,
@@ -3365,12 +3368,13 @@ const ensurePlannerEnvReady = async () => {
               icon: "doc",
               label: "כרטיסיית תיעוד",
               active: documentationOpen,
-              onClick: toggleDocumentation
+              onClick: toggleDocumentation,
+              theme
             }
           ))
         )
       ),
-      dtmData && /* @__PURE__ */ React.createElement("div", { className: "absolute bottom-6 left-6 z-[900] bg-white/90 p-2 rounded text-xs shadow-lg text-slate-900" }, /* @__PURE__ */ React.createElement("div", { className: "font-bold mb-1" }, "גבהים"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement("div", { className: "w-3 h-3 bg-red-500 rounded-full" }), " גבוה"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement("div", { className: "w-3 h-3 bg-green-500 rounded-full" }), " נמוך"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1 mt-1 border-t pt-1" }, /* @__PURE__ */ React.createElement("div", { className: "w-4 h-1 bg-black/60" }), " צל"))
+      dtmData && /* @__PURE__ */ React.createElement("div", { className: `absolute bottom-6 left-6 z-[900] p-2 rounded text-xs shadow-lg ${theme === "dark" ? "bg-slate-800/90 text-slate-200" : "bg-white/90 text-slate-900"}` }, /* @__PURE__ */ React.createElement("div", { className: "font-bold mb-1" }, "גבהים"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement("div", { className: "w-3 h-3 bg-red-500 rounded-full" }), " גבוה"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement("div", { className: "w-3 h-3 bg-green-500 rounded-full" }), " נמוך"), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1 mt-1 border-t pt-1" }, /* @__PURE__ */ React.createElement("div", { className: "w-4 h-1 bg-black/60" }), " צל"))
     )));
   };
   const root = ReactDOM.createRoot(document.getElementById("root"));

@@ -48,22 +48,25 @@
     };
     return icons[name] || null;
   };
-  const DockButton = ({ icon, label, active, onClick, compact = false }) => /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      onClick,
-      "aria-label": label,
-      className: `bg-white/95 text-slate-800 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl ${compact ? "p-0.5" : "p-1"} ${active ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"}`
-    },
-    /* @__PURE__ */ React.createElement(
-      "span",
+  const DockButton = ({ icon, label, active, onClick, compact = false, theme }) => {
+    const dk = theme === "dark";
+    return /* @__PURE__ */ React.createElement(
+      "button",
       {
-        className: `${compact ? "w-10 h-10" : "w-12 h-12"} rounded-full flex items-center justify-center ${active ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`
+        onClick,
+        "aria-label": label,
+        className: `rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl ${compact ? "p-0.5" : "p-1"} ${dk ? "bg-slate-800/95 text-slate-200" : "bg-white/95 text-slate-800"} ${active ? dk ? "border-blue-500 ring-2 ring-blue-900" : "border-blue-400 ring-2 ring-blue-100" : dk ? "border-slate-600" : "border-slate-200"}`
       },
-      /* @__PURE__ */ React.createElement(Icon, { name: icon, size: compact ? 16 : 18 })
-    ),
-    /* @__PURE__ */ React.createElement("span", { className: "sr-only" }, label)
-  );
+      /* @__PURE__ */ React.createElement(
+        "span",
+        {
+          className: `${compact ? "w-10 h-10" : "w-12 h-12"} rounded-full flex items-center justify-center ${active ? "bg-blue-600 text-white" : dk ? "bg-slate-700 text-slate-200" : "bg-slate-100 text-slate-700"}`
+        },
+        /* @__PURE__ */ React.createElement(Icon, { name: icon, size: compact ? 16 : 18 })
+      ),
+      /* @__PURE__ */ React.createElement("span", { className: "sr-only" }, label)
+    );
+  };
   const InfoHelpModal = ({ show, onClose, theme }) => {
     if (!show) return null;
     const isDark = theme === "dark";
