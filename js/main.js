@@ -257,6 +257,7 @@ const ensurePlannerEnvReady = async () => {
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [addressStatus, setAddressStatus] = useState("idle");
     const [isAddressOpen, setIsAddressOpen] = useState(false);
+    const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
     const [selectedDrone, setSelectedDrone] = useState(
       () => ENABLE_MISSION_PLANNING ? "mavic_3_e" : null
     );
@@ -407,6 +408,7 @@ const ensurePlannerEnvReady = async () => {
       () => ENABLE_MISSION_PLANNING ? false : null
     );
     const [weatherUnavailable, setWeatherUnavailable] = useState(false);
+    const [weatherLoading, setWeatherLoading] = useState(true);
     const [showTimeline, setShowTimeline] = useState(WEATHER_ONLY_MODE);
     const [sidebarOpen, setSidebarOpen] = useState(
       ENABLE_MISSION_PLANNING && !initialIsMobile
@@ -930,6 +932,7 @@ const ensurePlannerEnvReady = async () => {
         if (!addressSearchRef.current) return;
         if (!addressSearchRef.current.contains(event.target)) {
           setIsAddressOpen(false);
+          setActiveSuggestionIndex(-1);
         }
       };
       document.addEventListener("mousedown", handleOutsideClick);
@@ -937,6 +940,7 @@ const ensurePlannerEnvReady = async () => {
     }, []);
     useEffect(() => {
       const trimmed = addressQuery.trim();
+      setActiveSuggestionIndex(-1);
       if (trimmed.length < 2) {
         setAddressSuggestions([]);
         setAddressStatus("idle");
@@ -956,6 +960,7 @@ const ensurePlannerEnvReady = async () => {
           });
           if (!controller.signal.aborted) {
             setAddressSuggestions(results);
+            setActiveSuggestionIndex(-1);
             setAddressStatus("ready");
             setIsAddressOpen(true);
           }
@@ -974,6 +979,7 @@ const ensurePlannerEnvReady = async () => {
     }, [addressQuery]);
     const fetchWeather = async () => {
       if (!weatherLocation) return;
+      setWeatherLoading(true);
       try {
         const data = await Services.fetchWeather(weatherLocation);
         if (data) {
@@ -987,6 +993,8 @@ const ensurePlannerEnvReady = async () => {
         console.error(e);
         setHourlyForecast(null);
         setWeatherUnavailable(true);
+      } finally {
+        setWeatherLoading(false);
       }
     };
     useEffect(() => {
@@ -2405,9 +2413,11 @@ const ensurePlannerEnvReady = async () => {
       TimelineBoard,
       {
         show: timelineVisible,
+        theme,
         isMobile,
         days: daySuitability,
         dataUnavailable: weatherUnavailable,
+        isLoading: weatherLoading,
         selectedSlotKey,
         onSlotSelect: setFlightDate,
         selectedDayIndex,
@@ -2714,6 +2724,23 @@ const ensurePlannerEnvReady = async () => {
             value: addressQuery,
             onChange: (event) => setAddressQuery(event.target.value),
             onFocus: () => setIsAddressOpen(true),
+            onKeyDown: (e) => {
+              if (!isAddressOpen || addressSuggestions.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setActiveSuggestionIndex((prev) => prev < addressSuggestions.length - 1 ? prev + 1 : 0);
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setActiveSuggestionIndex((prev) => prev > 0 ? prev - 1 : addressSuggestions.length - 1);
+              } else if (e.key === "Enter" && activeSuggestionIndex >= 0) {
+                e.preventDefault();
+                handleAddressSelect(addressSuggestions[activeSuggestionIndex]);
+                setActiveSuggestionIndex(-1);
+              } else if (e.key === "Escape") {
+                setIsAddressOpen(false);
+                setActiveSuggestionIndex(-1);
+              }
+            },
             placeholder: "חיפוש כתובת להצגת מזג אוויר",
             className: "w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
           }
@@ -2727,21 +2754,30 @@ const ensurePlannerEnvReady = async () => {
               setIsAddressOpen(false);
               setAddressStatus("idle");
             },
-            className: "text-slate-400 hover:text-slate-600",
+            className: "w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 transition-colors flex-shrink-0",
             "aria-label": "נקה חיפוש"
           },
-          /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 14 })
+          /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 12 })
         ) : null)),
-        isAddressOpen && addressQuery.trim().length > 0 && /* @__PURE__ */ React.createElement("div", { className: "mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-xl" }, /* @__PURE__ */ React.createElement("div", { className: "max-h-60 overflow-y-auto" }, addressStatus === "loading" && /* @__PURE__ */ React.createElement("div", { className: "px-4 py-3 text-xs text-slate-500" }, "טוען הצעות..."), addressStatus === "error" && /* @__PURE__ */ React.createElement("div", { className: "px-4 py-3 text-xs text-red-600" }, "לא הצלחנו להביא הצעות כרגע."), addressStatus === "ready" && addressSuggestions.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "px-4 py-3 text-xs text-slate-500" }, "לא נמצאו תוצאות."), addressSuggestions.map((item) => /* @__PURE__ */ React.createElement(
+        isAddressOpen && addressQuery.trim().length > 0 && /* @__PURE__ */ React.createElement("div", { className: "absolute top-full mt-1 w-full bg-white rounded-xl border border-slate-200 shadow-xl z-[1000] overflow-hidden max-h-[240px] overflow-y-auto" },
+          addressStatus === "loading" && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-2 text-[12px] text-slate-500 text-center" },
+            /* @__PURE__ */ React.createElement("span", { className: "inline-block w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-1 align-middle" }),
+            "מחפש..."
+          ),
+          addressStatus === "error" && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-3 text-[12px] text-red-600 text-center" }, "לא הצלחנו להביא הצעות כרגע."),
+          addressStatus === "ready" && addressSuggestions.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-3 text-[12px] text-slate-500 text-center" }, "לא נמצאו תוצאות"),
+          addressSuggestions.map((item, index) => /* @__PURE__ */ React.createElement(
           "button",
           {
             key: item.id,
             type: "button",
             onClick: () => handleAddressSelect(item),
-            className: "w-full text-right px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 transition"
+            className: "w-full text-right px-3 py-2.5 text-sm border-b border-slate-100 last:border-0 transition " + (index === activeSuggestionIndex
+              ? "bg-blue-50 text-blue-800"
+              : "hover:bg-slate-50 text-slate-700")
           },
-          item.label
-        ))))
+          /* @__PURE__ */ React.createElement("div", { className: "truncate" }, item.label)
+        )))
       ),
       locationMessage && /* @__PURE__ */ React.createElement("div", { className: "absolute bottom-28 left-6 z-[930] bg-white/95 text-slate-800 px-4 py-2 rounded-full shadow-lg border border-slate-200 text-xs pointer-events-none" }, locationMessage),
       /* @__PURE__ */ React.createElement(
