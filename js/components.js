@@ -1,5 +1,7 @@
 (function() {
   "use strict";
+  const tr = (...args) => window.AerialPlannerI18n.t(...args);
+  const I18n = window.AerialPlannerI18n;
   const Icon = ({
     name,
     size = 18,
@@ -97,24 +99,24 @@
         {
           type: "button",
           onClick: onClose,
-          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
-          "aria-label": "סגור מדריך"
+          className: `absolute top-4 ${I18n.getLocale() === "he" ? "left-4" : "right-4"} rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          "aria-label": tr("help.closeGuide")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, "מדריך שימוש"), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "ps-8 md:ps-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("help.userGuide")), /* @__PURE__  */ React.createElement(
         "h2",
         {
           className: `text-2xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}`
         },
         "AERIAL PLANNER PRO"
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-sm ${t.text}` }, "כל מה שצריך לדעת על השימוש באפליקציה לתכנון טיסות רחפן לפי מזג אוויר.")),
-      /* @__PURE__ */ React.createElement(Section, { icon: "drone", title: "סקירה כללית" }, /* @__PURE__ */ React.createElement("p", null, "אפליקציית תכנון טיסות אוויריות המציגה תחזית מזג אוויר מפורטת לימים הקרובים."), /* @__PURE__ */ React.createElement("p", null, "המערכת בודקת באופן אוטומטי האם תנאי מזג האוויר מתאימים לטיסה בהתבסס על ספי יציבות מוגדרים.")),
-      /* @__PURE__ */ React.createElement(Section, { icon: "map", title: "שימוש במפה" }, /* @__PURE__ */ React.createElement("p", null, "לחצו על כל נקודה במפה כדי לבחור מיקום ולקבל תחזית מזג אוויר ספציפית."), /* @__PURE__ */ React.createElement("p", null, "ניתן לחפש כתובת דרך שורת החיפוש בראש המפה, או ללחוץ על כפתור המיקום כדי להתמרכז במיקומכם הנוכחי."), /* @__PURE__ */ React.createElement("p", null, "החלפת תצוגה בין מפה רגילה לתצלום לווין זמינה בלחיצה על כפתור תצוגת המפה.")),
-      /* @__PURE__ */ React.createElement(Section, { icon: "calendar", title: "ציר זמן מזג אוויר" }, /* @__PURE__ */ React.createElement("p", null, "לוח הימים מציג כרטיסיות לימים הקרובים עם סיכום יומי: אחוז התאמה לטיסה, טווח טמפרטורות, וסטטוס כללי."), /* @__PURE__ */ React.createElement("p", null, "לחיצה על כרטיס יום פותחת תצוגת שעות מפורטת עם קידוד צבעים:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-green-600" }, "ירוק"), " — תנאים מתאימים לטיסה"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-amber-500" }, "כתום"), " — תנאים על הגבול"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-red-500" }, "אדום"), " — תנאים לא מתאימים"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-slate-400" }, "אפור"), " — שעות לילה (כשטיסות לילה מושבתות)"))),
-      /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: "ספי יציבות / התאמה לטיסה" }, /* @__PURE__ */ React.createElement("p", null, "המערכת מחשבת התאמה לטיסה לפי הפרמטרים הבאים:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מהירות רוח"), " — ברירת מחדל: עד 20 קמ״ש"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "משבי רוח"), " — ברירת מחדל: עד 25 קמ״ש"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "הסתברות גשם"), " — ברירת מחדל: עד 40%"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "כיסוי עננים"), " — ברירת מחדל: 0%–100%"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "גובה שמש"), " — ברירת מחדל: 5°–85°")), /* @__PURE__ */ React.createElement("p", null, "ניתן לשנות ערכים אלו דרך מסך ההגדרות. הגדרה מותאמת אישית משפיעה על חישוב אחוז ההתאמה וסימון השעות.")),
-      /* @__PURE__ */ React.createElement(Section, { icon: "bell", title: "התראות Push — מעקב מרובה" }, /* @__PURE__ */ React.createElement("p", null, "ניתן להפעיל התראות על מספר ימים ומיקומים במקביל (עד 20 כללים פעילים). כל כלל עוקב אחרי יום + מיקום ספציפי ומתריע כשחלונות טיסה נפתחים או נסגרים."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "הפעלה:"), ' בחרו יום בלוח הימים ולחצו על "הפעל התראות לתאריך הנבחר". המערכת תזהה אוטומטית את שם המיקום לפי המפה. ניתן להפעיל התראות על ימים נוספים ומיקומים שונים — כל הפעלה מוסיפה כלל חדש.'), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "ניהול:"), " לחצו על כפתור הפעמון בפינת המפה כדי לפתוח את מנהל ההתראות. שם תוכלו לראות את כל הכללים הפעילים, למחוק כלל בודד, או לבטל את כל ההתראות בבת אחת."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "תדירות בדיקה חכמה:"), " מודלים מטאורולוגיים מתעדכנים כל ~6 שעות. המערכת מתאימה את תדירות הבדיקה לפי קרבת התאריך:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "היום/מחר"), " — בדיקה כל 6 שעות"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "2–4 ימים קדימה"), " — בדיקה כל 12 שעות"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "5–16 ימים קדימה"), " — בדיקה פעם ביום"), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "16+ ימים קדימה"), " — בדיקה כל 48 שעות")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מתי נשלחת התראה?"), " רק כאשר שעות טיסה בפועל נפתחות או נסגרות — שינויים קטנים במזג האוויר שלא משפיעים על ההתאמה לא יפעילו התראה מיותרת."), /* @__PURE__ */ React.createElement("p", null, "ההתראה כוללת: שם מיקום, תאריך, סטטוס (מתאים/חלקי/לא מתאים), וטווח השעות המתאימות לטיסה."), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, "מעקב תאריך עתידי:"), ' תכננתם משימה בעוד חודשיים? לחצו על כרטיס ה-"+" בסוף ציר הזמן ובחרו תאריך עד שנה קדימה. המערכת תעקוב בשקט ברקע — וכשהתאריך ייכנס לטווח התחזית (~16 ימים לפני), תקבלו התראה מיוחדת עם סטטוס ההתאמה לטיסה. לאחר מכן, הכלל ימשיך לעקוב כרגיל עם עדכונים שוטפים.'), /* @__PURE__ */ React.createElement("p", null, 'כללים עתידיים מסומנים בתג סגול "ממתין לתחזית" במנהל ההתראות.')),
-      /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: "הגדרות מערכת" }, /* @__PURE__ */ React.createElement("p", null, "מסך ההגדרות מאפשר:"), /* @__PURE__ */ React.createElement("ul", { className: "list-disc pr-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, "עריכת ספי יציבות לטיסה (רוח, משבים, גשם, עננים, שמש)"), /* @__PURE__ */ React.createElement("li", null, "הפעלת/כיבוי טיסות לילה בחישוב ההתאמה"), /* @__PURE__ */ React.createElement("li", null, "החלפה בין מצב תצוגה בהיר וכהה"), /* @__PURE__ */ React.createElement("li", null, "איפוס כל הפרמטרים לברירת מחדל")))
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-sm ${t.text}` }, tr("help.appDescription"))),
+      /* @__PURE__ */ React.createElement(Section, { icon: "drone", title: tr("help.overview.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.overview.p1")), /* @__PURE__ */ React.createElement("p", null, tr("help.overview.p2"))),
+      /* @__PURE__ */ React.createElement(Section, { icon: "map", title: tr("help.map.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.map.p1")), /* @__PURE__ */ React.createElement("p", null, tr("help.map.p2")), /* @__PURE__ */ React.createElement("p", null, tr("help.map.p3"))),
+      /* @__PURE__ */ React.createElement(Section, { icon: "calendar", title: tr("help.timeline.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.timeline.p1")), /* @__PURE__ */ React.createElement("p", null, tr("help.timeline.p2")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-green-600" }, tr("help.timeline.green")), " — ", tr("help.timeline.greenDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-amber-500" }, tr("help.timeline.orange")), " — ", tr("help.timeline.orangeDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-red-500" }, tr("help.timeline.red")), " — ", tr("help.timeline.redDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-slate-400" }, tr("help.timeline.gray")), " — ", tr("help.timeline.grayDesc")))),
+      /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: tr("help.suitability.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.suitability.p1")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.wind")), " — ", tr("help.suitability.windDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.gust")), " — ", tr("help.suitability.gustDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.rain")), " — ", tr("help.suitability.rainDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.clouds")), " — ", tr("help.suitability.cloudsDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.sun")), " — ", tr("help.suitability.sunDefault"))), /* @__PURE__ */ React.createElement("p", null, tr("help.suitability.p2"))),
+      /* @__PURE__ */ React.createElement(Section, { icon: "bell", title: tr("help.notifications.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.notifications.p1")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.enableLabel")), tr("help.notifications.enableText")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.manageLabel")), tr("help.notifications.manageText")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.frequencyLabel")), tr("help.notifications.frequencyText")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freqTodayLabel")), " — ", tr("help.notifications.freqTodayText")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freq2to4Label")), " — ", tr("help.notifications.freq2to4Text")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freq5to16Label")), " — ", tr("help.notifications.freq5to16Text")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freq16plusLabel")), " — ", tr("help.notifications.freq16plusText"))), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.whenLabel")), tr("help.notifications.whenText")), /* @__PURE__ */ React.createElement("p", null, tr("help.notifications.contentText")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.futureLabel")), tr("help.notifications.futureText")), /* @__PURE__ */ React.createElement("p", null, tr("help.notifications.futureBadge"))),
+      /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: tr("help.settings.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.settings.p1")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item1")), /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item2")), /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item3")), /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item4"))))
     ));
   };
   const Sidebar = ({ open, className = "", children, containerRef }) => {
@@ -259,7 +261,7 @@
             className: "inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500",
             "aria-hidden": "true"
           }
-        ), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, "סיכון נמוך"));
+        ), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, tr("risk.low")));
       }
       if (riskLevel === "medium") {
         return /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 text-orange-700" }, /* @__PURE__ */ React.createElement(
@@ -268,18 +270,17 @@
             className: "inline-flex h-2.5 w-2.5 rounded-full bg-orange-500",
             "aria-hidden": "true"
           }
-        ), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, "סיכון בינוני"));
+        ), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, tr("risk.medium")));
       }
       if (riskLevel === "high") {
-        return /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 text-red-600" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm leading-none", "aria-hidden": "true" }, "⚠️"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, "סיכון גבוה"));
+        return /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 text-red-600" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm leading-none", "aria-hidden": "true" }, "⚠️"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, tr("risk.high")));
       }
-      return /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 text-red-700" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm leading-none", "aria-hidden": "true" }, "⛔"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, "סיכון גבוה"));
+      return /* @__PURE__ */ React.createElement("span", { className: "inline-flex items-center gap-1 text-red-700" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm leading-none", "aria-hidden": "true" }, "⛔"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, tr("risk.high")));
     };
     const formatDayHeader = (dayValue) => {
       const date = new Date(dayValue);
       if (Number.isNaN(date.getTime())) return dayValue;
-      const weekdayMap = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
-      const weekday = weekdayMap[date.getDay()];
+      const weekday = tr("weekday." + date.getDay());
       const dayNum = `${date.getDate()}`.padStart(2, "0");
       const monthNum = `${date.getMonth() + 1}`.padStart(2, "0");
       return `${weekday} ${dayNum}.${monthNum}`;
@@ -334,10 +335,10 @@
       if (value === null || value === void 0 || Number.isNaN(value)) {
         return "-";
       }
-      return `${value.toFixed(1)} קמ"ש`;
+      return `${value.toFixed(1)} ${tr("wind.kmh")}`;
     };
     const displayedSlots = selectedDay ? filterFlyableOnly && !showAllSlots ? selectedDay.relevantSlots.filter((slot) => slot.isFlyable) : selectedDay.relevantSlots : [];
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: `fixed bottom-0 left-0 right-0 z-[940] pointer-events-auto backdrop-blur border-t ${t.bar} ${t.barShadow}` }, dataUnavailable && /* @__PURE__ */ React.createElement("div", { className: `text-[11px] border-b px-3 py-2 text-center ${t.unavailable}` }, "מקור הנתונים לא זמין כרגע"), /* @__PURE__ */ React.createElement("div", { className: "flex h-[180px] md:h-[210px] flex-col" }, /* @__PURE__ */ React.createElement("div", { className: `h-[48px] md:h-[52px] px-4 flex items-center justify-between gap-2 text-[12px] ${t.text} border-b ${t.modalBorder}` }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: `fixed bottom-0 left-0 right-0 z-[940] pointer-events-auto backdrop-blur border-t ${t.bar} ${t.barShadow}` }, dataUnavailable && /* @__PURE__ */ React.createElement("div", { className: `text-[11px] border-b px-3 py-2 text-center ${t.unavailable}` }, tr("timeline.dataUnavailable")), /* @__PURE__ */ React.createElement("div", { className: "flex h-[180px] md:h-[210px] flex-col" }, /* @__PURE__ */ React.createElement("div", { className: `h-[48px] md:h-[52px] px-4 flex items-center justify-between gap-2 text-[12px] ${t.text} border-b ${t.modalBorder}` }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -345,8 +346,8 @@
         className: `flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition ${filterFlyableOnly ? "bg-emerald-600 text-white border-emerald-600 shadow" : t.filterBtn}`
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "clock", size: 12 }),
-      filterFlyableOnly ? "הצג את כל הימים" : "הצג ימים מתאימים לטיסה"
-    ), isLoading && Array.isArray(days) && days.length > 0 && /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1 text-[11px] text-blue-500" }, /* @__PURE__ */ React.createElement("span", { className: "inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" }), "מעדכן תחזית...")), showSettingsButton && /* @__PURE__ */ React.createElement(
+      filterFlyableOnly ? tr("timeline.showAll") : tr("timeline.showFlyable")
+    ), isLoading && Array.isArray(days) && days.length > 0 && /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1 text-[11px] text-blue-500" }, /* @__PURE__ */ React.createElement("span", { className: "inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" }), tr("timeline.updatingForecast"))), showSettingsButton && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -354,7 +355,7 @@
         className: `flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] ${t.settingsBtn}`
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "settings", size: 12 }),
-      "הגדרות"
+      tr("timeline.settings")
     )), /* @__PURE__ */ React.createElement("div", { className: "relative flex-1 px-4" }, /* @__PURE__ */ React.createElement(
       "div",
       {
@@ -382,8 +383,8 @@
               className: `text-xl sm:text-2xl md:text-3xl font-black ${hasFlyableHours ? (isDark ? "text-slate-100" : "text-slate-900") : (isDark ? "text-slate-400" : "text-slate-500")}`
             },
             day.flyableHoursLabel
-          ), hasFlyableHours && /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}` }, "חלון טיסה")),
-          /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"} flex items-center justify-between` }, /* @__PURE__ */ React.createElement("span", null, riskIndicator), /* @__PURE__ */ React.createElement("span", null, "הצג פירוט →"))
+          ), hasFlyableHours && /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}` }, tr("timeline.flightWindow"))),
+          /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"} flex items-center justify-between` }, /* @__PURE__ */ React.createElement("span", null, riskIndicator), /* @__PURE__ */ React.createElement("span", null, tr("timeline.showDetails")))
         );
       }),
       onTrackFutureDate && /* @__PURE__ */ React.createElement(
@@ -394,7 +395,7 @@
           className: `min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border-2 border-dashed ${isDark ? "border-slate-600 hover:border-blue-400 bg-slate-800/80 hover:bg-blue-900/40" : "border-slate-300 hover:border-blue-400 bg-slate-50/80 hover:bg-blue-50/60"} transition flex flex-col items-center justify-center gap-2 md:gap-3 text-center snap-start`
         },
         /* @__PURE__ */ React.createElement("span", { className: "w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center" }, /* @__PURE__ */ React.createElement(Icon, { name: "calendar", size: 20 })),
-        /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-bold ${isDark ? "text-slate-200" : "text-slate-700"}` }, "תאריך עתידי?"), /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"} leading-snug` }, "עקוב אחר תאריך מעבר לטווח התחזית"))
+        /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-bold ${isDark ? "text-slate-200" : "text-slate-700"}` }, tr("timeline.futureDate")), /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"} leading-snug` }, tr("timeline.trackBeyondForecast")))
       )
     ), !isMobile && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
       "button",
@@ -402,7 +403,7 @@
         type: "button",
         onClick: () => scrollDaysBy(-1),
         className: `absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border shadow ${t.scrollArrow}`,
-        "aria-label": "גלול ימים שמאלה"
+        "aria-label": tr("timeline.scrollLeft")
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "chevron-left", size: 14 })
     ), /* @__PURE__ */ React.createElement(
@@ -411,7 +412,7 @@
         type: "button",
         onClick: () => scrollDaysBy(1),
         className: `absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border shadow ${t.scrollArrow}`,
-        "aria-label": "גלול ימים ימינה"
+        "aria-label": tr("timeline.scrollRight")
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "chevron-right", size: 14 })
     )), /* @__PURE__ */ React.createElement(
@@ -429,13 +430,13 @@
       {
         className: `${isDark ? "bg-slate-900" : "bg-white"} rounded-3xl shadow-2xl border ${t.modalBorder} w-full ${isMobile ? "max-h-[90vh]" : "max-h-[80vh] max-w-4xl"} flex flex-col overflow-hidden`
       },
-      /* @__PURE__ */ React.createElement("div", { className: `sticky top-0 ${t.modalHeader} border-b px-5 py-4 flex flex-col gap-3` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 text-right" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}` }, selectedDay.day), /* @__PURE__ */ React.createElement("div", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, selectedDay.label)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold" }, selectedDay.percent, "% התאמה"), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: `sticky top-0 ${t.modalHeader} border-b px-5 py-4 flex flex-col gap-3` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 text-right" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}` }, selectedDay.day), /* @__PURE__ */ React.createElement("div", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, selectedDay.label)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold" }, selectedDay.percent, tr("timeline.suitabilityPercent")), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
           onClick: onCloseDayDetails,
           className: `w-9 h-9 rounded-full border flex items-center justify-center ${t.closeBtn}`,
-          "aria-label": "סגור פרטי יום"
+          "aria-label": tr("timeline.closeDayDetails")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ))), visibleDays.length > 1 && /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 overflow-x-auto pb-1 pt-1 custom-scroll" }, visibleDays.map((day) => {
@@ -452,14 +453,14 @@
           /* @__PURE__ */ React.createElement("span", null, dayLine),
           /* @__PURE__ */ React.createElement("span", { className: "text-[10px] text-slate-400" }, day.percent, "%")
         );
-      })), /* @__PURE__ */ React.createElement("div", { className: `flex flex-wrap items-center justify-between gap-2 text-[12px] ${isDark ? "text-slate-300" : "text-slate-600"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: `px-3 py-1 rounded-full border ${t.chip}` }, "חלונות יציבים:", " ", selectedDay.flyableWindows.length ? selectedDay.flyableWindows.join(", ") : "אין"), filterFlyableOnly && /* @__PURE__ */ React.createElement(
+      })), /* @__PURE__ */ React.createElement("div", { className: `flex flex-wrap items-center justify-between gap-2 text-[12px] ${isDark ? "text-slate-300" : "text-slate-600"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: `px-3 py-1 rounded-full border ${t.chip}` }, tr("timeline.stableWindows"), " ", selectedDay.flyableWindows.length ? selectedDay.flyableWindows.join(", ") : tr("timeline.none")), filterFlyableOnly && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
           onClick: () => setShowAllSlots((prev) => !prev),
           className: `px-3 py-1 rounded-full border ${t.settingsBtn}`
         },
-        showAllSlots ? "הצג רק יציבים" : "הצג גם פחות מתאימים"
+        showAllSlots ? tr("timeline.showStableOnly") : tr("timeline.showLessIdeal")
       )), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(
         "button",
         {
@@ -467,15 +468,15 @@
           onClick: onOpenSettings,
           className: `px-3 py-1 rounded-full border ${t.settingsBtn}`
         },
-        "התאמת ספים"
-      ), !notificationsSupported ? /* @__PURE__ */ React.createElement("span", { className: `px-3 py-1 rounded-full border text-[11px] ${t.chip}` }, "הדפדפן לא תומך בהתראות.") : isSelectedDayTracked ? /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700" }, "יום זה במעקב ✓"), /* @__PURE__ */ React.createElement(
+        tr("timeline.adjustThresholds")
+      ), !notificationsSupported ? /* @__PURE__ */ React.createElement("span", { className: `px-3 py-1 rounded-full border text-[11px] ${t.chip}` }, tr("timeline.browserNoNotifications")) : isSelectedDayTracked ? /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700" }, tr("timeline.dayTracked")), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
           onClick: onOpenNotificationManager,
           className: `px-3 py-1 rounded-full border text-[11px] ${t.settingsBtn}`
         },
-        "ניהול התראות"
+        tr("timeline.manageNotifications")
       )) : /* @__PURE__ */ React.createElement(
         "button",
         {
@@ -484,9 +485,9 @@
           disabled: notificationsLoading,
           className: `px-3 py-1 rounded-full border text-[11px] font-semibold transition bg-blue-600 text-white border-blue-600 ${notificationsLoading ? "opacity-60 cursor-wait" : ""}`
         },
-        notificationsLoading ? "מעבד בקשה..." : "הפעל התראות לתאריך הנבחר"
+        notificationsLoading ? tr("timeline.processing") : tr("timeline.enableNotificationsForDay")
       )))),
-      /* @__PURE__ */ React.createElement("div", { className: `flex-1 overflow-y-auto p-5 space-y-3 custom-scroll ${isDark ? "bg-slate-900" : ""}` }, displayedSlots.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center text-sm ${isDark ? "text-slate-400 border-slate-600" : "text-slate-500 border-slate-300"} border border-dashed rounded-xl py-6` }, "אין חלונות מתאימים להצגה כרגע.") : displayedSlots.map((slot) => {
+      /* @__PURE__ */ React.createElement("div", { className: `flex-1 overflow-y-auto p-5 space-y-3 custom-scroll ${isDark ? "bg-slate-900" : ""}` }, displayedSlots.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center text-sm ${isDark ? "text-slate-400 border-slate-600" : "text-slate-500 border-slate-300"} border border-dashed rounded-xl py-6` }, tr("timeline.noSlotsToShow")) : displayedSlots.map((slot) => {
         const slotKey = `${selectedDay.day}T${slot.time}`;
         const isActive = slotKey === selectedSlotKey;
         const slotAlerts = getSlotAlerts(slot);
@@ -502,9 +503,9 @@
             {
               className: `px-3 py-1 rounded-full text-[11px] font-semibold ${slot.isFlyable ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : `${t.chip} border`}`
             },
-            slot.isFlyable ? "שעה יציבה" : "פחות מתאים"
+            slot.isFlyable ? tr("timeline.stableHour") : tr("timeline.lessIdeal")
           )),
-          /* @__PURE__ */ React.createElement("div", { className: `mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 text-[11px] ${isDark ? "text-slate-300" : "text-slate-600"}` }, /* @__PURE__ */ React.createElement("div", { className: `px-2 py-1 rounded-full border flex items-center gap-2 ${t.chip}` }, /* @__PURE__ */ React.createElement("span", { className: "whitespace-nowrap" }, "מדד סיכון:"), renderRiskIndicator(slot.riskScore ?? 0)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.wind) }, "🌬 רוח: ", formatWind(slot.wind), renderAlertBadge(slotAlerts.wind)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.gust) }, "💨 משבים:", " ", formatWind(slot.gust ?? slot.wind), renderAlertBadge(slotAlerts.gust)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.rain) }, "🌧 גשם: ", slot.rainProb ?? 0, "%", renderAlertBadge(slotAlerts.rain)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.clouds) }, "☁ עננות: ", slot.clouds ?? 0, "%", renderAlertBadge(slotAlerts.clouds)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.sun) }, "☀ זווית שמש:", " ", typeof slot.sunAlt === "number" ? `${slot.sunAlt.toFixed(1)}°` : "—", renderAlertBadge(slotAlerts.sun)))
+          /* @__PURE__ */ React.createElement("div", { className: `mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 text-[11px] ${isDark ? "text-slate-300" : "text-slate-600"}` }, /* @__PURE__ */ React.createElement("div", { className: `px-2 py-1 rounded-full border flex items-center gap-2 ${t.chip}` }, /* @__PURE__ */ React.createElement("span", { className: "whitespace-nowrap" }, tr("timeline.riskIndex")), renderRiskIndicator(slot.riskScore ?? 0)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.wind) }, "🌬 ", tr("timeline.wind"), " ", formatWind(slot.wind), renderAlertBadge(slotAlerts.wind)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.gust) }, "💨 ", tr("timeline.gusts"), " ", formatWind(slot.gust ?? slot.wind), renderAlertBadge(slotAlerts.gust)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.rain) }, "🌧 ", tr("timeline.rain"), " ", slot.rainProb ?? 0, "%", renderAlertBadge(slotAlerts.rain)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.clouds) }, "☁ ", tr("timeline.clouds"), " ", slot.clouds ?? 0, "%", renderAlertBadge(slotAlerts.clouds)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.sun) }, "☀ ", tr("timeline.sunAngle"), " ", typeof slot.sunAlt === "number" ? `${slot.sunAlt.toFixed(1)}°` : "—", renderAlertBadge(slotAlerts.sun)))
         );
       }))
     )));
@@ -670,19 +671,19 @@
         {
           type: "button",
           onClick: onClose,
-          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
-          "aria-label": "סגור ניהול התראות"
+          className: `absolute top-4 ${I18n.getLocale() === "he" ? "left-4" : "right-4"} rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          "aria-label": tr("notifMgr.closeManager")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, "ניהול התראות"), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, rules.length > 0 ? `${rules.length} כללים פעילים` : "אין כללים פעילים")),
-      isLoading ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-8" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, "טוען כללי התראות...")) : rules.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center py-8 border border-dashed rounded-xl ${isDark ? "border-slate-700" : "border-slate-300"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-center mb-3" }, /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 32, className: isDark ? "text-slate-600" : "text-slate-300" })), /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, "אין התראות פעילות כרגע."), /* @__PURE__ */ React.createElement("div", { className: `text-xs mt-1 ${t.text}` }, "הפעל התראות מתוך תצוגת פרטי יום כדי לעקוב אחרי תחזית.")) : /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, rules.map((rule) => {
-        const locationName = rule.criteria?.locationName || "מיקום לא ידוע";
+      /* @__PURE__ */ React.createElement("div", { className: "ps-8 md:ps-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("notifMgr.title")), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, rules.length > 0 ? tr("notifMgr.activeRules", { count: rules.length }) : tr("notifMgr.noActiveRules"))),
+      isLoading ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-8" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, tr("notifMgr.loadingRules"))) : rules.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center py-8 border border-dashed rounded-xl ${isDark ? "border-slate-700" : "border-slate-300"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-center mb-3" }, /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 32, className: isDark ? "text-slate-600" : "text-slate-300" })), /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, tr("notifMgr.noNotificationsNow")), /* @__PURE__ */ React.createElement("div", { className: `text-xs mt-1 ${t.text}` }, tr("notifMgr.enableFromDayView"))) : /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, rules.map((rule) => {
+        const locationName = rule.criteria?.locationName || tr("location.unknown");
         const dateRange = rule.start_date === rule.end_date ? formatDateShort(rule.start_date) : `${formatDateShort(rule.start_date)} – ${formatDateShort(rule.end_date)}`;
         const hourFrom = rule.hour_from ?? 0;
         const hourTo = rule.hour_to ?? 23;
         const hoursLabel = `${String(hourFrom).padStart(2, "0")}:00–${String(hourTo).padStart(2, "0")}:00`;
-        const lastChecked = rule.last_checked_at ? new Date(rule.last_checked_at).toLocaleString("he-IL", {
+        const lastChecked = rule.last_checked_at ? new Date(rule.last_checked_at).toLocaleString(I18n.getDateLocale(), {
           hour: "2-digit",
           minute: "2-digit",
           day: "2-digit",
@@ -695,14 +696,14 @@
             key: rule.id,
             className: `border rounded-xl p-3 space-y-2 ${t.card}`
           },
-          /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 flex-1" }, /* @__PURE__ */ React.createElement("div", { className: `font-bold text-sm ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, dateRange), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, hoursLabel), rule.criteria?.ruleType === "future" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-semibold" }, "ממתין לתחזית"), lastChecked && /* @__PURE__ */ React.createElement("span", { className: `text-[10px] ${t.text}` }, "נבדק: ", lastChecked))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, isConfirming ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+          /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 flex-1" }, /* @__PURE__ */ React.createElement("div", { className: `font-bold text-sm ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, dateRange), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, hoursLabel), rule.criteria?.ruleType === "future" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-semibold" }, tr("notifMgr.waitingForForecast")), lastChecked && /* @__PURE__ */ React.createElement("span", { className: `text-[10px] ${t.text}` }, tr("notifMgr.lastChecked"), " ", lastChecked))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, isConfirming ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
             "button",
             {
               type: "button",
               onClick: () => handleDeleteClick(rule.id),
               className: "px-2 py-1 rounded-lg bg-red-600 text-white text-[11px] font-semibold hover:bg-red-500"
             },
-            "מחק"
+            tr("notifMgr.delete")
           ), /* @__PURE__ */ React.createElement(
             "button",
             {
@@ -710,14 +711,14 @@
               onClick: () => setConfirmDeleteId(null),
               className: `px-2 py-1 rounded-lg text-[11px] font-semibold ${isDark ? "bg-slate-700 text-slate-200" : "bg-slate-200 text-slate-700"}`
             },
-            "ביטול"
+            tr("notifMgr.cancel")
           )) : /* @__PURE__ */ React.createElement(
             "button",
             {
               type: "button",
               onClick: () => handleDeleteClick(rule.id),
               className: `p-1.5 rounded-lg transition ${isDark ? "text-slate-400 hover:text-red-400 hover:bg-slate-700" : "text-slate-400 hover:text-red-600 hover:bg-slate-100"}`,
-              "aria-label": "מחק כלל"
+              "aria-label": tr("notifMgr.deleteRule")
             },
             /* @__PURE__ */ React.createElement(Icon, { name: "trash", size: 14 })
           )))
@@ -731,7 +732,7 @@
           disabled: isLoading,
           className: `px-3 py-2 rounded-lg border text-[11px] font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${isLoading ? "opacity-60 cursor-wait" : ""}`
         },
-        /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { name: "rotate", size: 12 }), "רענן")
+        /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1" }, /* @__PURE__ */ React.createElement(Icon, { name: "rotate", size: 12 }), tr("notifMgr.refresh"))
       ), rules.length > 0 && /* @__PURE__ */ React.createElement(
         "button",
         {
@@ -739,7 +740,7 @@
           onClick: onDisableAll,
           className: "px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-[11px] font-semibold hover:bg-red-100 transition"
         },
-        "בטל את כל ההתראות"
+        tr("notifMgr.disableAll")
       ))
     ));
   };
@@ -768,7 +769,7 @@
       const parts = futureDateValue.split("-");
       return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : futureDateValue;
     })() : "";
-    const confirmText = futureDateValue && locationName ? `עקוב אחר ${locationName} ב-${formattedDate}` : futureDateValue ? `עקוב אחר תאריך ${formattedDate}` : "בחרו תאריך להפעלת מעקב";
+    const confirmText = futureDateValue && locationName ? tr("futureDate.trackLocation", { location: locationName, date: formattedDate }) : futureDateValue ? tr("futureDate.trackDate", { date: formattedDate }) : tr("futureDate.selectDateToTrack");
     return /* @__PURE__ */ React.createElement("div", { className: t.overlay, onClick: onClose }, /* @__PURE__ */ React.createElement(
       "div",
       {
@@ -780,14 +781,14 @@
         {
           type: "button",
           onClick: onClose,
-          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
-          "aria-label": "סגור"
+          className: `absolute top-4 ${I18n.getLocale() === "he" ? "left-4" : "right-4"} rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          "aria-label": tr("futureDate.close")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, "מעקב תאריך עתידי"), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, "תכנון טיסה מראש")),
-      /* @__PURE__ */ React.createElement("div", { className: `border rounded-xl p-4 space-y-2 ${t.card}` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 16 })), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-bold truncate ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName || "טוען מיקום..."), /* @__PURE__ */ React.createElement("div", { className: `text-[11px] ${t.text}` }, "המיקום נקבע לפי מרכז המפה")))),
-      /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold block ${isDark ? "text-slate-200" : "text-slate-700"}` }, "בחרו תאריך"), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "ps-8 md:ps-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("futureDate.title")), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, tr("futureDate.subtitle"))),
+      /* @__PURE__ */ React.createElement("div", { className: `border rounded-xl p-4 space-y-2 ${t.card}` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 16 })), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-bold truncate ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName || tr("futureDate.loadingLocation")), /* @__PURE__ */ React.createElement("div", { className: `text-[11px] ${t.text}` }, tr("futureDate.locationByMapCenter"))))),
+      /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold block ${isDark ? "text-slate-200" : "text-slate-700"}` }, tr("futureDate.chooseDate")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "date",
@@ -797,7 +798,7 @@
           onChange: (e) => onDateChange(e.target.value),
           className: `w-full px-3 py-2.5 rounded-lg border text-sm ${isDark ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-white border-slate-300 text-slate-800"}`
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-[11px] leading-relaxed ${t.text}` }, "המערכת תעקוב ברקע ותתריע כשהתאריך ייכנס לטווח התחזית (~16 ימים לפני).")),
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-[11px] leading-relaxed ${t.text}` }, tr("futureDate.description"))),
       /* @__PURE__ */ React.createElement("div", { className: "flex flex-col gap-2" }, /* @__PURE__ */ React.createElement(
         "button",
         {
@@ -806,7 +807,7 @@
           disabled: !futureDateValue || isLoading,
           className: `w-full px-4 py-3 rounded-xl text-sm font-bold transition ${futureDateValue && !isLoading ? "bg-blue-600 text-white hover:bg-blue-500 shadow-sm" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`
         },
-        isLoading ? "מפעיל מעקב..." : confirmText
+        isLoading ? tr("futureDate.activating") : confirmText
       ), /* @__PURE__ */ React.createElement(
         "button",
         {
@@ -814,7 +815,7 @@
           onClick: onClose,
           className: `w-full px-4 py-2.5 rounded-xl border text-sm font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`
         },
-        "ביטול"
+        tr("futureDate.cancelBtn")
       ))
     ));
   };

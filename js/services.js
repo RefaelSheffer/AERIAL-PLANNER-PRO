@@ -3,6 +3,8 @@
 // Exposes AerialPlannerServices on window so main.jsx can orchestrate data loading for the UI and calculations.
 (() => {
   "use strict";
+  const tr = (...args) => window.AerialPlannerI18n ? window.AerialPlannerI18n.t(...args) : args[0];
+  const I18n = () => window.AerialPlannerI18n;
 
   /**
    * Fetch hourly weather forecast data from Open-Meteo for a specific location.
@@ -217,11 +219,12 @@
     url.searchParams.set("addressdetails", "1");
     url.searchParams.set("limit", String(limit));
     url.searchParams.set("q", trimmed);
-    url.searchParams.set("accept-language", "he");
+    const apiLang = I18n()?.getLocaleForApi() || "he";
+    url.searchParams.set("accept-language", apiLang);
 
     const res = await fetch(url.toString(), {
       signal,
-      headers: { "Accept-Language": "he" },
+      headers: { "Accept-Language": apiLang },
     });
     if (!res.ok) {
       throw new Error(`Geocode failed: ${res.status}`);
@@ -352,10 +355,11 @@
       url.searchParams.set("lat", String(roundedLat));
       url.searchParams.set("lon", String(roundedLon));
       url.searchParams.set("zoom", "14");
-      url.searchParams.set("accept-language", "he");
+      const revApiLang = I18n()?.getLocaleForApi() || "he";
+      url.searchParams.set("accept-language", revApiLang);
 
       const res = await fetch(url.toString(), {
-        headers: { "Accept-Language": "he" },
+        headers: { "Accept-Language": revApiLang },
       });
       if (!res.ok) throw new Error(`Reverse geocode failed: ${res.status}`);
       const data = await res.json();
@@ -367,13 +371,13 @@
       ].filter(Boolean);
 
       const label = parts.length > 0 ? parts.join(", ") : (data?.display_name || "").split(",").slice(0, 2).join(",").trim();
-      const result = label || "מיקום לא ידוע";
+      const result = label || tr("location.unknown");
 
       _reverseGeocodeCache.set(cacheKey, result);
       return result;
     } catch (e) {
       console.warn("Reverse geocode failed", e);
-      return "מיקום לא ידוע";
+      return tr("location.unknown");
     }
   };
 

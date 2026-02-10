@@ -6,13 +6,15 @@ const WEATHER_ONLY_MODE = !ENABLE_MISSION_PLANNING && !ENABLE_REALTIME_PANEL && 
 const renderDependencyError = window.renderPlannerDependencyError || ((missingDeps2) => {
   const root = document.getElementById("root");
   if (!root) return;
+  const _t = window.AerialPlannerI18n ? window.AerialPlannerI18n.t : (k) => k;
+  const isRtl = document.documentElement.dir === "rtl";
   root.innerHTML = `
-      <div style="font-family: 'Heebo', sans-serif; padding: 24px; max-width: 720px; margin: 0 auto; text-align: right;">
-        <h1 style="font-size: 24px; margin-bottom: 12px;">האתר לא נטען</h1>
-        <p style="margin-bottom: 8px;">לא הצלחנו לטעון את הספריות החיצוניות הנדרשות להפעלת האפליקציה.</p>
-        <p style="margin-bottom: 16px;">אנא ודאו שיש גישה לאינטרנט או שה-CDN לא חסום.</p>
+      <div style="font-family: 'Heebo', 'Inter', sans-serif; padding: 24px; max-width: 720px; margin: 0 auto; text-align: ${isRtl ? "right" : "left"};">
+        <h1 style="font-size: 24px; margin-bottom: 12px;">${_t("error.siteNotLoaded")}</h1>
+        <p style="margin-bottom: 8px;">${_t("error.cannotLoadLibraries")}</p>
+        <p style="margin-bottom: 16px;">${_t("error.checkInternet")}</p>
         <div style="background: #f1f5f9; padding: 12px 16px; border-radius: 12px; color: #0f172a;">
-          <strong>תלויות חסרות:</strong>
+          <strong>${_t("error.missingDeps")}</strong>
           <ul style="margin-top: 8px; padding-inline-start: 20px;">
             ${missingDeps2.map((name) => `<li>${name}</li>`).join("")}
           </ul>
@@ -51,6 +53,8 @@ const ensurePlannerEnvReady = async () => {
 (async () => {
   await ensurePlannerEnvReady();
   const { useState, useEffect, useRef, useMemo, useCallback } = React;
+  const tr = (...args) => window.AerialPlannerI18n.t(...args);
+  const I18n = window.AerialPlannerI18n;
   const Config = window.AerialPlannerConfig;
   const Services = window.AerialPlannerServices;
   const {
@@ -77,10 +81,10 @@ const ensurePlannerEnvReady = async () => {
   const PUSH_SUBSCRIPTION_ID_STORAGE_KEY = "ap_push_subscription_id";
   const DAY_QUERY_PARAM = "day";
   const WIND_UNITS = [
-    { id: "kmh", label: 'קמ"ש', suffix: 'קמ"ש', factor: 1 },
-    { id: "mps", label: 'מ"ש', suffix: 'מ"ש', factor: 0.27778 },
-    { id: "kt", label: "קשר", suffix: "קשר", factor: 0.539957 },
-    { id: "mph", label: "mph", suffix: "mph", factor: 0.621371 }
+    { id: "kmh", get label() { return tr("wind.kmh"); }, get suffix() { return tr("wind.kmh"); }, factor: 1 },
+    { id: "mps", get label() { return tr("wind.mps"); }, get suffix() { return tr("wind.mps"); }, factor: 0.27778 },
+    { id: "kt", get label() { return tr("wind.kt"); }, get suffix() { return tr("wind.kt"); }, factor: 0.539957 },
+    { id: "mph", get label() { return tr("wind.mph"); }, get suffix() { return tr("wind.mph"); }, factor: 0.621371 }
   ];
   const computeSunAltitudeDeg = (weatherLocation, dateStr) => {
     if (typeof SunCalc === "undefined" || !weatherLocation) return null;
@@ -175,7 +179,7 @@ const ensurePlannerEnvReady = async () => {
       }
       days.get(dayKey).slots.push({
         key: t,
-        time: slotDate.toLocaleTimeString("he-IL", {
+        time: slotDate.toLocaleTimeString(I18n.getDateLocale(), {
           hour: "2-digit",
           minute: "2-digit"
         }),
@@ -189,7 +193,7 @@ const ensurePlannerEnvReady = async () => {
     });
     return Array.from(days.values()).map((day) => ({
       ...day,
-      label: day.date.toLocaleDateString("he-IL", {
+      label: day.date.toLocaleDateString(I18n.getDateLocale(), {
         weekday: "short",
         day: "2-digit",
         month: "2-digit"
@@ -296,6 +300,12 @@ const ensurePlannerEnvReady = async () => {
       if (typeof window === "undefined") return "light";
       return window.localStorage.getItem("plannerTheme") || "light";
     });
+    const [locale, setLocaleState] = useState(() => I18n.getLocale());
+    const switchLanguage = useCallback(() => {
+      const next = I18n.getLocale() === "he" ? "en" : "he";
+      I18n.setLocale(next);
+      setLocaleState(next);
+    }, []);
     const [suitabilitySettings, setSuitabilitySettings] = useState(() => {
       if (typeof window === "undefined") return Config.DEFAULT_SUITABILITY;
       const saved = window.localStorage.getItem(SUITABILITY_STORAGE_KEY);
@@ -777,7 +787,7 @@ const ensurePlannerEnvReady = async () => {
       }
       setIsAddressOpen(false);
       setAddressSuggestions([]);
-      setLocationMessage("מציג תחזית לכתובת...");
+      setLocationMessage(tr("location.showingForecast"));
       setTimeout(() => setLocationMessage(null), 2200);
     }, []);
     const handleAddressSelect = useCallback(
@@ -796,16 +806,16 @@ const ensurePlannerEnvReady = async () => {
         const zoom = Math.max(mapRef.current.getZoom(), 16);
         mapRef.current.flyTo(userLocation, zoom, { duration: 0.75 });
         setMapCenter(userLocation);
-        setLocationMessage("ממקם לפי GPS...");
+        setLocationMessage(tr("location.locatingGPS"));
         clearMessageLater();
         return;
       }
       if (!navigator.geolocation) {
-        setLocationMessage("המכשיר לא תומך ב-GPS");
+        setLocationMessage(tr("location.noGPS"));
         clearMessageLater(3200);
         return;
       }
-      setLocationMessage("מאתר מיקום...");
+      setLocationMessage(tr("location.findingLocation"));
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const coords = [pos.coords.latitude, pos.coords.longitude];
@@ -814,11 +824,11 @@ const ensurePlannerEnvReady = async () => {
           setMapCenter(coords);
           const zoom = Math.max(mapRef.current.getZoom(), 16);
           mapRef.current.flyTo(coords, zoom, { duration: 0.75 });
-          setLocationMessage("מרכזתי לפי GPS");
+          setLocationMessage(tr("location.centeredGPS"));
           clearMessageLater();
         },
         () => {
-          setLocationMessage("לא הצלחתי לקבל מיקום");
+          setLocationMessage(tr("location.failedLocation"));
           clearMessageLater(3200);
         },
         { enableHighAccuracy: true, timeout: 9e3 }
@@ -1175,13 +1185,13 @@ const ensurePlannerEnvReady = async () => {
         });
       };
       const formatFlyableHoursLabel = (windowHours, totalHours) => {
-        if (totalHours <= 0) return "אין חלון טיסה";
+        if (totalHours <= 0) return tr("timeline.noFlightWindow");
         const hasSequence = windowHours.some((hours) => hours > SLOT_HOURS);
-        if (!hasSequence) return `${totalHours} ש׳`;
+        if (!hasSequence) return `${totalHours} ${tr("main.hours")}`;
         const min = Math.min(...windowHours);
         const max = Math.max(...windowHours);
-        if (min === max) return `${min} ש׳`;
-        return `${min}–${max} ש׳`;
+        if (min === max) return `${min} ${tr("main.hours")}`;
+        return `${min}–${max} ${tr("main.hours")}`;
       };
       return windTimeline.map((day) => {
         const relevantSlots = day.slots.filter(isSlotRelevant);
@@ -1329,11 +1339,11 @@ const ensurePlannerEnvReady = async () => {
     );
     const handleEnableNotifications = useCallback(async () => {
       if (!pushSupported) {
-        pushToast("הדפדפן לא תומך בהתראות.", "warning");
+        pushToast(tr("push.notSupported"), "warning");
         return;
       }
       if (!vapidPublicKey) {
-        pushToast("חסר מפתח VAPID ציבורי בהגדרות.", "warning");
+        pushToast(tr("push.missingVAPID"), "warning");
         return;
       }
       setIsPushWorking(true);
@@ -1341,7 +1351,7 @@ const ensurePlannerEnvReady = async () => {
         const permission = await Notification.requestPermission();
         console.info("Push permission result", { permission });
         if (permission !== "granted") {
-          pushToast("לא ניתן להפעיל התראות בלי הרשאה.", "warning");
+          pushToast(tr("push.noPermission"), "warning");
           return;
         }
         const swUrl = `${appBasePath}/service-worker.js`;
@@ -1366,7 +1376,7 @@ const ensurePlannerEnvReady = async () => {
           }
         } catch (err) {
           console.error("Service worker registration failed", err);
-          pushToast("כשל ברישום שירות התראות", "warning");
+          pushToast(tr("push.swRegistrationFailed"), "warning");
           return;
         }
         let subscription = await registration.pushManager.getSubscription();
@@ -1379,7 +1389,7 @@ const ensurePlannerEnvReady = async () => {
             });
           } catch (err) {
             console.error("Push subscription failed", err);
-            pushToast("כשל ביצירת הרשמה להתראות", "warning");
+            pushToast(tr("push.subscriptionFailed"), "warning");
             return;
           }
         }
@@ -1391,13 +1401,13 @@ const ensurePlannerEnvReady = async () => {
             currentSubId = subscribeResponse?.subscription_id;
             if (!currentSubId) {
               console.warn("Missing subscription_id from subscribe response.");
-              pushToast("כשל בשמירת הרשמה להתראות", "warning");
+              pushToast(tr("push.saveFailed"), "warning");
               return;
             }
             setPushSubscriptionId(currentSubId);
           } catch (err) {
             console.error("Push subscription save failed", err);
-            pushToast(err?.message || "כשל בשמירת הרשמה להתראות — נסה שוב", "warning");
+            pushToast(err?.message || tr("push.saveFailedRetry"), "warning");
             return;
           }
         }
@@ -1416,15 +1426,15 @@ const ensurePlannerEnvReady = async () => {
           });
         } catch (err) {
           console.error("Notification rule upsert failed", err);
-          pushToast(err?.message || "כשל בעדכון כללי התראות — נסה שוב", "warning");
+          pushToast(err?.message || tr("push.ruleUpdateFailed"), "warning");
           return;
         }
         const ruleDate = selectedDay?.day || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-        const displayLabel = locationName || "מיקום נוכחי";
-        pushToast(`התראות פעילות: ${displayLabel} — ${ruleDate}`, "success");
+        const displayLabel = locationName || tr("push.currentLocation");
+        pushToast(tr("push.activeFor", { label: displayLabel, date: ruleDate }), "success");
       } catch (err) {
         console.error("Push enable failed", err);
-        pushToast(err?.message || "לא הצלחנו להפעיל התראות.", "warning");
+        pushToast(err?.message || tr("push.enableFailed"), "warning");
       } finally {
         setIsPushWorking(false);
       }
@@ -1445,10 +1455,10 @@ const ensurePlannerEnvReady = async () => {
       try {
         await Services.deleteNotificationRule(pushSubscriptionId, ruleId);
         setNotificationRules((prev) => prev.filter((r) => r.id !== ruleId));
-        pushToast("כלל התראה נמחק.", "success");
+        pushToast(tr("push.ruleDeleted"), "success");
       } catch (err) {
         console.error("Failed to delete rule", err);
-        pushToast(err?.message || "כשל במחיקת כלל התראה.", "warning");
+        pushToast(err?.message || tr("push.ruleDeleteFailed"), "warning");
       }
     }, [pushSubscriptionId, pushToast]);
     const handleDisableAllNotifications = useCallback(async () => {
@@ -1475,10 +1485,10 @@ const ensurePlannerEnvReady = async () => {
         setPushSubscriptionId(null);
         setNotificationRules([]);
         setShowNotificationManager(false);
-        pushToast("כל ההתראות בוטלו.", "success");
+        pushToast(tr("push.allDisabled"), "success");
       } catch (err) {
         console.error("Push disable failed", err);
-        pushToast(err?.message || "לא הצלחנו לבטל התראות.", "warning");
+        pushToast(err?.message || tr("push.disableFailed"), "warning");
       } finally {
         setIsPushWorking(false);
       }
@@ -1519,18 +1529,18 @@ const ensurePlannerEnvReady = async () => {
     const handleTrackFutureDate = useCallback(async () => {
       if (!futureDateInput) return;
       if (!pushSupported) {
-        pushToast("הדפדפן לא תומך בהתראות.", "warning");
+        pushToast(tr("push.notSupported"), "warning");
         return;
       }
       if (!vapidPublicKey) {
-        pushToast("חסר מפתח VAPID ציבורי בהגדרות.", "warning");
+        pushToast(tr("push.missingVAPID"), "warning");
         return;
       }
       setIsPushWorking(true);
       try {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-          pushToast("לא ניתן להפעיל התראות בלי הרשאה.", "warning");
+          pushToast(tr("push.noPermission"), "warning");
           return;
         }
         const swUrl = `${appBasePath}/service-worker.js`;
@@ -1555,7 +1565,7 @@ const ensurePlannerEnvReady = async () => {
           }
         } catch (err) {
           console.error("Service worker registration failed", err);
-          pushToast("כשל ברישום שירות התראות", "warning");
+          pushToast(tr("push.swRegistrationFailed"), "warning");
           return;
         }
         let subscription = await registration.pushManager.getSubscription();
@@ -1568,7 +1578,7 @@ const ensurePlannerEnvReady = async () => {
             });
           } catch (err) {
             console.error("Push subscription failed", err);
-            pushToast("כשל ביצירת הרשמה להתראות", "warning");
+            pushToast(tr("push.subscriptionFailed"), "warning");
             return;
           }
         }
@@ -1579,13 +1589,13 @@ const ensurePlannerEnvReady = async () => {
             );
             currentSubId = subscribeResponse?.subscription_id;
             if (!currentSubId) {
-              pushToast("כשל בשמירת הרשמה להתראות", "warning");
+              pushToast(tr("push.saveFailed"), "warning");
               return;
             }
             setPushSubscriptionId(currentSubId);
           } catch (err) {
             console.error("Push subscription save failed", err);
-            pushToast(err?.message || "כשל בשמירת הרשמה להתראות — נסה שוב", "warning");
+            pushToast(err?.message || tr("push.saveFailedRetry"), "warning");
             return;
           }
         }
@@ -1601,17 +1611,17 @@ const ensurePlannerEnvReady = async () => {
           });
         } catch (err) {
           console.error("Future date rule upsert failed", err);
-          pushToast(err?.message || "כשל ביצירת מעקב תאריך עתידי", "warning");
+          pushToast(err?.message || tr("push.futureTrackFailed"), "warning");
           return;
         }
-        const displayLabel = locationName || "מיקום נוכחי";
-        pushToast(`מעקב הופעל: ${displayLabel} — ${futureDateInput}`, "success");
+        const displayLabel = locationName || tr("push.currentLocation");
+        pushToast(tr("push.futureTrackActive", { label: displayLabel, date: futureDateInput }), "success");
         setShowFutureDateModal(false);
         setFutureDateInput("");
         setFutureDateLocationName("");
       } catch (err) {
         console.error("Future date tracking failed", err);
-        pushToast(err?.message || "לא הצלחנו להפעיל מעקב.", "warning");
+        pushToast(err?.message || tr("push.futureActivateFailed"), "warning");
       } finally {
         setIsPushWorking(false);
       }
@@ -1777,7 +1787,7 @@ const ensurePlannerEnvReady = async () => {
         doc.setFont(void 0, "normal");
         y += 6;
         if (entry.timestamp) {
-          doc.text(new Date(entry.timestamp).toLocaleString("he-IL"), 10, y);
+          doc.text(new Date(entry.timestamp).toLocaleString(I18n.getDateLocale()), 10, y);
           y += 6;
         }
         if (entry.location) {
@@ -2405,7 +2415,7 @@ const ensurePlannerEnvReady = async () => {
         type: "button",
         onClick: cycleWindUnit,
         className: `inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100 ${className}`,
-        "aria-label": "החלף יחידת רוח"
+        "aria-label": tr("settings.changeWindUnit")
       },
       windUnitMeta.label
     );
@@ -2447,6 +2457,7 @@ const ensurePlannerEnvReady = async () => {
         onTrackFutureDate: pushSupported ? openFutureDateModal : void 0
       }
     );
+    void locale;
     return /* @__PURE__ */ React.createElement(React.Fragment, null, toastItems.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "fixed top-4 right-4 z-[2100] flex flex-col gap-2" }, toastItems.map((toast) => {
       const toneStyles = toast.tone === "success" ? "bg-emerald-600 text-white" : toast.tone === "warning" ? "bg-amber-500 text-white" : "bg-slate-900 text-white";
       return /* @__PURE__ */ React.createElement(
@@ -2467,57 +2478,64 @@ const ensurePlannerEnvReady = async () => {
         {
           type: "button",
           onClick: () => setShowSettings(false),
-          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${settingsTheme.closeButton}`,
-          "aria-label": "סגור הגדרות"
+          className: `absolute top-4 ${I18n.getLocale() === "he" ? "left-4" : "right-4"} rounded-full border p-2 shadow-sm transition ${settingsTheme.closeButton}`,
+          "aria-label": tr("settings.close")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "flex flex-col md:flex-row md:items-start md:justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-sm uppercase tracking-widest text-blue-600 font-bold" }, "הגדרות מערכת"), /* @__PURE__ */ React.createElement("h2", { className: `text-2xl font-black ${settingsTheme.title}` }, "ספי יציבות לטיסה"), /* @__PURE__ */ React.createElement("p", { className: `text-sm ${settingsTheme.subtitle}` }, "הגדר פרמטרים ברירת מחדל למה נחשב יום מתאים לטיסה. לחץ על פרמטר כדי לאפשר עריכה.")), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 justify-end" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm flex items-center gap-2 ${settingsTheme.metaText}` }, "מצב תצוגה:", /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, theme === "dark" ? "כהה" : "בהיר")), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "flex flex-col md:flex-row md:items-start md:justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "ps-8 md:ps-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-sm uppercase tracking-widest text-blue-600 font-bold" }, tr("settings.title")), /* @__PURE__ */ React.createElement("h2", { className: `text-2xl font-black ${settingsTheme.title}` }, tr("settings.suitabilityTitle")), /* @__PURE__ */ React.createElement("p", { className: `text-sm ${settingsTheme.subtitle}` }, tr("settings.suitabilityDescription"))), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 justify-end" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm flex items-center gap-2 ${settingsTheme.metaText}` }, tr("settings.displayMode"), /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, theme === "dark" ? tr("settings.dark") : tr("settings.light"))), /* @__PURE__ */ React.createElement(
         "button",
         {
           onClick: () => setTheme(theme === "dark" ? "light" : "dark"),
           className: "px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 text-sm font-semibold hover:bg-blue-100"
         },
-        "החלף למצב ",
-        theme === "dark" ? "בהיר" : "כהה"
+        tr("settings.switchToMode"),
+        theme === "dark" ? tr("settings.light") : tr("settings.dark")
       ), /* @__PURE__ */ React.createElement(
         "button",
         {
           onClick: resetSuitabilitySettings,
           className: `px-3 py-2 rounded-lg border text-sm font-semibold ${theme === "dark" ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`
         },
-        "איפוס לברירת מחדל"
-      ))),
+        tr("settings.resetDefaults")
+      ), /* @__PURE__ */ React.createElement("div", { className: `text-sm flex items-center gap-2 ${settingsTheme.metaText}` }, tr("settings.language"), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          onClick: switchLanguage,
+          className: "px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 text-sm font-semibold hover:bg-blue-100"
+        },
+        tr("settings.switchLang")
+      )))),
       /* @__PURE__ */ React.createElement(
         "div",
         {
           className: `text-xs border rounded-lg px-3 py-2 ${settingsTheme.summary}`
         },
-        "מה נחשב יציב: רוח ≤ ",
+        tr("settings.stableWhen"),
         formatWindNumber(suitabilitySettings.maxWind),
         " ",
         renderWindUnitToggle("align-middle"),
-        " · משבים ≤",
+        tr("settings.gustsLE"),
         " ",
         formatWindNumber(suitabilitySettings.maxGust),
         " ",
         renderWindUnitToggle("align-middle"),
-        " · עננות בין",
+        tr("settings.cloudsBetween"),
         " ",
         suitabilitySettings.minCloudCover,
-        "% ל-",
+        tr("settings.to"),
         suitabilitySettings.maxCloudCover,
-        "% · גשם ≤",
+        tr("settings.rainLE"),
         " ",
         suitabilitySettings.maxRainProb,
-        "% · שמש בין",
+        tr("settings.sunBetween"),
         " ",
         suitabilitySettings.minSunAltitude,
-        "° ל-",
+        tr("settings.toSun"),
         suitabilitySettings.maxSunAltitude,
         "°"
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "מקסימום רוח ", renderWindUnitToggle("align-middle")), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.maxWind"), renderWindUnitToggle("align-middle")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -2531,7 +2549,7 @@ const ensurePlannerEnvReady = async () => {
           className: `input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`,
           readOnly: settingsReadOnly
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "ברירת מחדל:", " ", formatWindValue(Config.DEFAULT_SUITABILITY.maxWind), ".")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "מקסימום משבי רוח ", renderWindUnitToggle("align-middle")), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.default"), " ", formatWindValue(Config.DEFAULT_SUITABILITY.maxWind), ".")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.maxGust"), renderWindUnitToggle("align-middle")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -2545,7 +2563,7 @@ const ensurePlannerEnvReady = async () => {
           className: `input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`,
           readOnly: settingsReadOnly
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "ברירת מחדל:", " ", formatWindValue(Config.DEFAULT_SUITABILITY.maxGust), ".")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "מינימום כיסוי עננים (%)"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.default"), " ", formatWindValue(Config.DEFAULT_SUITABILITY.maxGust), ".")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.minClouds")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -2562,7 +2580,7 @@ const ensurePlannerEnvReady = async () => {
           className: `input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`,
           readOnly: settingsReadOnly
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "ברירת מחדל: ", Config.DEFAULT_SUITABILITY.minCloudCover, "%.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "מקסימום כיסוי עננים (%)"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.default"), " ", Config.DEFAULT_SUITABILITY.minCloudCover, "%.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.maxClouds")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -2579,7 +2597,7 @@ const ensurePlannerEnvReady = async () => {
           className: `input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`,
           readOnly: settingsReadOnly
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "ברירת מחדל: ", Config.DEFAULT_SUITABILITY.maxCloudCover, "%.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "מקסימום הסתברות גשם (%)"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.default"), " ", Config.DEFAULT_SUITABILITY.maxCloudCover, "%.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.maxRain")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -2596,7 +2614,7 @@ const ensurePlannerEnvReady = async () => {
           className: `input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`,
           readOnly: settingsReadOnly
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "ברירת מחדל: ", Config.DEFAULT_SUITABILITY.maxRainProb, "%.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "גובה שמש מינימלי (°)"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.default"), " ", Config.DEFAULT_SUITABILITY.maxRainProb, "%.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.minSun")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -2613,7 +2631,7 @@ const ensurePlannerEnvReady = async () => {
           className: `input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`,
           readOnly: settingsReadOnly
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "ברירת מחדל: ", Config.DEFAULT_SUITABILITY.minSunAltitude, "°. ערך גבוה יותר ימנע טיסה בשעת דמדומים.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "גובה שמש מקסימלי (°)"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.default"), " ", Config.DEFAULT_SUITABILITY.minSunAltitude, "°. ", tr("settings.minSunHelper"))), /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.maxSun")), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -2630,7 +2648,7 @@ const ensurePlannerEnvReady = async () => {
           className: `input-field ${settingsReadOnly ? "opacity-70" : ""} ${settingsTheme.input}`,
           readOnly: settingsReadOnly
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "ברירת מחדל: ", Config.DEFAULT_SUITABILITY.maxSunAltitude, "°. ניתן להגביל במקרים של סינוור חזק.")), /* @__PURE__ */ React.createElement("div", { className: "space-y-2 md:col-span-2" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, "כולל טיסות לילה"), /* @__PURE__ */ React.createElement("div", { className: `flex items-start gap-3 rounded-lg border p-3 ${settingsTheme.panel}` }, /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.default"), " ", Config.DEFAULT_SUITABILITY.maxSunAltitude, "°. ", tr("settings.maxSunHelper"))), /* @__PURE__ */ React.createElement("div", { className: "space-y-2 md:col-span-2" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold ${settingsTheme.label}` }, tr("settings.includeNight")), /* @__PURE__ */ React.createElement("div", { className: `flex items-start gap-3 rounded-lg border p-3 ${settingsTheme.panel}` }, /* @__PURE__ */ React.createElement(
         "input",
         {
           id: "includeNightFlights",
@@ -2650,21 +2668,21 @@ const ensurePlannerEnvReady = async () => {
           htmlFor: "includeNightFlights",
           className: `text-sm font-semibold ${settingsTheme.label}`
         },
-        "הכללת שעות לילה בחישוב התאמה"
-      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, "כאשר כבוי, אחוז ההתאמה ושעות יציבות מחושבים רק בשעות יום."))))),
+        tr("settings.includeNightLabel")
+      ), /* @__PURE__ */ React.createElement("p", { className: `text-xs ${settingsTheme.helperText}` }, tr("settings.includeNightHelper")))))),
       /* @__PURE__ */ React.createElement(
         "div",
         {
           className: `flex justify-between items-center text-sm rounded-lg p-3 ${theme === "dark" ? "text-slate-200 bg-slate-800 border border-slate-700" : "text-slate-600 bg-slate-100 border border-slate-200"}`
         },
-        /* @__PURE__ */ React.createElement("span", null, "ההגדרות נשמרות למצב הנוכחי בלבד. שינוי הערכים משפיע על סימון השעות היציבות בלוח הרוח/עננות/גשם."),
+        /* @__PURE__ */ React.createElement("span", null, tr("settings.saveNote")),
         /* @__PURE__ */ React.createElement(
           "button",
           {
             className: "px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-500",
             onClick: () => setShowSettings(false)
           },
-          "שמור וסגור"
+          tr("settings.saveAndClose")
         )
       )
     )), /* @__PURE__ */ React.createElement(
@@ -2741,7 +2759,7 @@ const ensurePlannerEnvReady = async () => {
                 setActiveSuggestionIndex(-1);
               }
             },
-            placeholder: "חיפוש כתובת להצגת מזג אוויר",
+            placeholder: tr("search.placeholder"),
             className: `w-full bg-transparent text-sm focus:outline-none ${theme === "dark" ? "text-slate-100 placeholder:text-slate-500" : "text-slate-800 placeholder:text-slate-400"}`
           }
         ), addressQuery ? /* @__PURE__ */ React.createElement(
@@ -2755,24 +2773,24 @@ const ensurePlannerEnvReady = async () => {
               setAddressStatus("idle");
             },
             className: `w-5 h-5 flex items-center justify-center rounded-full transition-colors flex-shrink-0 ${theme === "dark" ? "bg-slate-600 hover:bg-slate-500 text-slate-300" : "bg-slate-200 hover:bg-slate-300 text-slate-500"}`,
-            "aria-label": "נקה חיפוש"
+            "aria-label": tr("search.clearSearch")
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 12 })
         ) : null)),
         isAddressOpen && addressQuery.trim().length > 0 && /* @__PURE__ */ React.createElement("div", { className: `absolute top-full mt-1 w-full rounded-xl border shadow-xl z-[1000] overflow-hidden max-h-[240px] overflow-y-auto ${theme === "dark" ? "bg-slate-800 border-slate-600" : "bg-white border-slate-200"}` },
           addressStatus === "loading" && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-2 text-[12px] text-slate-500 text-center" },
             /* @__PURE__ */ React.createElement("span", { className: "inline-block w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-1 align-middle" }),
-            "מחפש..."
+            tr("search.searching")
           ),
-          addressStatus === "error" && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-3 text-[12px] text-red-600 text-center" }, "לא הצלחנו להביא הצעות כרגע."),
-          addressStatus === "ready" && addressSuggestions.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-3 text-[12px] text-slate-500 text-center" }, "לא נמצאו תוצאות"),
+          addressStatus === "error" && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-3 text-[12px] text-red-600 text-center" }, tr("search.errorFetching")),
+          addressStatus === "ready" && addressSuggestions.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "px-3 py-3 text-[12px] text-slate-500 text-center" }, tr("search.noResults")),
           addressSuggestions.map((item, index) => /* @__PURE__ */ React.createElement(
           "button",
           {
             key: item.id,
             type: "button",
             onClick: () => handleAddressSelect(item),
-            className: "w-full text-right px-3 py-2.5 text-sm last:border-0 transition " + (theme === "dark"
+            className: "w-full text-start px-3 py-2.5 text-sm last:border-0 transition " + (theme === "dark"
               ? "border-b border-slate-700 " + (index === activeSuggestionIndex ? "bg-blue-900/50 text-blue-300" : "hover:bg-slate-700 text-slate-200")
               : "border-b border-slate-100 " + (index === activeSuggestionIndex ? "bg-blue-50 text-blue-800" : "hover:bg-slate-50 text-slate-700"))
           },
@@ -2791,7 +2809,7 @@ const ensurePlannerEnvReady = async () => {
           {
             onClick: () => setShowInfoModal(true),
             className: `w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
-            "aria-label": "מדריך שימוש"
+            "aria-label": tr("map.guide")
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "info", size: 18 })
         ),
@@ -2803,7 +2821,7 @@ const ensurePlannerEnvReady = async () => {
               fetchRules();
             },
             className: `relative w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
-            "aria-label": "ניהול התראות"
+            "aria-label": tr("map.manageNotifications")
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 18 }),
           notificationRules.length > 0 && /* @__PURE__ */ React.createElement("span", { className: "absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1" }, notificationRules.length)
@@ -2813,7 +2831,7 @@ const ensurePlannerEnvReady = async () => {
           {
             onClick: recenterOnUser,
             className: `w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
-            "aria-label": "מרכז למיקום הנוכחי"
+            "aria-label": tr("map.centerLocation")
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 18 })
         ),
@@ -2822,10 +2840,10 @@ const ensurePlannerEnvReady = async () => {
           {
             onClick: toggleMapStyle,
             className: "px-3 py-2 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center gap-2 text-xs font-semibold hover:-translate-y-0.5 hover:shadow-xl transition",
-            "aria-label": "החלפת תצוגת מפה"
+            "aria-label": tr("map.switchView")
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "map", size: 16, className: "text-slate-500" }),
-          mapStyle === "satellite" ? "מפה רגילה" : "תצלום לווין"
+          mapStyle === "satellite" ? tr("map.normalMap") : tr("map.satelliteView")
         )
       ),
       timelineBoard
@@ -3054,7 +3072,7 @@ const ensurePlannerEnvReady = async () => {
           {
             onClick: recenterOnUser,
             className: `w-12 h-12 rounded-full shadow-lg border flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition ${theme === "dark" ? "bg-slate-800/95 text-slate-200 border-slate-600" : "bg-white/95 text-slate-800 border-slate-200"}`,
-            "aria-label": "מרכז למיקום הנוכחי"
+            "aria-label": tr("map.centerLocation")
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 18 })
         ),
@@ -3063,10 +3081,10 @@ const ensurePlannerEnvReady = async () => {
           {
             onClick: toggleMapStyle,
             className: "px-3 py-2 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center gap-2 text-xs font-semibold hover:-translate-y-0.5 hover:shadow-xl transition",
-            "aria-label": "החלפת תצוגת מפה"
+            "aria-label": tr("map.switchView")
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "map", size: 16, className: "text-slate-500" }),
-          mapStyle === "satellite" ? "מפה רגילה" : "תצלום לווין"
+          mapStyle === "satellite" ? tr("map.normalMap") : tr("map.satelliteView")
         )
       ),
       ENABLE_MISSION_PLANNING && polygon?.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs pointer-events-none z-[900]" }, "לחץ במפה לסימון"),
@@ -3281,7 +3299,7 @@ const ensurePlannerEnvReady = async () => {
                     className: `text-[10px] ${theme === "dark" ? "text-slate-300" : "text-slate-500"}`
                   },
                   new Date(entry.timestamp).toLocaleString(
-                    "he-IL"
+                    I18n.getDateLocale()
                   )
                 )), entry.location && /* @__PURE__ */ React.createElement(
                   "div",
