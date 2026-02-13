@@ -4,6 +4,9 @@
 (function () {
   "use strict";
 
+const tr = (key, params) => window.AerialPlannerI18n ? window.AerialPlannerI18n.t(key, params) : key;
+const getDateLocale = () => window.AerialPlannerI18n ? window.AerialPlannerI18n.getDateLocale() : "he-IL";
+
 // Icon library for UI elements
 const Icon = ({
   name,
@@ -223,14 +226,14 @@ const InfoHelpModal = ({ show, onClose, theme }) => {
           type="button"
           onClick={onClose}
           className={`absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`}
-          aria-label="סגור מדריך"
+          aria-label={tr("help.closeGuide")}
         >
           <Icon name="close" size={16} />
         </button>
 
         <div className="pr-8 md:pr-0">
           <div className="text-blue-600 font-bold text-sm uppercase tracking-widest">
-            מדריך שימוש
+            {tr("help.userGuide")}
           </div>
           <h2
             className={`text-2xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}`}
@@ -238,159 +241,113 @@ const InfoHelpModal = ({ show, onClose, theme }) => {
             AERIAL PLANNER PRO
           </h2>
           <p className={`text-sm ${t.text}`}>
-            כל מה שצריך לדעת על השימוש באפליקציה לתכנון טיסות רחפן לפי מזג
-            אוויר.
+            {tr("help.appDescription")}
           </p>
         </div>
 
-        <Section icon="drone" title="סקירה כללית">
-          <p>
-            אפליקציית תכנון טיסות אוויריות המציגה תחזית מזג אוויר מפורטת לימים
-            הקרובים.
-          </p>
-          <p>
-            המערכת בודקת באופן אוטומטי האם תנאי מזג האוויר מתאימים לטיסה
-            בהתבסס על ספי יציבות מוגדרים.
-          </p>
+        <Section icon="drone" title={tr("help.overview.title")}>
+          <p>{tr("help.overview.p1")}</p>
+          <p>{tr("help.overview.p2")}</p>
         </Section>
 
-        <Section icon="map" title="שימוש במפה">
-          <p>
-            לחצו על כל נקודה במפה כדי לבחור מיקום ולקבל תחזית מזג אוויר
-            ספציפית.
-          </p>
-          <p>
-            ניתן לחפש כתובת דרך שורת החיפוש בראש המפה, או ללחוץ על כפתור
-            המיקום כדי להתמרכז במיקומכם הנוכחי.
-          </p>
-          <p>
-            החלפת תצוגה בין מפה רגילה לתצלום לווין זמינה בלחיצה על כפתור
-            תצוגת המפה.
-          </p>
+        <Section icon="map" title={tr("help.map.title")}>
+          <p>{tr("help.map.p1")}</p>
+          <p>{tr("help.map.p2")}</p>
+          <p>{tr("help.map.p3")}</p>
         </Section>
 
-        <Section icon="calendar" title="ציר זמן מזג אוויר">
-          <p>
-            לוח הימים מציג כרטיסיות לימים הקרובים עם סיכום יומי: אחוז התאמה
-            לטיסה, טווח טמפרטורות, וסטטוס כללי.
-          </p>
-          <p>
-            לחיצה על כרטיס יום פותחת תצוגת שעות מפורטת עם קידוד צבעים:
-          </p>
-          <ul className="list-disc pr-5 space-y-1">
+        <Section icon="calendar" title={tr("help.timeline.title")}>
+          <p>{tr("help.timeline.p1")}</p>
+          <p>{tr("help.timeline.p2")}</p>
+          <ul className="list-disc ps-5 space-y-1">
             <li>
-              <span className="font-semibold text-green-600">ירוק</span> —
-              תנאים מתאימים לטיסה
+              <span className="font-semibold text-green-600">{tr("help.timeline.green")}</span> —{" "}
+              {tr("help.timeline.greenDesc")}
             </li>
             <li>
-              <span className="font-semibold text-amber-500">כתום</span> —
-              תנאים על הגבול
+              <span className="font-semibold text-amber-500">{tr("help.timeline.orange")}</span> —{" "}
+              {tr("help.timeline.orangeDesc")}
             </li>
             <li>
-              <span className="font-semibold text-red-500">אדום</span> —
-              תנאים לא מתאימים
+              <span className="font-semibold text-red-500">{tr("help.timeline.red")}</span> —{" "}
+              {tr("help.timeline.redDesc")}
             </li>
             <li>
-              <span className="font-semibold text-slate-400">אפור</span> —
-              שעות לילה (כשטיסות לילה מושבתות)
+              <span className="font-semibold text-slate-400">{tr("help.timeline.gray")}</span> —{" "}
+              {tr("help.timeline.grayDesc")}
             </li>
           </ul>
         </Section>
 
-        <Section icon="settings" title="ספי יציבות / התאמה לטיסה">
-          <p>המערכת מחשבת התאמה לטיסה לפי הפרמטרים הבאים:</p>
-          <ul className="list-disc pr-5 space-y-1">
+        <Section icon="settings" title={tr("help.suitability.title")}>
+          <p>{tr("help.suitability.p1")}</p>
+          <ul className="list-disc ps-5 space-y-1">
             <li>
-              <span className="font-semibold">מהירות רוח</span> — ברירת מחדל:
-              עד 20 קמ״ש
+              <span className="font-semibold">{tr("help.suitability.wind")}</span> — {tr("help.suitability.windDefault")}
             </li>
             <li>
-              <span className="font-semibold">משבי רוח</span> — ברירת מחדל: עד
-              25 קמ״ש
+              <span className="font-semibold">{tr("help.suitability.gust")}</span> — {tr("help.suitability.gustDefault")}
             </li>
             <li>
-              <span className="font-semibold">הסתברות גשם</span> — ברירת מחדל:
-              עד 40%
+              <span className="font-semibold">{tr("help.suitability.rain")}</span> — {tr("help.suitability.rainDefault")}
             </li>
             <li>
-              <span className="font-semibold">כיסוי עננים</span> — ברירת מחדל:
-              0%–100%
+              <span className="font-semibold">{tr("help.suitability.clouds")}</span> — {tr("help.suitability.cloudsDefault")}
             </li>
             <li>
-              <span className="font-semibold">גובה שמש</span> — ברירת מחדל:
-              5°–85°
+              <span className="font-semibold">{tr("help.suitability.sun")}</span> — {tr("help.suitability.sunDefault")}
+            </li>
+          </ul>
+          <p>{tr("help.suitability.p2")}</p>
+        </Section>
+
+        <Section icon="bell" title={tr("help.notifications.title")}>
+          <p>{tr("help.notifications.p1")}</p>
+          <p>
+            <span className="font-semibold">{tr("help.notifications.enableLabel")}</span>
+            {tr("help.notifications.enableText")}
+          </p>
+          <p>
+            <span className="font-semibold">{tr("help.notifications.manageLabel")}</span>
+            {tr("help.notifications.manageText")}
+          </p>
+          <p>
+            <span className="font-semibold">{tr("help.notifications.frequencyLabel")}</span>
+            {tr("help.notifications.frequencyText")}
+          </p>
+          <ul className="list-disc ps-5 space-y-1">
+            <li>
+              <span className="font-semibold">{tr("help.notifications.freqTodayLabel")}</span> — {tr("help.notifications.freqTodayText")}
+            </li>
+            <li>
+              <span className="font-semibold">{tr("help.notifications.freq2to4Label")}</span> — {tr("help.notifications.freq2to4Text")}
+            </li>
+            <li>
+              <span className="font-semibold">{tr("help.notifications.freq5to16Label")}</span> — {tr("help.notifications.freq5to16Text")}
+            </li>
+            <li>
+              <span className="font-semibold">{tr("help.notifications.freq16plusLabel")}</span> — {tr("help.notifications.freq16plusText")}
             </li>
           </ul>
           <p>
-            ניתן לשנות ערכים אלו דרך מסך ההגדרות. הגדרה מותאמת אישית משפיעה
-            על חישוב אחוז ההתאמה וסימון השעות.
+            <span className="font-semibold">{tr("help.notifications.whenLabel")}</span>
+            {tr("help.notifications.whenText")}
           </p>
+          <p>{tr("help.notifications.contentText")}</p>
+          <p>
+            <span className="font-semibold">{tr("help.notifications.futureLabel")}</span>
+            {tr("help.notifications.futureText")}
+          </p>
+          <p>{tr("help.notifications.futureBadge")}</p>
         </Section>
 
-        <Section icon="bell" title="התראות Push — מעקב מרובה">
-          <p>
-            ניתן להפעיל התראות על מספר ימים ומיקומים במקביל (עד 20 כללים פעילים).
-            כל כלל עוקב אחרי יום + מיקום ספציפי ומתריע כשחלונות טיסה נפתחים או נסגרים.
-          </p>
-          <p>
-            <span className="font-semibold">הפעלה:</span> בחרו יום בלוח הימים ולחצו על
-            "הפעל התראות לתאריך הנבחר". המערכת תזהה אוטומטית את שם המיקום לפי המפה.
-            ניתן להפעיל התראות על ימים נוספים ומיקומים שונים — כל הפעלה מוסיפה כלל חדש.
-          </p>
-          <p>
-            <span className="font-semibold">ניהול:</span> לחצו על כפתור הפעמון
-            בפינת המפה כדי לפתוח את מנהל ההתראות. שם תוכלו לראות את כל הכללים
-            הפעילים, למחוק כלל בודד, או לבטל את כל ההתראות בבת אחת.
-          </p>
-          <p>
-            <span className="font-semibold">תדירות בדיקה חכמה:</span> מודלים
-            מטאורולוגיים מתעדכנים כל ~6 שעות. המערכת מתאימה את תדירות הבדיקה
-            לפי קרבת התאריך:
-          </p>
-          <ul className="list-disc pr-5 space-y-1">
-            <li>
-              <span className="font-semibold">היום/מחר</span> — בדיקה כל 6 שעות
-            </li>
-            <li>
-              <span className="font-semibold">2–4 ימים קדימה</span> — בדיקה כל 12 שעות
-            </li>
-            <li>
-              <span className="font-semibold">5–16 ימים קדימה</span> — בדיקה פעם ביום
-            </li>
-            <li>
-              <span className="font-semibold">16+ ימים קדימה</span> — בדיקה כל 48 שעות
-            </li>
-          </ul>
-          <p>
-            <span className="font-semibold">מתי נשלחת התראה?</span> רק כאשר שעות
-            טיסה בפועל נפתחות או נסגרות — שינויים קטנים במזג האוויר שלא משפיעים
-            על ההתאמה לא יפעילו התראה מיותרת.
-          </p>
-          <p>
-            ההתראה כוללת: שם מיקום, תאריך, סטטוס (מתאים/חלקי/לא מתאים),
-            וטווח השעות המתאימות לטיסה.
-          </p>
-          <p>
-            <span className="font-semibold">מעקב תאריך עתידי:</span> תכננתם
-            משימה בעוד חודשיים? לחצו על כרטיס ה-"+" בסוף ציר הזמן
-            ובחרו תאריך עד שנה קדימה. המערכת תעקוב בשקט ברקע — וכשהתאריך
-            ייכנס לטווח התחזית (~16 ימים לפני), תקבלו התראה מיוחדת עם סטטוס
-            ההתאמה לטיסה. לאחר מכן, הכלל ימשיך לעקוב כרגיל עם עדכונים שוטפים.
-          </p>
-          <p>
-            כללים עתידיים מסומנים בתג סגול "ממתין לתחזית" במנהל ההתראות.
-          </p>
-        </Section>
-
-        <Section icon="settings" title="הגדרות מערכת">
-          <p>מסך ההגדרות מאפשר:</p>
-          <ul className="list-disc pr-5 space-y-1">
-            <li>
-              עריכת ספי יציבות לטיסה (רוח, משבים, גשם, עננים, שמש)
-            </li>
-            <li>הפעלת/כיבוי טיסות לילה בחישוב ההתאמה</li>
-            <li>החלפה בין מצב תצוגה בהיר וכהה</li>
-            <li>איפוס כל הפרמטרים לברירת מחדל</li>
+        <Section icon="settings" title={tr("help.settings.title")}>
+          <p>{tr("help.settings.p1")}</p>
+          <ul className="list-disc ps-5 space-y-1">
+            <li>{tr("help.settings.item1")}</li>
+            <li>{tr("help.settings.item2")}</li>
+            <li>{tr("help.settings.item3")}</li>
+            <li>{tr("help.settings.item4")}</li>
           </ul>
         </Section>
       </div>
@@ -541,7 +498,7 @@ const TimelineBoard = ({
             className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"
             aria-hidden="true"
           />
-          <span className="text-[11px] font-semibold">סיכון נמוך</span>
+          <span className="text-[11px] font-semibold">{tr("risk.low")}</span>
         </span>
       );
     }
@@ -552,7 +509,7 @@ const TimelineBoard = ({
             className="inline-flex h-2.5 w-2.5 rounded-full bg-orange-500"
             aria-hidden="true"
           />
-          <span className="text-[11px] font-semibold">סיכון בינוני</span>
+          <span className="text-[11px] font-semibold">{tr("risk.medium")}</span>
         </span>
       );
     }
@@ -562,7 +519,7 @@ const TimelineBoard = ({
           <span className="text-sm leading-none" aria-hidden="true">
             ⚠️
           </span>
-          <span className="text-[11px] font-semibold">סיכון גבוה</span>
+          <span className="text-[11px] font-semibold">{tr("risk.high")}</span>
         </span>
       );
     }
@@ -571,7 +528,7 @@ const TimelineBoard = ({
         <span className="text-sm leading-none" aria-hidden="true">
           ⛔
         </span>
-        <span className="text-[11px] font-semibold">סיכון גבוה</span>
+        <span className="text-[11px] font-semibold">{tr("risk.high")}</span>
       </span>
     );
   };
@@ -579,8 +536,7 @@ const TimelineBoard = ({
   const formatDayHeader = (dayValue) => {
     const date = new Date(dayValue);
     if (Number.isNaN(date.getTime())) return dayValue;
-    const weekdayMap = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
-    const weekday = weekdayMap[date.getDay()];
+    const weekday = tr(`weekday.${date.getDay()}`);
     const dayNum = `${date.getDate()}`.padStart(2, "0");
     const monthNum = `${date.getMonth() + 1}`.padStart(2, "0");
     return `${weekday} ${dayNum}.${monthNum}`;
@@ -666,7 +622,7 @@ const TimelineBoard = ({
     if (value === null || value === undefined || Number.isNaN(value)) {
       return "-";
     }
-    return `${value.toFixed(1)} קמ"ש`;
+    return `${value.toFixed(1)} ${tr("wind.kmh")}`;
   };
 
   const displayedSlots = selectedDay
@@ -680,7 +636,7 @@ const TimelineBoard = ({
       <div className="fixed bottom-0 left-0 right-0 z-[940] pointer-events-auto bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-6px_18px_rgba(15,23,42,0.12)]">
         {dataUnavailable && (
           <div className="text-[11px] text-amber-800 bg-amber-50 border-b border-amber-200 px-3 py-2 text-center">
-            מקור הנתונים לא זמין כרגע
+            {tr("timeline.dataUnavailable")}
           </div>
         )}
         <div className="flex h-[180px] md:h-[210px] flex-col">
@@ -697,8 +653,8 @@ const TimelineBoard = ({
               >
                 <Icon name="clock" size={12} />
                 {filterFlyableOnly
-                  ? "הצג את כל הימים"
-                  : "הצג ימים מתאימים לטיסה"}
+                  ? tr("timeline.showAll")
+                  : tr("timeline.showFlyable")}
               </button>
             </div>
             {showSettingsButton && (
@@ -708,7 +664,7 @@ const TimelineBoard = ({
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               >
                 <Icon name="settings" size={12} />
-                הגדרות
+                {tr("timeline.settings")}
               </button>
             )}
           </div>
@@ -729,7 +685,7 @@ const TimelineBoard = ({
                   <button
                     key={day.day}
                     onClick={() => onSelectDay(day.originalIndex)}
-                    className={`min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${
+                    className={`min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-start snap-start bg-gradient-to-br ${backgroundTone} ${
                       isSelected
                         ? "border-blue-500 ring-2 ring-blue-200"
                         : "border-slate-200 hover:border-blue-300"
@@ -748,13 +704,13 @@ const TimelineBoard = ({
                       </div>
                       {hasFlyableHours && (
                         <div className="text-[10px] md:text-[11px] font-semibold text-slate-500">
-                          חלון טיסה
+                          {tr("timeline.flightWindow")}
                         </div>
                       )}
                     </div>
                     <div className="text-[10px] md:text-[11px] font-semibold text-slate-500 flex items-center justify-between">
                       <span>{riskIndicator}</span>
-                      <span>הצג פירוט →</span>
+                      <span>{tr("timeline.showDetails")}</span>
                     </div>
                   </button>
                 );
@@ -770,10 +726,10 @@ const TimelineBoard = ({
                   </span>
                   <div className="space-y-1">
                     <div className="text-sm font-bold text-slate-700">
-                      תאריך עתידי?
+                      {tr("timeline.futureDate")}
                     </div>
                     <div className="text-[10px] md:text-[11px] text-slate-500 leading-snug">
-                      עקוב אחר תאריך מעבר לטווח התחזית
+                      {tr("timeline.trackBeyondForecast")}
                     </div>
                   </div>
                 </button>
@@ -785,7 +741,7 @@ const TimelineBoard = ({
                   type="button"
                   onClick={() => scrollDaysBy(-1)}
                   className="absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow hover:bg-white"
-                  aria-label="גלול ימים שמאלה"
+                  aria-label={tr("timeline.scrollLeft")}
                 >
                   <Icon name="chevron-left" size={14} />
                 </button>
@@ -793,7 +749,7 @@ const TimelineBoard = ({
                   type="button"
                   onClick={() => scrollDaysBy(1)}
                   className="absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow hover:bg-white"
-                  aria-label="גלול ימים ימינה"
+                  aria-label={tr("timeline.scrollRight")}
                 >
                   <Icon name="chevron-right" size={14} />
                 </button>
@@ -822,7 +778,7 @@ const TimelineBoard = ({
           >
             <div className="sticky top-0 bg-white border-b border-slate-200 px-5 py-4 flex flex-col gap-3">
               <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1 text-right">
+                <div className="space-y-1 text-start">
                   <div className="text-sm font-semibold text-slate-500">
                     {selectedDay.day}
                   </div>
@@ -832,13 +788,13 @@ const TimelineBoard = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold">
-                    {selectedDay.percent}% התאמה
+                    {selectedDay.percent}{tr("timeline.suitabilityPercent")}
                   </span>
                   <button
                     type="button"
                     onClick={onCloseDayDetails}
                     className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                    aria-label="סגור פרטי יום"
+                    aria-label={tr("timeline.closeDayDetails")}
                   >
                     <Icon name="close" size={16} />
                   </button>
@@ -872,10 +828,10 @@ const TimelineBoard = ({
               <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-slate-600">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200">
-                    חלונות יציבים:{" "}
+                    {tr("timeline.stableWindows")}{" "}
                     {selectedDay.flyableWindows.length
                       ? selectedDay.flyableWindows.join(", ")
-                      : "אין"}
+                      : tr("timeline.none")}
                   </span>
                   {filterFlyableOnly && (
                     <button
@@ -883,7 +839,7 @@ const TimelineBoard = ({
                       onClick={() => setShowAllSlots((prev) => !prev)}
                       className="px-3 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                     >
-                      {showAllSlots ? "הצג רק יציבים" : "הצג גם פחות מתאימים"}
+                      {showAllSlots ? tr("timeline.showStableOnly") : tr("timeline.showLessIdeal")}
                     </button>
                   )}
                 </div>
@@ -893,23 +849,23 @@ const TimelineBoard = ({
                     onClick={onOpenSettings}
                     className="px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                   >
-                    התאמת ספים
+                    {tr("timeline.adjustThresholds")}
                   </button>
                   {!notificationsSupported ? (
                     <span className="px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[11px] text-slate-600">
-                      הדפדפן לא תומך בהתראות.
+                      {tr("timeline.browserNoNotifications")}
                     </span>
                   ) : isSelectedDayTracked ? (
                     <div className="flex items-center gap-2">
                       <span className="px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700">
-                        יום זה במעקב ✓
+                        {tr("timeline.dayTracked")}
                       </span>
                       <button
                         type="button"
                         onClick={onOpenNotificationManager}
                         className="px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] text-slate-600 hover:bg-slate-50"
                       >
-                        ניהול התראות
+                        {tr("timeline.manageNotifications")}
                       </button>
                     </div>
                   ) : (
@@ -920,8 +876,8 @@ const TimelineBoard = ({
                       className={`px-3 py-1 rounded-full border text-[11px] font-semibold transition bg-blue-600 text-white border-blue-600 ${notificationsLoading ? "opacity-60 cursor-wait" : ""}`}
                     >
                       {notificationsLoading
-                        ? "מעבד בקשה..."
-                        : "הפעל התראות לתאריך הנבחר"}
+                        ? tr("timeline.processing")
+                        : tr("timeline.enableNotificationsForDay")}
                     </button>
                   )}
                 </div>
@@ -931,7 +887,7 @@ const TimelineBoard = ({
             <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scroll">
               {displayedSlots.length === 0 ? (
                 <div className="text-center text-sm text-slate-500 border border-dashed border-slate-300 rounded-xl py-6">
-                  אין חלונות מתאימים להצגה כרגע.
+                  {tr("timeline.noSlotsToShow")}
                 </div>
               ) : (
                 displayedSlots.map((slot) => {
@@ -944,7 +900,7 @@ const TimelineBoard = ({
                       onClick={() =>
                         onSlotSelect(`${selectedDay.day}T${slot.time}`)
                       }
-                      className={`w-full text-right border rounded-2xl p-4 shadow-sm transition ${
+                      className={`w-full text-start border rounded-2xl p-4 shadow-sm transition ${
                         isActive
                           ? "border-blue-500 ring-2 ring-blue-200"
                           : "border-slate-200 hover:border-blue-300"
@@ -961,33 +917,33 @@ const TimelineBoard = ({
                               : "bg-slate-100 text-slate-600 border border-slate-200"
                           }`}
                         >
-                          {slot.isFlyable ? "שעה יציבה" : "פחות מתאים"}
+                          {slot.isFlyable ? tr("timeline.stableHour") : tr("timeline.lessIdeal")}
                         </span>
                       </div>
                       <div className="mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 text-[11px] text-slate-600">
                         <div className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200 flex items-center gap-2">
-                          <span className="whitespace-nowrap">מדד סיכון:</span>
+                          <span className="whitespace-nowrap">{tr("timeline.riskIndex")}</span>
                           {renderRiskIndicator(slot.riskScore ?? 0)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.wind)}>
-                          🌬 רוח: {formatWind(slot.wind)}
+                          🌬 {tr("timeline.wind")} {formatWind(slot.wind)}
                           {renderAlertBadge(slotAlerts.wind)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.gust)}>
-                          💨 משבים:{" "}
+                          💨 {tr("timeline.gusts")}{" "}
                           {formatWind(slot.gust ?? slot.wind)}
                           {renderAlertBadge(slotAlerts.gust)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.rain)}>
-                          🌧 גשם: {slot.rainProb ?? 0}%
+                          🌧 {tr("timeline.rain")} {slot.rainProb ?? 0}%
                           {renderAlertBadge(slotAlerts.rain)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.clouds)}>
-                          ☁ עננות: {slot.clouds ?? 0}%
+                          ☁ {tr("timeline.clouds")} {slot.clouds ?? 0}%
                           {renderAlertBadge(slotAlerts.clouds)}
                         </div>
                         <div className={getSlotChipClass(slotAlerts.sun)}>
-                          ☀ זווית שמש:{" "}
+                          ☀ {tr("timeline.sunAngle")}{" "}
                           {typeof slot.sunAlt === "number"
                             ? `${slot.sunAlt.toFixed(1)}°`
                             : "—"}
@@ -1041,37 +997,37 @@ const RealtimePanel = ({
       style={panelStyle}
     >
       <div className="sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200">
-        <div className="space-y-1 text-right">
+        <div className="space-y-1 text-start">
           <div className="text-xs uppercase tracking-[0.3em] text-blue-700 font-bold">
-            זמן אמת
+            {tr("realtime.title")}
           </div>
           <h2 className="text-xl font-black text-slate-900 leading-tight">
-            מכ״ם גשם ומיקומי מטוסים
+            {tr("realtime.subtitle")}
           </h2>
           <p className="text-sm text-slate-600">
-            הפעלת שכבות מפה מתעדכנות ללא טקסט כפול או עומס מיותר.
+            {tr("realtime.description")}
           </p>
         </div>
       </div>
 
-      <div className="p-5 space-y-4 text-right">
+      <div className="p-5 space-y-4 text-start">
         <div className="border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                 <Icon name="radar" size={18} />
               </span>
-              <div className="leading-tight text-right">
-                <div className="font-bold text-slate-900">מכ״ם גשם</div>
+              <div className="leading-tight text-start">
+                <div className="font-bold text-slate-900">{tr("realtime.rainRadar")}</div>
                 <div className="text-[11px] text-blue-800/80">
-                  RainViewer · מתעדכן כל 5 דקות
+                  {tr("realtime.rainRadarSource")}
                 </div>
               </div>
             </div>
             <span
               className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${rainRadarEnabled ? "text-blue-700 bg-blue-50 border border-blue-200" : "text-slate-400 bg-slate-100"}`}
             >
-              {rainRadarEnabled ? "מוצג" : "מוסתר"}
+              {rainRadarEnabled ? tr("realtime.shown") : tr("realtime.hidden")}
             </span>
           </div>
           <div className="flex flex-col gap-2">
@@ -1079,23 +1035,23 @@ const RealtimePanel = ({
               <div className="flex flex-wrap gap-2 items-center">
                 {rainRadarStatus === "loading" && (
                   <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                    מכ״ם נטען...
+                    {tr("realtime.radarLoading")}
                   </span>
                 )}
                 {rainRadarStatus === "error" && (
                   <span className="px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
-                    מכ״ם לא זמין
+                    {tr("realtime.radarUnavailable")}
                   </span>
                 )}
                 {(rainRadarUnavailable || rainRadarStatus === "unavailable") && (
                   <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800">
-                    מקור הנתונים לא זמין כרגע
+                    {tr("realtime.sourceUnavailable")}
                   </span>
                 )}
               </div>
               {rainRadarTimestamp && (
                 <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700">
-                  עודכן: {new Date(rainRadarTimestamp * 1000).toLocaleTimeString("he-IL")}
+                  {tr("realtime.updated")} {new Date(rainRadarTimestamp * 1000).toLocaleTimeString(getDateLocale())}
                 </span>
               )}
             </div>
@@ -1110,21 +1066,21 @@ const RealtimePanel = ({
                   >
                     <Icon name="cloud" size={16} />
                   </span>
-                  <span className="font-bold text-right">
-                    {rainRadarEnabled ? "הסתר שכבת גשם" : "הצג שכבת גשם"}
+                  <span className="font-bold text-start">
+                    {rainRadarEnabled ? tr("realtime.hideRain") : tr("realtime.showRain")}
                   </span>
                 </div>
                 <span
                   className={`text-[11px] font-semibold ${rainRadarEnabled ? "text-white" : "text-blue-700"}`}
                 >
-                  {rainRadarEnabled ? "פעיל" : "כבוי"}
+                  {rainRadarEnabled ? tr("realtime.active") : tr("realtime.off")}
                 </span>
               </button>
               <button
                 onClick={onRefreshRainRadar}
                 className="flex items-center justify-center rounded-xl border border-blue-200 bg-white text-sm font-semibold text-blue-700 hover:bg-blue-50/80"
               >
-                רענון מכ״ם
+                {tr("realtime.refreshRadar")}
               </button>
             </div>
           </div>
@@ -1136,33 +1092,33 @@ const RealtimePanel = ({
               <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
                 <Icon name="drone" size={18} />
               </span>
-              <div className="leading-tight text-right">
-                <div className="font-bold text-slate-900">מיקומי מטוסים</div>
+              <div className="leading-tight text-start">
+                <div className="font-bold text-slate-900">{tr("realtime.aircraft")}</div>
                 <div className="text-[11px] text-blue-800/80">
-                  ADSBExchange · רענון כל 15 שניות
+                  {tr("realtime.aircraftSource")}
                 </div>
               </div>
             </div>
             <span
               className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${aircraftEnabled ? "text-blue-700 bg-blue-50 border border-blue-200" : "text-slate-400 bg-slate-100"}`}
             >
-              {aircraftEnabled ? "מוצג" : "מוסתר"}
+              {aircraftEnabled ? tr("realtime.shown") : tr("realtime.hidden")}
             </span>
           </div>
           <div className="space-y-2 bg-blue-50/60 border border-blue-200 rounded-xl px-3 py-2">
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-800">
               <div className="flex gap-2 items-center">
-                {aircraftStatus === "loading" && <span className="px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200">מתחבר...</span>}
-                {aircraftStatus === "updating" && <span className="px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200">מרענן...</span>}
+                {aircraftStatus === "loading" && <span className="px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200">{tr("realtime.connecting")}</span>}
+                {aircraftStatus === "updating" && <span className="px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200">{tr("realtime.refreshing")}</span>}
                 {aircraftStatus === "error" && (
-                  <span className="px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-600">שגיאה</span>
+                  <span className="px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-600">{tr("realtime.error")}</span>
                 )}
                 {(aircraftUnavailable || aircraftStatus === "error") && (
-                  <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">מקור הנתונים לא זמין כרגע</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200">{tr("realtime.sourceUnavailable")}</span>
                 )}
               </div>
               <span className="px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700 text-[10px]">
-                טווח: {aircraftRangeKm} ק"מ · {aircraftData.length} בטווח
+                {tr("realtime.range")} {aircraftRangeKm} {tr("realtime.kmUnit")} · {aircraftData.length} {tr("realtime.inRange")}
               </span>
             </div>
             <button
@@ -1175,14 +1131,14 @@ const RealtimePanel = ({
                 >
                   <Icon name="drone" size={16} />
                 </span>
-                <span className="font-bold text-right">
-                  {aircraftEnabled ? "הסתר מיקומי מטוסים" : "הצג מיקומי מטוסים"}
+                <span className="font-bold text-start">
+                  {aircraftEnabled ? tr("realtime.hideAircraft") : tr("realtime.showAircraft")}
                 </span>
               </div>
               <span
                 className={`text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-blue-700"}`}
               >
-                {aircraftEnabled ? "פעיל" : "כבוי"}
+                {aircraftEnabled ? tr("realtime.active") : tr("realtime.off")}
               </span>
             </button>
             <div className="flex items-center gap-2 text-[11px] text-blue-800">
@@ -1197,7 +1153,7 @@ const RealtimePanel = ({
                 disabled={!aircraftEnabled}
               />
               <span className="text-[10px] text-blue-700">
-                חיפוש סביב מרכז המפה
+                {tr("realtime.searchAroundMap")}
               </span>
             </div>
           </div>
@@ -1277,25 +1233,25 @@ const NotificationManagerModal = ({
           type="button"
           onClick={onClose}
           className={`absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`}
-          aria-label="סגור ניהול התראות"
+          aria-label={tr("notifMgr.closeManager")}
         >
           <Icon name="close" size={16} />
         </button>
 
         <div className="pr-8 md:pr-0">
           <div className="text-blue-600 font-bold text-sm uppercase tracking-widest">
-            ניהול התראות
+            {tr("notifMgr.title")}
           </div>
           <h2 className={`text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}`}>
             {rules.length > 0
-              ? `${rules.length} כללים פעילים`
-              : "אין כללים פעילים"}
+              ? tr("notifMgr.activeRules", { count: rules.length })
+              : tr("notifMgr.noActiveRules")}
           </h2>
         </div>
 
         {isLoading ? (
           <div className="text-center py-8">
-            <div className={`text-sm ${t.text}`}>טוען כללי התראות...</div>
+            <div className={`text-sm ${t.text}`}>{tr("notifMgr.loadingRules")}</div>
           </div>
         ) : rules.length === 0 ? (
           <div className={`text-center py-8 border border-dashed rounded-xl ${isDark ? "border-slate-700" : "border-slate-300"}`}>
@@ -1303,16 +1259,16 @@ const NotificationManagerModal = ({
               <Icon name="bell" size={32} className={isDark ? "text-slate-600" : "text-slate-300"} />
             </div>
             <div className={`text-sm ${t.text}`}>
-              אין התראות פעילות כרגע.
+              {tr("notifMgr.noNotificationsNow")}
             </div>
             <div className={`text-xs mt-1 ${t.text}`}>
-              הפעל התראות מתוך תצוגת פרטי יום כדי לעקוב אחרי תחזית.
+              {tr("notifMgr.enableFromDayView")}
             </div>
           </div>
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => {
-              const locationName = rule.criteria?.locationName || "מיקום לא ידוע";
+              const locationName = rule.criteria?.locationName || tr("location.unknown");
               const dateRange =
                 rule.start_date === rule.end_date
                   ? formatDateShort(rule.start_date)
@@ -1321,7 +1277,7 @@ const NotificationManagerModal = ({
               const hourTo = rule.hour_to ?? 23;
               const hoursLabel = `${String(hourFrom).padStart(2, "0")}:00–${String(hourTo).padStart(2, "0")}:00`;
               const lastChecked = rule.last_checked_at
-                ? new Date(rule.last_checked_at).toLocaleString("he-IL", {
+                ? new Date(rule.last_checked_at).toLocaleString(getDateLocale(), {
                     hour: "2-digit",
                     minute: "2-digit",
                     day: "2-digit",
@@ -1349,12 +1305,12 @@ const NotificationManagerModal = ({
                         </span>
                         {rule.criteria?.ruleType === "future" && (
                           <span className="px-2 py-0.5 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-semibold">
-                            ממתין לתחזית
+                            {tr("notifMgr.waitingForForecast")}
                           </span>
                         )}
                         {lastChecked && (
                           <span className={`text-[10px] ${t.text}`}>
-                            נבדק: {lastChecked}
+                            {tr("notifMgr.lastChecked")} {lastChecked}
                           </span>
                         )}
                       </div>
@@ -1367,14 +1323,14 @@ const NotificationManagerModal = ({
                             onClick={() => handleDeleteClick(rule.id)}
                             className="px-2 py-1 rounded-lg bg-red-600 text-white text-[11px] font-semibold hover:bg-red-500"
                           >
-                            מחק
+                            {tr("notifMgr.delete")}
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
                             className={`px-2 py-1 rounded-lg text-[11px] font-semibold ${isDark ? "bg-slate-700 text-slate-200" : "bg-slate-200 text-slate-700"}`}
                           >
-                            ביטול
+                            {tr("notifMgr.cancel")}
                           </button>
                         </>
                       ) : (
@@ -1382,7 +1338,7 @@ const NotificationManagerModal = ({
                           type="button"
                           onClick={() => handleDeleteClick(rule.id)}
                           className={`p-1.5 rounded-lg transition ${isDark ? "text-slate-400 hover:text-red-400 hover:bg-slate-700" : "text-slate-400 hover:text-red-600 hover:bg-slate-100"}`}
-                          aria-label="מחק כלל"
+                          aria-label={tr("notifMgr.deleteRule")}
                         >
                           <Icon name="trash" size={14} />
                         </button>
@@ -1404,7 +1360,7 @@ const NotificationManagerModal = ({
           >
             <span className="flex items-center gap-1">
               <Icon name="rotate" size={12} />
-              רענן
+              {tr("notifMgr.refresh")}
             </span>
           </button>
           {rules.length > 0 && (
@@ -1413,7 +1369,7 @@ const NotificationManagerModal = ({
               onClick={onDisableAll}
               className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-[11px] font-semibold hover:bg-red-100 transition"
             >
-              בטל את כל ההתראות
+              {tr("notifMgr.disableAll")}
             </button>
           )}
         </div>
@@ -1462,10 +1418,10 @@ const FutureDateTrackingModal = ({
 
   const confirmText =
     futureDateValue && locationName
-      ? `עקוב אחר ${locationName} ב-${formattedDate}`
+      ? tr("futureDate.trackLocation", { location: locationName, date: formattedDate })
       : futureDateValue
-        ? `עקוב אחר תאריך ${formattedDate}`
-        : "בחרו תאריך להפעלת מעקב";
+        ? tr("futureDate.trackDate", { date: formattedDate })
+        : tr("futureDate.selectDateToTrack");
 
   return (
     <div className={t.overlay} onClick={onClose}>
@@ -1477,17 +1433,17 @@ const FutureDateTrackingModal = ({
           type="button"
           onClick={onClose}
           className={`absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`}
-          aria-label="סגור"
+          aria-label={tr("futureDate.close")}
         >
           <Icon name="close" size={16} />
         </button>
 
         <div className="pr-8 md:pr-0">
           <div className="text-blue-600 font-bold text-sm uppercase tracking-widest">
-            מעקב תאריך עתידי
+            {tr("futureDate.title")}
           </div>
           <h2 className={`text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}`}>
-            תכנון טיסה מראש
+            {tr("futureDate.subtitle")}
           </h2>
         </div>
 
@@ -1498,10 +1454,10 @@ const FutureDateTrackingModal = ({
             </span>
             <div className="flex-1 min-w-0">
               <div className={`text-sm font-bold truncate ${isDark ? "text-slate-100" : "text-slate-900"}`}>
-                {locationName || "טוען מיקום..."}
+                {locationName || tr("futureDate.loadingLocation")}
               </div>
               <div className={`text-[11px] ${t.text}`}>
-                המיקום נקבע לפי מרכז המפה
+                {tr("futureDate.locationByMapCenter")}
               </div>
             </div>
           </div>
@@ -1509,7 +1465,7 @@ const FutureDateTrackingModal = ({
 
         <div className="space-y-2">
           <label className={`text-sm font-semibold block ${isDark ? "text-slate-200" : "text-slate-700"}`}>
-            בחרו תאריך
+            {tr("futureDate.chooseDate")}
           </label>
           <input
             type="date"
@@ -1520,7 +1476,7 @@ const FutureDateTrackingModal = ({
             className={`w-full px-3 py-2.5 rounded-lg border text-sm ${isDark ? "bg-slate-800 border-slate-600 text-slate-200" : "bg-white border-slate-300 text-slate-800"}`}
           />
           <p className={`text-[11px] leading-relaxed ${t.text}`}>
-            המערכת תעקוב ברקע ותתריע כשהתאריך ייכנס לטווח התחזית (~16 ימים לפני).
+            {tr("futureDate.description")}
           </p>
         </div>
 
@@ -1535,14 +1491,14 @@ const FutureDateTrackingModal = ({
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
             }`}
           >
-            {isLoading ? "מפעיל מעקב..." : confirmText}
+            {isLoading ? tr("futureDate.activating") : confirmText}
           </button>
           <button
             type="button"
             onClick={onClose}
             className={`w-full px-4 py-2.5 rounded-xl border text-sm font-semibold transition ${isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}
           >
-            ביטול
+            {tr("futureDate.cancelBtn")}
           </button>
         </div>
       </div>

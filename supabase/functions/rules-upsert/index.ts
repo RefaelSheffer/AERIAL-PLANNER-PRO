@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit } from "../_shared/rate_limit.ts";
 import { getAllowedOrigin, getClientIp } from "../_shared/security.ts";
+import { DEFAULT_CRITERIA } from "../_shared/weather-logic.ts";
 
 type RulePayload = {
   lat?: number;
@@ -17,17 +18,6 @@ type RulePayload = {
 type UpsertPayload = {
   subscription_id?: string;
   rule?: RulePayload;
-};
-
-const DEFAULT_CRITERIA = {
-  maxWind: 20,
-  maxGust: 25,
-  minCloudCover: 0,
-  maxCloudCover: 100,
-  maxRainProb: 40,
-  minSunAltitude: 5,
-  maxSunAltitude: 85,
-  includeNightFlights: false,
 };
 
 const parseJson = async (req: Request) => {

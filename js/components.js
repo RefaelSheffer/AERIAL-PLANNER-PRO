@@ -1,7 +1,7 @@
 (function() {
   "use strict";
-  const tr = (...args) => window.AerialPlannerI18n.t(...args);
-  const I18n = window.AerialPlannerI18n;
+  const tr = (key, params) => window.AerialPlannerI18n ? window.AerialPlannerI18n.t(key, params) : key;
+  const getDateLocale = () => window.AerialPlannerI18n ? window.AerialPlannerI18n.getDateLocale() : "he-IL";
   const Icon = ({
     name,
     size = 18,
@@ -50,25 +50,22 @@
     };
     return icons[name] || null;
   };
-  const DockButton = ({ icon, label, active, onClick, compact = false, theme }) => {
-    const dk = theme === "dark";
-    return /* @__PURE__ */ React.createElement(
-      "button",
+  const DockButton = ({ icon, label, active, onClick, compact = false }) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      onClick,
+      "aria-label": label,
+      className: `bg-white/95 text-slate-800 rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl ${compact ? "p-0.5" : "p-1"} ${active ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"}`
+    },
+    /* @__PURE__ */ React.createElement(
+      "span",
       {
-        onClick,
-        "aria-label": label,
-        className: `rounded-full shadow-lg border transition hover:-translate-y-0.5 hover:shadow-xl ${compact ? "p-0.5" : "p-1"} ${dk ? "bg-slate-800/95 text-slate-200" : "bg-white/95 text-slate-800"} ${active ? dk ? "border-blue-500 ring-2 ring-blue-900" : "border-blue-400 ring-2 ring-blue-100" : dk ? "border-slate-600" : "border-slate-200"}`
+        className: `${compact ? "w-10 h-10" : "w-12 h-12"} rounded-full flex items-center justify-center ${active ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`
       },
-      /* @__PURE__ */ React.createElement(
-        "span",
-        {
-          className: `${compact ? "w-10 h-10" : "w-12 h-12"} rounded-full flex items-center justify-center ${active ? "bg-blue-600 text-white" : dk ? "bg-slate-700 text-slate-200" : "bg-slate-100 text-slate-700"}`
-        },
-        /* @__PURE__ */ React.createElement(Icon, { name: icon, size: compact ? 16 : 18 })
-      ),
-      /* @__PURE__ */ React.createElement("span", { className: "sr-only" }, label)
-    );
-  };
+      /* @__PURE__ */ React.createElement(Icon, { name: icon, size: compact ? 16 : 18 })
+    ),
+    /* @__PURE__ */ React.createElement("span", { className: "sr-only" }, label)
+  );
   const InfoHelpModal = ({ show, onClose, theme }) => {
     if (!show) return null;
     const isDark = theme === "dark";
@@ -99,12 +96,12 @@
         {
           type: "button",
           onClick: onClose,
-          className: `absolute top-4 ${I18n.getLocale() === "he" ? "left-4" : "right-4"} rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
           "aria-label": tr("help.closeGuide")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "ps-8 md:ps-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("help.userGuide")), /* @__PURE__  */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("help.userGuide")), /* @__PURE__ */ React.createElement(
         "h2",
         {
           className: `text-2xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}`
@@ -113,7 +110,7 @@
       ), /* @__PURE__ */ React.createElement("p", { className: `text-sm ${t.text}` }, tr("help.appDescription"))),
       /* @__PURE__ */ React.createElement(Section, { icon: "drone", title: tr("help.overview.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.overview.p1")), /* @__PURE__ */ React.createElement("p", null, tr("help.overview.p2"))),
       /* @__PURE__ */ React.createElement(Section, { icon: "map", title: tr("help.map.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.map.p1")), /* @__PURE__ */ React.createElement("p", null, tr("help.map.p2")), /* @__PURE__ */ React.createElement("p", null, tr("help.map.p3"))),
-      /* @__PURE__ */ React.createElement(Section, { icon: "calendar", title: tr("help.timeline.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.timeline.p1")), /* @__PURE__ */ React.createElement("p", null, tr("help.timeline.p2")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-green-600" }, tr("help.timeline.green")), " — ", tr("help.timeline.greenDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-amber-500" }, tr("help.timeline.orange")), " — ", tr("help.timeline.orangeDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-red-500" }, tr("help.timeline.red")), " — ", tr("help.timeline.redDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-slate-400" }, tr("help.timeline.gray")), " — ", tr("help.timeline.grayDesc")))),
+      /* @__PURE__ */ React.createElement(Section, { icon: "calendar", title: tr("help.timeline.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.timeline.p1")), /* @__PURE__ */ React.createElement("p", null, tr("help.timeline.p2")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-green-600" }, tr("help.timeline.green")), " —", " ", tr("help.timeline.greenDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-amber-500" }, tr("help.timeline.orange")), " —", " ", tr("help.timeline.orangeDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-red-500" }, tr("help.timeline.red")), " —", " ", tr("help.timeline.redDesc")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold text-slate-400" }, tr("help.timeline.gray")), " —", " ", tr("help.timeline.grayDesc")))),
       /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: tr("help.suitability.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.suitability.p1")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.wind")), " — ", tr("help.suitability.windDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.gust")), " — ", tr("help.suitability.gustDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.rain")), " — ", tr("help.suitability.rainDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.clouds")), " — ", tr("help.suitability.cloudsDefault")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.suitability.sun")), " — ", tr("help.suitability.sunDefault"))), /* @__PURE__ */ React.createElement("p", null, tr("help.suitability.p2"))),
       /* @__PURE__ */ React.createElement(Section, { icon: "bell", title: tr("help.notifications.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.notifications.p1")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.enableLabel")), tr("help.notifications.enableText")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.manageLabel")), tr("help.notifications.manageText")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.frequencyLabel")), tr("help.notifications.frequencyText")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freqTodayLabel")), " — ", tr("help.notifications.freqTodayText")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freq2to4Label")), " — ", tr("help.notifications.freq2to4Text")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freq5to16Label")), " — ", tr("help.notifications.freq5to16Text")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.freq16plusLabel")), " — ", tr("help.notifications.freq16plusText"))), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.whenLabel")), tr("help.notifications.whenText")), /* @__PURE__ */ React.createElement("p", null, tr("help.notifications.contentText")), /* @__PURE__ */ React.createElement("p", null, /* @__PURE__ */ React.createElement("span", { className: "font-semibold" }, tr("help.notifications.futureLabel")), tr("help.notifications.futureText")), /* @__PURE__ */ React.createElement("p", null, tr("help.notifications.futureBadge"))),
       /* @__PURE__ */ React.createElement(Section, { icon: "settings", title: tr("help.settings.title") }, /* @__PURE__ */ React.createElement("p", null, tr("help.settings.p1")), /* @__PURE__ */ React.createElement("ul", { className: "list-disc ps-5 space-y-1" }, /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item1")), /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item2")), /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item3")), /* @__PURE__ */ React.createElement("li", null, tr("help.settings.item4"))))
@@ -126,7 +123,6 @@
   const MapView = ({ className = "", style, children }) => /* @__PURE__ */ React.createElement("div", { className, style }, children);
   const TimelineBoard = ({
     show,
-    theme,
     isMobile,
     days,
     dataUnavailable = false,
@@ -150,29 +146,9 @@
     onDisableNotifications,
     onOpenNotificationManager,
     suitabilitySettings,
-    formatWindValue,
-    isLoading = false
+    formatWindValue
   }) => {
     if (!show) return null;
-    const isDark = theme === "dark";
-    const t = {
-      bar: isDark ? "bg-slate-900/95 border-slate-700" : "bg-white/95 border-slate-200",
-      barShadow: isDark ? "shadow-[0_-6px_18px_rgba(0,0,0,0.4)]" : "shadow-[0_-6px_18px_rgba(15,23,42,0.12)]",
-      text: isDark ? "text-slate-200" : "text-slate-700",
-      card: isDark ? "border-slate-600" : "border-slate-200",
-      cardHover: isDark ? "hover:border-blue-400" : "hover:border-blue-300",
-      modal: isDark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-900",
-      modalBorder: isDark ? "border-slate-700" : "border-slate-200",
-      modalHeader: isDark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200",
-      slotCard: isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200",
-      chip: isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-slate-100 border-slate-200 text-slate-600",
-      filterBtn: isDark ? "bg-blue-900/50 text-blue-300 border-blue-700 hover:bg-blue-800/50" : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100",
-      settingsBtn: isDark ? "bg-slate-800 text-slate-200 border-slate-700 hover:bg-slate-700" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50",
-      fade: isDark ? "from-slate-900/95" : "from-white/95",
-      unavailable: isDark ? "text-amber-300 bg-amber-900/50 border-amber-700" : "text-amber-800 bg-amber-50 border-amber-200",
-      scrollArrow: isDark ? "bg-slate-800/90 border-slate-600 text-slate-300 hover:bg-slate-700" : "bg-white/90 border-slate-200 text-slate-600 hover:bg-white",
-      closeBtn: isDark ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white" : "border-slate-200 bg-white/95 text-slate-500 hover:text-slate-700 hover:bg-slate-50",
-    };
     const [showAllSlots, setShowAllSlots] = React.useState(false);
     const daysScrollRef = React.useRef(null);
     const [showLeftFade, setShowLeftFade] = React.useState(false);
@@ -235,12 +211,6 @@
     };
     const selectedDay = days?.[selectedDayIndex] || null;
     const getSuitabilityBackground = (percent) => {
-      if (isDark) {
-        if (percent <= 15) return "from-slate-800 to-rose-900/30";
-        if (percent <= 40) return "from-slate-800 to-orange-900/30";
-        if (percent <= 70) return "from-slate-800 to-lime-900/30";
-        return "from-slate-800 to-emerald-900/30";
-      }
       if (percent <= 15) return "from-slate-50 to-rose-50";
       if (percent <= 40) return "from-orange-50 to-orange-100";
       if (percent <= 70) return "from-lime-50 to-lime-100";
@@ -280,7 +250,7 @@
     const formatDayHeader = (dayValue) => {
       const date = new Date(dayValue);
       if (Number.isNaN(date.getTime())) return dayValue;
-      const weekday = tr("weekday." + date.getDay());
+      const weekday = tr(`weekday.${date.getDay()}`);
       const dayNum = `${date.getDate()}`.padStart(2, "0");
       const monthNum = `${date.getMonth() + 1}`.padStart(2, "0");
       return `${weekday} ${dayNum}.${monthNum}`;
@@ -319,7 +289,7 @@
         sun: !includeNightFlights && sunAlt !== null && (sunAlt < minSunAltitude || sunAlt > maxSunAltitude)
       };
     };
-    const getSlotChipClass = (isAlert) => `px-2 py-1 rounded-full border flex items-center gap-2 ${isAlert ? (isDark ? "border-rose-700 bg-rose-900/50 text-rose-300" : "border-rose-200 bg-rose-50 text-rose-700") : t.chip}`;
+    const getSlotChipClass = (isAlert) => `px-2 py-1 rounded-full border flex items-center gap-2 ${isAlert ? "border-rose-200 bg-rose-50 text-rose-700" : "bg-slate-100 border-slate-200 text-slate-600"}`;
     const renderAlertBadge = (isAlert) => isAlert ? /* @__PURE__ */ React.createElement(
       "span",
       {
@@ -338,21 +308,21 @@
       return `${value.toFixed(1)} ${tr("wind.kmh")}`;
     };
     const displayedSlots = selectedDay ? filterFlyableOnly && !showAllSlots ? selectedDay.relevantSlots.filter((slot) => slot.isFlyable) : selectedDay.relevantSlots : [];
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: `fixed bottom-0 left-0 right-0 z-[940] pointer-events-auto backdrop-blur border-t ${t.bar} ${t.barShadow}` }, dataUnavailable && /* @__PURE__ */ React.createElement("div", { className: `text-[11px] border-b px-3 py-2 text-center ${t.unavailable}` }, tr("timeline.dataUnavailable")), /* @__PURE__ */ React.createElement("div", { className: "flex h-[180px] md:h-[210px] flex-col" }, /* @__PURE__ */ React.createElement("div", { className: `h-[48px] md:h-[52px] px-4 flex items-center justify-between gap-2 text-[12px] ${t.text} border-b ${t.modalBorder}` }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "fixed bottom-0 left-0 right-0 z-[940] pointer-events-auto bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-6px_18px_rgba(15,23,42,0.12)]" }, dataUnavailable && /* @__PURE__ */ React.createElement("div", { className: "text-[11px] text-amber-800 bg-amber-50 border-b border-amber-200 px-3 py-2 text-center" }, tr("timeline.dataUnavailable")), /* @__PURE__ */ React.createElement("div", { className: "flex h-[180px] md:h-[210px] flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "h-[48px] md:h-[52px] px-4 flex items-center justify-between gap-2 text-[12px] text-slate-700 border-b border-slate-200" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
         onClick: onToggleFilterFlyable,
-        className: `flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition ${filterFlyableOnly ? "bg-emerald-600 text-white border-emerald-600 shadow" : t.filterBtn}`
+        className: `flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition ${filterFlyableOnly ? "bg-emerald-600 text-white border-emerald-600 shadow" : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"}`
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "clock", size: 12 }),
       filterFlyableOnly ? tr("timeline.showAll") : tr("timeline.showFlyable")
-    ), isLoading && Array.isArray(days) && days.length > 0 && /* @__PURE__ */ React.createElement("span", { className: "flex items-center gap-1 text-[11px] text-blue-500" }, /* @__PURE__ */ React.createElement("span", { className: "inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" }), tr("timeline.updatingForecast"))), showSettingsButton && /* @__PURE__ */ React.createElement(
+    )), showSettingsButton && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
         onClick: onOpenSettings,
-        className: `flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] ${t.settingsBtn}`
+        className: "flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "settings", size: 12 }),
       tr("timeline.settings")
@@ -363,7 +333,7 @@
         className: "flex items-center gap-3 overflow-x-auto overflow-y-hidden py-4 custom-scroll scroll-smooth snap-x snap-mandatory touch-pan-x",
         style: { WebkitOverflowScrolling: "touch" }
       },
-      isLoading && visibleDays.length === 0 ? [0, 1, 2, 3].map((i) => /* @__PURE__ */ React.createElement("div", { key: `skel-${i}`, className: `min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border ${isDark ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-slate-50"} animate-pulse flex flex-col gap-2 md:gap-3 snap-start` }, /* @__PURE__ */ React.createElement("div", { className: `h-4 w-16 ${isDark ? "bg-slate-700" : "bg-slate-200"} rounded` }), /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("div", { className: `h-8 w-24 ${isDark ? "bg-slate-700" : "bg-slate-200"} rounded` }), /* @__PURE__ */ React.createElement("div", { className: `h-3 w-14 ${isDark ? "bg-slate-700" : "bg-slate-200"} rounded` })), /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", { className: `h-3 w-20 ${isDark ? "bg-slate-700" : "bg-slate-200"} rounded-full` }), /* @__PURE__ */ React.createElement("div", { className: `h-3 w-16 ${isDark ? "bg-slate-700" : "bg-slate-200"} rounded` })))) : visibleDays.map((day) => {
+      visibleDays.map((day) => {
         const isSelected = day.originalIndex === selectedDayIndex;
         const backgroundTone = getSuitabilityBackground(day.percent);
         const dayLine = formatDayHeader(day.day);
@@ -374,17 +344,17 @@
           {
             key: day.day,
             onClick: () => onSelectDay(day.originalIndex),
-            className: `min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-right snap-start bg-gradient-to-br ${backgroundTone} ${isSelected ? "border-blue-500 ring-2 ring-blue-200" : `${t.card} ${t.cardHover}`} opacity-100`
+            className: `min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border shadow-sm transition flex flex-col gap-2 md:gap-3 text-start snap-start bg-gradient-to-br ${backgroundTone} ${isSelected ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"} opacity-100`
           },
-          /* @__PURE__ */ React.createElement("div", { className: `text-[12px] md:text-[13px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}` }, dayLine),
+          /* @__PURE__ */ React.createElement("div", { className: "text-[12px] md:text-[13px] font-semibold text-slate-500" }, dayLine),
           /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement(
             "div",
             {
-              className: `text-xl sm:text-2xl md:text-3xl font-black ${hasFlyableHours ? (isDark ? "text-slate-100" : "text-slate-900") : (isDark ? "text-slate-400" : "text-slate-500")}`
+              className: `text-xl sm:text-2xl md:text-3xl font-black ${hasFlyableHours ? "text-slate-900" : "text-slate-500"}`
             },
             day.flyableHoursLabel
-          ), hasFlyableHours && /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}` }, tr("timeline.flightWindow"))),
-          /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"} flex items-center justify-between` }, /* @__PURE__ */ React.createElement("span", null, riskIndicator), /* @__PURE__ */ React.createElement("span", null, tr("timeline.showDetails")))
+          ), hasFlyableHours && /* @__PURE__ */ React.createElement("div", { className: "text-[10px] md:text-[11px] font-semibold text-slate-500" }, tr("timeline.flightWindow"))),
+          /* @__PURE__ */ React.createElement("div", { className: "text-[10px] md:text-[11px] font-semibold text-slate-500 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("span", null, riskIndicator), /* @__PURE__ */ React.createElement("span", null, tr("timeline.showDetails")))
         );
       }),
       onTrackFutureDate && /* @__PURE__ */ React.createElement(
@@ -392,17 +362,17 @@
         {
           type: "button",
           onClick: onTrackFutureDate,
-          className: `min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border-2 border-dashed ${isDark ? "border-slate-600 hover:border-blue-400 bg-slate-800/80 hover:bg-blue-900/40" : "border-slate-300 hover:border-blue-400 bg-slate-50/80 hover:bg-blue-50/60"} transition flex flex-col items-center justify-center gap-2 md:gap-3 text-center snap-start`
+          className: "min-w-[190px] sm:min-w-[230px] md:min-w-[280px] lg:min-w-[300px] max-w-[320px] p-2.5 sm:p-3 md:p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50/80 hover:bg-blue-50/60 transition flex flex-col items-center justify-center gap-2 md:gap-3 text-center snap-start"
         },
         /* @__PURE__ */ React.createElement("span", { className: "w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center" }, /* @__PURE__ */ React.createElement(Icon, { name: "calendar", size: 20 })),
-        /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-bold ${isDark ? "text-slate-200" : "text-slate-700"}` }, tr("timeline.futureDate")), /* @__PURE__ */ React.createElement("div", { className: `text-[10px] md:text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"} leading-snug` }, tr("timeline.trackBeyondForecast")))
+        /* @__PURE__ */ React.createElement("div", { className: "space-y-1" }, /* @__PURE__ */ React.createElement("div", { className: "text-sm font-bold text-slate-700" }, tr("timeline.futureDate")), /* @__PURE__ */ React.createElement("div", { className: "text-[10px] md:text-[11px] text-slate-500 leading-snug" }, tr("timeline.trackBeyondForecast")))
       )
     ), !isMobile && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
         onClick: () => scrollDaysBy(-1),
-        className: `absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border shadow ${t.scrollArrow}`,
+        className: "absolute left-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow hover:bg-white",
         "aria-label": tr("timeline.scrollLeft")
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "chevron-left", size: 14 })
@@ -411,31 +381,31 @@
       {
         type: "button",
         onClick: () => scrollDaysBy(1),
-        className: `absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border shadow ${t.scrollArrow}`,
+        className: "absolute right-1 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow hover:bg-white",
         "aria-label": tr("timeline.scrollRight")
       },
       /* @__PURE__ */ React.createElement(Icon, { name: "chevron-right", size: 14 })
     )), /* @__PURE__ */ React.createElement(
       "div",
       {
-        className: `pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r ${t.fade} to-transparent transition-opacity ${showLeftFade ? "opacity-100" : "opacity-0"}`
+        className: `pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white/95 to-transparent transition-opacity ${showLeftFade ? "opacity-100" : "opacity-0"}`
       }
     ), /* @__PURE__ */ React.createElement(
       "div",
       {
-        className: `pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l ${t.fade} to-transparent transition-opacity ${showRightFade ? "opacity-100" : "opacity-0"}`
+        className: `pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-white/95 to-transparent transition-opacity ${showRightFade ? "opacity-100" : "opacity-0"}`
       }
     )))), showDayDetails && selectedDay && /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 px-4 py-6" }, /* @__PURE__ */ React.createElement(
       "div",
       {
-        className: `${isDark ? "bg-slate-900" : "bg-white"} rounded-3xl shadow-2xl border ${t.modalBorder} w-full ${isMobile ? "max-h-[90vh]" : "max-h-[80vh] max-w-4xl"} flex flex-col overflow-hidden`
+        className: `bg-white rounded-3xl shadow-2xl border border-slate-200 w-full ${isMobile ? "max-h-[90vh]" : "max-h-[80vh] max-w-4xl"} flex flex-col overflow-hidden`
       },
-      /* @__PURE__ */ React.createElement("div", { className: `sticky top-0 ${t.modalHeader} border-b px-5 py-4 flex flex-col gap-3` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 text-right" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}` }, selectedDay.day), /* @__PURE__ */ React.createElement("div", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, selectedDay.label)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold" }, selectedDay.percent, tr("timeline.suitabilityPercent")), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "sticky top-0 bg-white border-b border-slate-200 px-5 py-4 flex flex-col gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 text-start" }, /* @__PURE__ */ React.createElement("div", { className: "text-sm font-semibold text-slate-500" }, selectedDay.day), /* @__PURE__ */ React.createElement("div", { className: "text-xl font-black text-slate-900" }, selectedDay.label)), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold" }, selectedDay.percent, tr("timeline.suitabilityPercent")), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
           onClick: onCloseDayDetails,
-          className: `w-9 h-9 rounded-full border flex items-center justify-center ${t.closeBtn}`,
+          className: "w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-50",
           "aria-label": tr("timeline.closeDayDetails")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
@@ -448,17 +418,17 @@
             key: day.day,
             type: "button",
             onClick: () => onSelectDay(day.originalIndex),
-            className: `flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold transition ${isSelected ? (isDark ? "border-blue-500 bg-blue-900/50 text-blue-300" : "border-blue-500 bg-blue-50 text-blue-700") : (isDark ? "border-slate-600 bg-slate-800 text-slate-300 hover:border-blue-400" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300")}`
+            className: `flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold transition ${isSelected ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`
           },
           /* @__PURE__ */ React.createElement("span", null, dayLine),
           /* @__PURE__ */ React.createElement("span", { className: "text-[10px] text-slate-400" }, day.percent, "%")
         );
-      })), /* @__PURE__ */ React.createElement("div", { className: `flex flex-wrap items-center justify-between gap-2 text-[12px] ${isDark ? "text-slate-300" : "text-slate-600"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: `px-3 py-1 rounded-full border ${t.chip}` }, tr("timeline.stableWindows"), " ", selectedDay.flyableWindows.length ? selectedDay.flyableWindows.join(", ") : tr("timeline.none")), filterFlyableOnly && /* @__PURE__ */ React.createElement(
+      })), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-2 text-[12px] text-slate-600" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full bg-slate-100 border border-slate-200" }, tr("timeline.stableWindows"), " ", selectedDay.flyableWindows.length ? selectedDay.flyableWindows.join(", ") : tr("timeline.none")), filterFlyableOnly && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
           onClick: () => setShowAllSlots((prev) => !prev),
-          className: `px-3 py-1 rounded-full border ${t.settingsBtn}`
+          className: "px-3 py-1 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
         },
         showAllSlots ? tr("timeline.showStableOnly") : tr("timeline.showLessIdeal")
       )), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2" }, /* @__PURE__ */ React.createElement(
@@ -466,15 +436,15 @@
         {
           type: "button",
           onClick: onOpenSettings,
-          className: `px-3 py-1 rounded-full border ${t.settingsBtn}`
+          className: "px-3 py-1 rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         },
         tr("timeline.adjustThresholds")
-      ), !notificationsSupported ? /* @__PURE__ */ React.createElement("span", { className: `px-3 py-1 rounded-full border text-[11px] ${t.chip}` }, tr("timeline.browserNoNotifications")) : isSelectedDayTracked ? /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700" }, tr("timeline.dayTracked")), /* @__PURE__ */ React.createElement(
+      ), !notificationsSupported ? /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[11px] text-slate-600" }, tr("timeline.browserNoNotifications")) : isSelectedDayTracked ? /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[11px] font-semibold text-emerald-700" }, tr("timeline.dayTracked")), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
           onClick: onOpenNotificationManager,
-          className: `px-3 py-1 rounded-full border text-[11px] ${t.settingsBtn}`
+          className: "px-3 py-1 rounded-full border border-slate-200 bg-white text-[11px] text-slate-600 hover:bg-slate-50"
         },
         tr("timeline.manageNotifications")
       )) : /* @__PURE__ */ React.createElement(
@@ -487,7 +457,7 @@
         },
         notificationsLoading ? tr("timeline.processing") : tr("timeline.enableNotificationsForDay")
       )))),
-      /* @__PURE__ */ React.createElement("div", { className: `flex-1 overflow-y-auto p-5 space-y-3 custom-scroll ${isDark ? "bg-slate-900" : ""}` }, displayedSlots.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center text-sm ${isDark ? "text-slate-400 border-slate-600" : "text-slate-500 border-slate-300"} border border-dashed rounded-xl py-6` }, tr("timeline.noSlotsToShow")) : displayedSlots.map((slot) => {
+      /* @__PURE__ */ React.createElement("div", { className: "flex-1 overflow-y-auto p-5 space-y-3 custom-scroll" }, displayedSlots.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "text-center text-sm text-slate-500 border border-dashed border-slate-300 rounded-xl py-6" }, tr("timeline.noSlotsToShow")) : displayedSlots.map((slot) => {
         const slotKey = `${selectedDay.day}T${slot.time}`;
         const isActive = slotKey === selectedSlotKey;
         const slotAlerts = getSlotAlerts(slot);
@@ -496,16 +466,16 @@
           {
             key: slot.key,
             onClick: () => onSlotSelect(`${selectedDay.day}T${slot.time}`),
-            className: `w-full text-right border rounded-2xl p-4 shadow-sm transition ${t.slotCard} ${isActive ? "border-blue-500 ring-2 ring-blue-200" : `${t.card} ${t.cardHover}`}`
+            className: `w-full text-start border rounded-2xl p-4 shadow-sm transition ${isActive ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200 hover:border-blue-300"}`
           },
-          /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, slot.time), /* @__PURE__ */ React.createElement(
+          /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between gap-3" }, /* @__PURE__ */ React.createElement("div", { className: "text-xl font-black text-slate-900" }, slot.time), /* @__PURE__ */ React.createElement(
             "span",
             {
-              className: `px-3 py-1 rounded-full text-[11px] font-semibold ${slot.isFlyable ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : `${t.chip} border`}`
+              className: `px-3 py-1 rounded-full text-[11px] font-semibold ${slot.isFlyable ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`
             },
             slot.isFlyable ? tr("timeline.stableHour") : tr("timeline.lessIdeal")
           )),
-          /* @__PURE__ */ React.createElement("div", { className: `mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 text-[11px] ${isDark ? "text-slate-300" : "text-slate-600"}` }, /* @__PURE__ */ React.createElement("div", { className: `px-2 py-1 rounded-full border flex items-center gap-2 ${t.chip}` }, /* @__PURE__ */ React.createElement("span", { className: "whitespace-nowrap" }, tr("timeline.riskIndex")), renderRiskIndicator(slot.riskScore ?? 0)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.wind) }, "🌬 ", tr("timeline.wind"), " ", formatWind(slot.wind), renderAlertBadge(slotAlerts.wind)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.gust) }, "💨 ", tr("timeline.gusts"), " ", formatWind(slot.gust ?? slot.wind), renderAlertBadge(slotAlerts.gust)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.rain) }, "🌧 ", tr("timeline.rain"), " ", slot.rainProb ?? 0, "%", renderAlertBadge(slotAlerts.rain)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.clouds) }, "☁ ", tr("timeline.clouds"), " ", slot.clouds ?? 0, "%", renderAlertBadge(slotAlerts.clouds)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.sun) }, "☀ ", tr("timeline.sunAngle"), " ", typeof slot.sunAlt === "number" ? `${slot.sunAlt.toFixed(1)}°` : "—", renderAlertBadge(slotAlerts.sun)))
+          /* @__PURE__ */ React.createElement("div", { className: "mt-3 grid grid-cols-2 md:grid-cols-6 gap-2 text-[11px] text-slate-600" }, /* @__PURE__ */ React.createElement("div", { className: "px-2 py-1 rounded-full bg-slate-100 border border-slate-200 flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "whitespace-nowrap" }, tr("timeline.riskIndex")), renderRiskIndicator(slot.riskScore ?? 0)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.wind) }, "🌬 ", tr("timeline.wind"), " ", formatWind(slot.wind), renderAlertBadge(slotAlerts.wind)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.gust) }, "💨 ", tr("timeline.gusts"), " ", formatWind(slot.gust ?? slot.wind), renderAlertBadge(slotAlerts.gust)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.rain) }, "🌧 ", tr("timeline.rain"), " ", slot.rainProb ?? 0, "%", renderAlertBadge(slotAlerts.rain)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.clouds) }, "☁ ", tr("timeline.clouds"), " ", slot.clouds ?? 0, "%", renderAlertBadge(slotAlerts.clouds)), /* @__PURE__ */ React.createElement("div", { className: getSlotChipClass(slotAlerts.sun) }, "☀ ", tr("timeline.sunAngle"), " ", typeof slot.sunAlt === "number" ? `${slot.sunAlt.toFixed(1)}°` : "—", renderAlertBadge(slotAlerts.sun)))
         );
       }))
     )));
@@ -542,14 +512,14 @@
         className: "fixed right-3 sm:right-4 max-h-[82vh] z-[920] bg-gradient-to-b from-blue-50 to-white text-slate-900 shadow-2xl border border-blue-200 rounded-3xl overflow-y-auto custom-scroll",
         style: panelStyle
       },
-      /* @__PURE__ */ React.createElement("div", { className: "sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 text-right" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs uppercase tracking-[0.3em] text-blue-700 font-bold" }, "זמן אמת"), /* @__PURE__ */ React.createElement("h2", { className: "text-xl font-black text-slate-900 leading-tight" }, "מכ״ם גשם ומיקומי מטוסים"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, "הפעלת שכבות מפה מתעדכנות ללא טקסט כפול או עומס מיותר."))),
-      /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-4 text-right" }, /* @__PURE__ */ React.createElement("div", { className: "border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "radar", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "leading-tight text-right" }, /* @__PURE__ */ React.createElement("div", { className: "font-bold text-slate-900" }, "מכ״ם גשם"), /* @__PURE__ */ React.createElement("div", { className: "text-[11px] text-blue-800/80" }, "RainViewer · מתעדכן כל 5 דקות"))), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "sticky top-0 z-10 bg-gradient-to-b from-blue-50 to-white px-5 pt-5 pb-3 border-b border-blue-200" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 text-start" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs uppercase tracking-[0.3em] text-blue-700 font-bold" }, tr("realtime.title")), /* @__PURE__ */ React.createElement("h2", { className: "text-xl font-black text-slate-900 leading-tight" }, tr("realtime.subtitle")), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-slate-600" }, tr("realtime.description")))),
+      /* @__PURE__ */ React.createElement("div", { className: "p-5 space-y-4 text-start" }, /* @__PURE__ */ React.createElement("div", { className: "border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "radar", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "leading-tight text-start" }, /* @__PURE__ */ React.createElement("div", { className: "font-bold text-slate-900" }, tr("realtime.rainRadar")), /* @__PURE__ */ React.createElement("div", { className: "text-[11px] text-blue-800/80" }, tr("realtime.rainRadarSource")))), /* @__PURE__ */ React.createElement(
         "span",
         {
           className: `text-[11px] font-semibold px-2 py-0.5 rounded-full ${rainRadarEnabled ? "text-blue-700 bg-blue-50 border border-blue-200" : "text-slate-400 bg-slate-100"}`
         },
-        rainRadarEnabled ? "מוצג" : "מוסתר"
-      )), /* @__PURE__ */ React.createElement("div", { className: "flex flex-col gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-800" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2 items-center" }, rainRadarStatus === "loading" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200" }, "מכ״ם נטען..."), rainRadarStatus === "error" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200" }, "מכ״ם לא זמין"), (rainRadarUnavailable || rainRadarStatus === "unavailable") && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800" }, "מקור הנתונים לא זמין כרגע")), rainRadarTimestamp && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700" }, "עודכן: ", new Date(rainRadarTimestamp * 1e3).toLocaleTimeString("he-IL"))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-2" }, /* @__PURE__ */ React.createElement(
+        rainRadarEnabled ? tr("realtime.shown") : tr("realtime.hidden")
+      )), /* @__PURE__ */ React.createElement("div", { className: "flex flex-col gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-800" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-2 items-center" }, rainRadarStatus === "loading" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200" }, tr("realtime.radarLoading")), rainRadarStatus === "error" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200" }, tr("realtime.radarUnavailable")), (rainRadarUnavailable || rainRadarStatus === "unavailable") && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800" }, tr("realtime.sourceUnavailable"))), rainRadarTimestamp && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700" }, tr("realtime.updated"), " ", new Date(rainRadarTimestamp * 1e3).toLocaleTimeString(getDateLocale()))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-2" }, /* @__PURE__ */ React.createElement(
         "button",
         {
           onClick: onToggleRainRadar,
@@ -561,13 +531,13 @@
             className: `w-7 h-7 rounded-full flex items-center justify-center ${rainRadarEnabled ? "bg-white/20" : "bg-blue-100 text-blue-700"}`
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "cloud", size: 16 })
-        ), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-right" }, rainRadarEnabled ? "הסתר שכבת גשם" : "הצג שכבת גשם")),
+        ), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-start" }, rainRadarEnabled ? tr("realtime.hideRain") : tr("realtime.showRain"))),
         /* @__PURE__ */ React.createElement(
           "span",
           {
             className: `text-[11px] font-semibold ${rainRadarEnabled ? "text-white" : "text-blue-700"}`
           },
-          rainRadarEnabled ? "פעיל" : "כבוי"
+          rainRadarEnabled ? tr("realtime.active") : tr("realtime.off")
         )
       ), /* @__PURE__ */ React.createElement(
         "button",
@@ -575,14 +545,14 @@
           onClick: onRefreshRainRadar,
           className: "flex items-center justify-center rounded-xl border border-blue-200 bg-white text-sm font-semibold text-blue-700 hover:bg-blue-50/80"
         },
-        "רענון מכ״ם"
-      )))), /* @__PURE__ */ React.createElement("div", { className: "border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "drone", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "leading-tight text-right" }, /* @__PURE__ */ React.createElement("div", { className: "font-bold text-slate-900" }, "מיקומי מטוסים"), /* @__PURE__ */ React.createElement("div", { className: "text-[11px] text-blue-800/80" }, "ADSBExchange · רענון כל 15 שניות"))), /* @__PURE__ */ React.createElement(
+        tr("realtime.refreshRadar")
+      )))), /* @__PURE__ */ React.createElement("div", { className: "border border-blue-200 rounded-2xl bg-white/90 p-4 space-y-3 shadow-sm" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "drone", size: 18 })), /* @__PURE__ */ React.createElement("div", { className: "leading-tight text-start" }, /* @__PURE__ */ React.createElement("div", { className: "font-bold text-slate-900" }, tr("realtime.aircraft")), /* @__PURE__ */ React.createElement("div", { className: "text-[11px] text-blue-800/80" }, tr("realtime.aircraftSource")))), /* @__PURE__ */ React.createElement(
         "span",
         {
           className: `text-[11px] font-semibold px-2 py-0.5 rounded-full ${aircraftEnabled ? "text-blue-700 bg-blue-50 border border-blue-200" : "text-slate-400 bg-slate-100"}`
         },
-        aircraftEnabled ? "מוצג" : "מוסתר"
-      )), /* @__PURE__ */ React.createElement("div", { className: "space-y-2 bg-blue-50/60 border border-blue-200 rounded-xl px-3 py-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-800" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 items-center" }, aircraftStatus === "loading" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200" }, "מתחבר..."), aircraftStatus === "updating" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200" }, "מרענן..."), aircraftStatus === "error" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-600" }, "שגיאה"), (aircraftUnavailable || aircraftStatus === "error") && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200" }, "מקור הנתונים לא זמין כרגע")), /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700 text-[10px]" }, "טווח: ", aircraftRangeKm, ' ק"מ · ', aircraftData.length, " בטווח")), /* @__PURE__ */ React.createElement(
+        aircraftEnabled ? tr("realtime.shown") : tr("realtime.hidden")
+      )), /* @__PURE__ */ React.createElement("div", { className: "space-y-2 bg-blue-50/60 border border-blue-200 rounded-xl px-3 py-2" }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center justify-between gap-2 text-[11px] text-blue-800" }, /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 items-center" }, aircraftStatus === "loading" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200" }, tr("realtime.connecting")), aircraftStatus === "updating" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-100 border border-blue-200" }, tr("realtime.refreshing")), aircraftStatus === "error" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-600" }, tr("realtime.error")), (aircraftUnavailable || aircraftStatus === "error") && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200" }, tr("realtime.sourceUnavailable"))), /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full bg-white border border-blue-200 text-blue-700 text-[10px]" }, tr("realtime.range"), " ", aircraftRangeKm, " ", tr("realtime.kmUnit"), " · ", aircraftData.length, " ", tr("realtime.inRange"))), /* @__PURE__ */ React.createElement(
         "button",
         {
           onClick: onToggleAircraft,
@@ -594,13 +564,13 @@
             className: `w-7 h-7 rounded-full flex items-center justify-center ${aircraftEnabled ? "bg-white/20" : "bg-blue-100 text-blue-700"}`
           },
           /* @__PURE__ */ React.createElement(Icon, { name: "drone", size: 16 })
-        ), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-right" }, aircraftEnabled ? "הסתר מיקומי מטוסים" : "הצג מיקומי מטוסים")),
+        ), /* @__PURE__ */ React.createElement("span", { className: "font-bold text-start" }, aircraftEnabled ? tr("realtime.hideAircraft") : tr("realtime.showAircraft"))),
         /* @__PURE__ */ React.createElement(
           "span",
           {
             className: `text-[11px] font-semibold ${aircraftEnabled ? "text-white" : "text-blue-700"}`
           },
-          aircraftEnabled ? "פעיל" : "כבוי"
+          aircraftEnabled ? tr("realtime.active") : tr("realtime.off")
         )
       ), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 text-[11px] text-blue-800" }, /* @__PURE__ */ React.createElement(
         "input",
@@ -614,7 +584,7 @@
           className: "flex-1 accent-blue-600",
           disabled: !aircraftEnabled
         }
-      ), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] text-blue-700" }, "חיפוש סביב מרכז המפה")))))
+      ), /* @__PURE__ */ React.createElement("span", { className: "text-[10px] text-blue-700" }, tr("realtime.searchAroundMap"))))))
     );
   };
   const DocumentationPanel = ({ children }) => children;
@@ -671,19 +641,19 @@
         {
           type: "button",
           onClick: onClose,
-          className: `absolute top-4 ${I18n.getLocale() === "he" ? "left-4" : "right-4"} rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
           "aria-label": tr("notifMgr.closeManager")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "ps-8 md:ps-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("notifMgr.title")), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, rules.length > 0 ? tr("notifMgr.activeRules", { count: rules.length }) : tr("notifMgr.noActiveRules"))),
+      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("notifMgr.title")), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, rules.length > 0 ? tr("notifMgr.activeRules", { count: rules.length }) : tr("notifMgr.noActiveRules"))),
       isLoading ? /* @__PURE__ */ React.createElement("div", { className: "text-center py-8" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, tr("notifMgr.loadingRules"))) : rules.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: `text-center py-8 border border-dashed rounded-xl ${isDark ? "border-slate-700" : "border-slate-300"}` }, /* @__PURE__ */ React.createElement("div", { className: "flex justify-center mb-3" }, /* @__PURE__ */ React.createElement(Icon, { name: "bell", size: 32, className: isDark ? "text-slate-600" : "text-slate-300" })), /* @__PURE__ */ React.createElement("div", { className: `text-sm ${t.text}` }, tr("notifMgr.noNotificationsNow")), /* @__PURE__ */ React.createElement("div", { className: `text-xs mt-1 ${t.text}` }, tr("notifMgr.enableFromDayView"))) : /* @__PURE__ */ React.createElement("div", { className: "space-y-3" }, rules.map((rule) => {
         const locationName = rule.criteria?.locationName || tr("location.unknown");
         const dateRange = rule.start_date === rule.end_date ? formatDateShort(rule.start_date) : `${formatDateShort(rule.start_date)} – ${formatDateShort(rule.end_date)}`;
         const hourFrom = rule.hour_from ?? 0;
         const hourTo = rule.hour_to ?? 23;
         const hoursLabel = `${String(hourFrom).padStart(2, "0")}:00–${String(hourTo).padStart(2, "0")}:00`;
-        const lastChecked = rule.last_checked_at ? new Date(rule.last_checked_at).toLocaleString(I18n.getDateLocale(), {
+        const lastChecked = rule.last_checked_at ? new Date(rule.last_checked_at).toLocaleString(getDateLocale(), {
           hour: "2-digit",
           minute: "2-digit",
           day: "2-digit",
@@ -781,12 +751,12 @@
         {
           type: "button",
           onClick: onClose,
-          className: `absolute top-4 ${I18n.getLocale() === "he" ? "left-4" : "right-4"} rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
+          className: `absolute top-4 left-4 rounded-full border p-2 shadow-sm transition ${t.closeBtn}`,
           "aria-label": tr("futureDate.close")
         },
         /* @__PURE__ */ React.createElement(Icon, { name: "close", size: 16 })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "ps-8 md:ps-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("futureDate.title")), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, tr("futureDate.subtitle"))),
+      /* @__PURE__ */ React.createElement("div", { className: "pr-8 md:pr-0" }, /* @__PURE__ */ React.createElement("div", { className: "text-blue-600 font-bold text-sm uppercase tracking-widest" }, tr("futureDate.title")), /* @__PURE__ */ React.createElement("h2", { className: `text-xl font-black ${isDark ? "text-slate-100" : "text-slate-900"}` }, tr("futureDate.subtitle"))),
       /* @__PURE__ */ React.createElement("div", { className: `border rounded-xl p-4 space-y-2 ${t.card}` }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0" }, /* @__PURE__ */ React.createElement(Icon, { name: "gps", size: 16 })), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-w-0" }, /* @__PURE__ */ React.createElement("div", { className: `text-sm font-bold truncate ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName || tr("futureDate.loadingLocation")), /* @__PURE__ */ React.createElement("div", { className: `text-[11px] ${t.text}` }, tr("futureDate.locationByMapCenter"))))),
       /* @__PURE__ */ React.createElement("div", { className: "space-y-2" }, /* @__PURE__ */ React.createElement("label", { className: `text-sm font-semibold block ${isDark ? "text-slate-200" : "text-slate-700"}` }, tr("futureDate.chooseDate")), /* @__PURE__ */ React.createElement(
         "input",
