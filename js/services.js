@@ -424,6 +424,48 @@
   };
 
   /**
+   * Refresh weather summaries for all active rules (re-evaluates from Open-Meteo).
+   * @param {string} subscriptionId - Subscription ID from localStorage.
+   * @returns {Promise<object[]>} Array of rule objects with fresh weather_summary.
+   */
+  const refreshNotificationRules = async (subscriptionId) => {
+    const Config = window.AerialPlannerConfig || {};
+    if (!Config.SUPABASE_FUNCTIONS_URL) {
+      throw new Error("Missing SUPABASE_FUNCTIONS_URL in configuration.");
+    }
+    if (!Config.SUPABASE_ANON_KEY) {
+      throw new Error("Missing SUPABASE_ANON_KEY in configuration.");
+    }
+    const res = await fetch(
+      `${Config.SUPABASE_FUNCTIONS_URL}/rules-manage`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: Config.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${Config.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: "refresh",
+          subscription_id: subscriptionId,
+        }),
+      },
+    );
+    const responseText = await res.text();
+    if (!res.ok) {
+      throw new Error(responseText || res.statusText);
+    }
+    if (!responseText) return [];
+    try {
+      const parsed = JSON.parse(responseText);
+      return parsed?.rules || [];
+    } catch (err) {
+      console.warn("Failed to parse rules-manage refresh response", err);
+      return [];
+    }
+  };
+
+  /**
    * Delete a specific notification rule.
    * @param {string} subscriptionId - Subscription ID from localStorage.
    * @param {string} ruleId - ID of the rule to delete.
@@ -468,6 +510,7 @@
     upsertNotificationRule,
     reverseGeocode,
     listNotificationRules,
+    refreshNotificationRules,
     deleteNotificationRule,
   };
 })();

@@ -842,6 +842,19 @@ const App = () => {
     }
   }, [pushSubscriptionId]);
 
+  const refreshRules = useCallback(async () => {
+    if (!pushSubscriptionId) return;
+    setIsLoadingRules(true);
+    try {
+      const rules = await Services.refreshNotificationRules(pushSubscriptionId);
+      setNotificationRules(rules);
+    } catch (err) {
+      console.warn("Failed to refresh notification rules", err);
+    } finally {
+      setIsLoadingRules(false);
+    }
+  }, [pushSubscriptionId]);
+
   // Fetch rules on mount if subscriptionId exists
   useEffect(() => {
     if (pushSubscriptionId) {
@@ -3001,7 +3014,7 @@ const App = () => {
       onDisableNotifications={handleDisableAllNotifications}
       onOpenNotificationManager={() => {
         setShowNotificationManager(true);
-        fetchRules();
+        refreshRules();
       }}
       suitabilitySettings={suitabilitySettings}
       formatWindValue={formatWindValue}
@@ -3337,7 +3350,7 @@ const App = () => {
         rules={notificationRules}
         isLoading={isLoadingRules}
         onDeleteRule={handleDeleteRule}
-        onRefresh={fetchRules}
+        onRefresh={refreshRules}
         onDisableAll={handleDisableAllNotifications}
         onNavigateToRule={handleNavigateToRule}
       />
@@ -3450,7 +3463,7 @@ const App = () => {
             <button
               onClick={() => {
                 setShowNotificationManager(true);
-                fetchRules();
+                refreshRules();
               }}
               className="relative w-12 h-12 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center hover:-translate-y-0.5 hover:shadow-xl transition"
               aria-label="ניהול התראות"
