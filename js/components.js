@@ -604,11 +604,24 @@
     isLoading = false,
     onDeleteRule,
     onRefresh,
-    onDisableAll
+    onDisableAll,
+    onNavigateToRule
   }) => {
     if (!show) return null;
     const isDark = theme === "dark";
     const [confirmDeleteId, setConfirmDeleteId] = React.useState(null);
+    const getStatusBadge = (summary) => {
+      if (!summary || !summary.status) return null;
+      const map = {
+        fly: { dot: "bg-emerald-500", text: isDark ? "text-emerald-400" : "text-emerald-700", label: tr("notifMgr.statusFly") },
+        risk: { dot: "bg-amber-500", text: isDark ? "text-amber-400" : "text-amber-700", label: tr("notifMgr.statusRisk") },
+        "no-fly": { dot: "bg-red-500", text: isDark ? "text-red-400" : "text-red-600", label: tr("notifMgr.statusNoFly") },
+        "no-data": { dot: "bg-slate-400", text: isDark ? "text-slate-400" : "text-slate-500", label: tr("notifMgr.statusNoData") },
+        "awaiting-forecast": { dot: "bg-purple-500", text: isDark ? "text-purple-400" : "text-purple-700", label: tr("notifMgr.statusAwaiting") }
+      };
+      const info = map[summary.status] || map["no-data"];
+      return /* @__PURE__ */ React.createElement("span", { className: `inline-flex items-center gap-1.5 ${info.text}` }, /* @__PURE__ */ React.createElement("span", { className: `inline-flex h-2 w-2 rounded-full ${info.dot}`, "aria-hidden": "true" }), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] font-semibold" }, info.label));
+    };
     const t = {
       overlay: "fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4",
       modal: isDark ? "bg-slate-900 text-slate-100" : "bg-white text-slate-900",
@@ -660,17 +673,27 @@
           month: "2-digit"
         }) : null;
         const isConfirming = confirmDeleteId === rule.id;
+        const ws = rule.weather_summary;
         return /* @__PURE__ */ React.createElement(
           "div",
           {
             key: rule.id,
-            className: `border rounded-xl p-3 space-y-2 ${t.card}`
+            className: `border rounded-xl p-3 space-y-2 cursor-pointer transition hover:ring-2 ${isDark ? "hover:ring-blue-500/50" : "hover:ring-blue-400/50"} ${t.card}`,
+            onClick: () => onNavigateToRule?.(rule),
+            role: "button",
+            tabIndex: 0,
+            onKeyDown: (e) => {
+              if (e.key === "Enter") onNavigateToRule?.(rule);
+            }
           },
-          /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 flex-1" }, /* @__PURE__ */ React.createElement("div", { className: `font-bold text-sm ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, dateRange), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, hoursLabel), rule.criteria?.ruleType === "future" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-semibold" }, tr("notifMgr.waitingForForecast")), lastChecked && /* @__PURE__ */ React.createElement("span", { className: `text-[10px] ${t.text}` }, tr("notifMgr.lastChecked"), " ", lastChecked))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1" }, isConfirming ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+          /* @__PURE__ */ React.createElement("div", { className: "flex items-start justify-between gap-2" }, /* @__PURE__ */ React.createElement("div", { className: "space-y-1 flex-1" }, /* @__PURE__ */ React.createElement("div", { className: `font-bold text-sm ${isDark ? "text-slate-100" : "text-slate-900"}` }, locationName), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 text-[11px]" }, /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, dateRange), /* @__PURE__ */ React.createElement("span", { className: `px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-700 border-slate-600 text-slate-200" : "bg-white border-slate-200 text-slate-700"}` }, hoursLabel), rule.criteria?.ruleType === "future" && /* @__PURE__ */ React.createElement("span", { className: "px-2 py-0.5 rounded-full border border-purple-200 bg-purple-50 text-purple-700 text-[10px] font-semibold" }, tr("notifMgr.waitingForForecast")), lastChecked && /* @__PURE__ */ React.createElement("span", { className: `text-[10px] ${t.text}` }, tr("notifMgr.lastChecked"), " ", lastChecked)), ws && /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 text-[11px] pt-1" }, getStatusBadge(ws), ws.totalCount > 0 && /* @__PURE__ */ React.createElement("span", { className: `${t.text} text-[10px]` }, tr("notifMgr.flyableHours", { flyable: ws.flyableCount, total: ws.totalCount })))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1", onClick: (e) => e.stopPropagation() }, isConfirming ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
             "button",
             {
               type: "button",
-              onClick: () => handleDeleteClick(rule.id),
+              onClick: (e) => {
+                e.stopPropagation();
+                handleDeleteClick(rule.id);
+              },
               className: "px-2 py-1 rounded-lg bg-red-600 text-white text-[11px] font-semibold hover:bg-red-500"
             },
             tr("notifMgr.delete")
@@ -678,7 +701,10 @@
             "button",
             {
               type: "button",
-              onClick: () => setConfirmDeleteId(null),
+              onClick: (e) => {
+                e.stopPropagation();
+                setConfirmDeleteId(null);
+              },
               className: `px-2 py-1 rounded-lg text-[11px] font-semibold ${isDark ? "bg-slate-700 text-slate-200" : "bg-slate-200 text-slate-700"}`
             },
             tr("notifMgr.cancel")
@@ -686,12 +712,16 @@
             "button",
             {
               type: "button",
-              onClick: () => handleDeleteClick(rule.id),
+              onClick: (e) => {
+                e.stopPropagation();
+                handleDeleteClick(rule.id);
+              },
               className: `p-1.5 rounded-lg transition ${isDark ? "text-slate-400 hover:text-red-400 hover:bg-slate-700" : "text-slate-400 hover:text-red-600 hover:bg-slate-100"}`,
               "aria-label": tr("notifMgr.deleteRule")
             },
             /* @__PURE__ */ React.createElement(Icon, { name: "trash", size: 14 })
-          )))
+          ))),
+          /* @__PURE__ */ React.createElement("div", { className: `flex items-center gap-1 text-[10px] ${isDark ? "text-blue-400" : "text-blue-600"}` }, /* @__PURE__ */ React.createElement(Icon, { name: "map", size: 12 }), /* @__PURE__ */ React.createElement("span", null, tr("notifMgr.goToLocation")))
         );
       })),
       /* @__PURE__ */ React.createElement("div", { className: `flex flex-wrap items-center justify-between gap-2 pt-2 border-t ${isDark ? "border-slate-700" : "border-slate-200"}` }, /* @__PURE__ */ React.createElement(

@@ -150,6 +150,13 @@
       "notifMgr.deleteRule": "מחק כלל",
       "notifMgr.refresh": "רענן",
       "notifMgr.disableAll": "בטל את כל ההתראות",
+      "notifMgr.statusFly": "מתאים לטיסה",
+      "notifMgr.statusRisk": "חלקית",
+      "notifMgr.statusNoFly": "לא מתאים",
+      "notifMgr.statusNoData": "אין נתונים",
+      "notifMgr.statusAwaiting": "ממתין לתחזית",
+      "notifMgr.flyableHours": "{flyable}/{total} שעות מתאימות",
+      "notifMgr.goToLocation": "הצג במפה",
 
       // === components.js — RealtimePanel ===
       "realtime.title": "זמן אמת",
@@ -426,6 +433,13 @@
       "notifMgr.deleteRule": "Delete rule",
       "notifMgr.refresh": "Refresh",
       "notifMgr.disableAll": "Disable all notifications",
+      "notifMgr.statusFly": "Flyable",
+      "notifMgr.statusRisk": "Partial",
+      "notifMgr.statusNoFly": "Not suitable",
+      "notifMgr.statusNoData": "No data",
+      "notifMgr.statusAwaiting": "Awaiting forecast",
+      "notifMgr.flyableHours": "{flyable}/{total} flyable hours",
+      "notifMgr.goToLocation": "Show on map",
 
       // === components.js — FutureDateTrackingModal ===
       // === components.js — RealtimePanel ===

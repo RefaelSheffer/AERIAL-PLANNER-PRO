@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("rules")
-      .select("id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_checked_at, created_at")
+      .select("id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_checked_at, created_at, weather_summary")
       .eq("subscription_id", subscriptionId)
       .gt("expires_at", now)
       .order("created_at", { ascending: false });

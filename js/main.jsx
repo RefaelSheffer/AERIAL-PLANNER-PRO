@@ -473,6 +473,7 @@ const App = () => {
   const [futureDateLocationName, setFutureDateLocationName] = useState("");
   const queryDay = useMemo(() => getQueryDayParam(), []);
   const queryDayAppliedRef = useRef(false);
+  const pendingRuleDayRef = useRef(null);
   const windUnitMeta = useMemo(
     () => WIND_UNITS.find((unit) => unit.id === windUnit) || WIND_UNITS[0],
     [windUnit],
@@ -1024,6 +1025,13 @@ const App = () => {
     [moveToLocation],
   );
 
+  const handleNavigateToRule = useCallback((rule) => {
+    setShowNotificationManager(false);
+    moveToLocation([rule.lat, rule.lon], rule.criteria?.locationName || "");
+    pendingRuleDayRef.current = rule.start_date;
+    setShowTimeline(true);
+  }, [moveToLocation]);
+
   const recenterOnUser = useCallback(() => {
     if (!mapRef.current) return;
 
@@ -1556,6 +1564,16 @@ const App = () => {
     }
     queryDayAppliedRef.current = true;
   }, [daySuitability, queryDay]);
+
+  useEffect(() => {
+    if (!pendingRuleDayRef.current || !daySuitability.length) return;
+    const idx = daySuitability.findIndex((d) => d.day === pendingRuleDayRef.current);
+    if (idx >= 0) {
+      setSelectedDayIndex(idx);
+      setShowDayDetails(true);
+      pendingRuleDayRef.current = null;
+    }
+  }, [daySuitability]);
 
   useEffect(() => {
     if (selectedDayIndex >= daySuitability.length && daySuitability.length > 0) {
@@ -3321,6 +3339,7 @@ const App = () => {
         onDeleteRule={handleDeleteRule}
         onRefresh={fetchRules}
         onDisableAll={handleDisableAllNotifications}
+        onNavigateToRule={handleNavigateToRule}
       />
 
       <FutureDateTrackingModal

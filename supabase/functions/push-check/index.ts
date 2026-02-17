@@ -346,7 +346,10 @@ Deno.serve(async (req) => {
       updates.push(
         supabase
           .from("rules")
-          .update({ last_checked_at: new Date().toISOString() })
+          .update({
+            last_checked_at: new Date().toISOString(),
+            weather_summary: { status: "awaiting-forecast", percent: 0, flyableCount: 0, totalCount: 0 },
+          })
           .eq("id", rule.id),
       );
       results.push({
@@ -469,12 +472,20 @@ Deno.serve(async (req) => {
       ? { ...criteriaRaw, ruleType: "standard" }
       : undefined;
 
+    const weatherSummary = {
+      status,
+      percent,
+      flyableCount: flyableSlots.length,
+      totalCount: relevantSlots.length,
+    };
+
     updates.push(
       supabase
         .from("rules")
         .update({
           last_state_hash: stateHash,
           last_checked_at: new Date().toISOString(),
+          weather_summary: weatherSummary,
           ...(updatedCriteria ? { criteria: updatedCriteria } : {}),
         })
         .eq("id", rule.id),

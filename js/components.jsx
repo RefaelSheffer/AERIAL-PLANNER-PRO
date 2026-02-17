@@ -1186,11 +1186,30 @@ const NotificationManagerModal = ({
   onDeleteRule,
   onRefresh,
   onDisableAll,
+  onNavigateToRule,
 }) => {
   if (!show) return null;
 
   const isDark = theme === "dark";
   const [confirmDeleteId, setConfirmDeleteId] = React.useState(null);
+
+  const getStatusBadge = (summary) => {
+    if (!summary || !summary.status) return null;
+    const map = {
+      fly: { dot: "bg-emerald-500", text: isDark ? "text-emerald-400" : "text-emerald-700", label: tr("notifMgr.statusFly") },
+      risk: { dot: "bg-amber-500", text: isDark ? "text-amber-400" : "text-amber-700", label: tr("notifMgr.statusRisk") },
+      "no-fly": { dot: "bg-red-500", text: isDark ? "text-red-400" : "text-red-600", label: tr("notifMgr.statusNoFly") },
+      "no-data": { dot: "bg-slate-400", text: isDark ? "text-slate-400" : "text-slate-500", label: tr("notifMgr.statusNoData") },
+      "awaiting-forecast": { dot: "bg-purple-500", text: isDark ? "text-purple-400" : "text-purple-700", label: tr("notifMgr.statusAwaiting") },
+    };
+    const info = map[summary.status] || map["no-data"];
+    return (
+      <span className={`inline-flex items-center gap-1.5 ${info.text}`}>
+        <span className={`inline-flex h-2 w-2 rounded-full ${info.dot}`} aria-hidden="true" />
+        <span className="text-[11px] font-semibold">{info.label}</span>
+      </span>
+    );
+  };
 
   const t = {
     overlay:
@@ -1286,10 +1305,16 @@ const NotificationManagerModal = ({
                 : null;
               const isConfirming = confirmDeleteId === rule.id;
 
+              const ws = rule.weather_summary;
+
               return (
                 <div
                   key={rule.id}
-                  className={`border rounded-xl p-3 space-y-2 ${t.card}`}
+                  className={`border rounded-xl p-3 space-y-2 cursor-pointer transition hover:ring-2 ${isDark ? "hover:ring-blue-500/50" : "hover:ring-blue-400/50"} ${t.card}`}
+                  onClick={() => onNavigateToRule?.(rule)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === "Enter") onNavigateToRule?.(rule); }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1 flex-1">
@@ -1314,20 +1339,30 @@ const NotificationManagerModal = ({
                           </span>
                         )}
                       </div>
+                      {ws && (
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1">
+                          {getStatusBadge(ws)}
+                          {ws.totalCount > 0 && (
+                            <span className={`${t.text} text-[10px]`}>
+                              {tr("notifMgr.flyableHours", { flyable: ws.flyableCount, total: ws.totalCount })}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       {isConfirming ? (
                         <>
                           <button
                             type="button"
-                            onClick={() => handleDeleteClick(rule.id)}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClick(rule.id); }}
                             className="px-2 py-1 rounded-lg bg-red-600 text-white text-[11px] font-semibold hover:bg-red-500"
                           >
                             {tr("notifMgr.delete")}
                           </button>
                           <button
                             type="button"
-                            onClick={() => setConfirmDeleteId(null)}
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
                             className={`px-2 py-1 rounded-lg text-[11px] font-semibold ${isDark ? "bg-slate-700 text-slate-200" : "bg-slate-200 text-slate-700"}`}
                           >
                             {tr("notifMgr.cancel")}
@@ -1336,7 +1371,7 @@ const NotificationManagerModal = ({
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleDeleteClick(rule.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(rule.id); }}
                           className={`p-1.5 rounded-lg transition ${isDark ? "text-slate-400 hover:text-red-400 hover:bg-slate-700" : "text-slate-400 hover:text-red-600 hover:bg-slate-100"}`}
                           aria-label={tr("notifMgr.deleteRule")}
                         >
@@ -1344,6 +1379,10 @@ const NotificationManagerModal = ({
                         </button>
                       )}
                     </div>
+                  </div>
+                  <div className={`flex items-center gap-1 text-[10px] ${isDark ? "text-blue-400" : "text-blue-600"}`}>
+                    <Icon name="map" size={12} />
+                    <span>{tr("notifMgr.goToLocation")}</span>
                   </div>
                 </div>
               );
