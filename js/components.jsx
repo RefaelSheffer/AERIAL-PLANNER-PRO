@@ -1347,6 +1347,18 @@ const NotificationManagerModal = ({
                               {tr("notifMgr.flyableHours", { flyable: ws.flyableCount, total: ws.totalCount })}
                             </span>
                           )}
+                          {ws.prevFlyableCount !== null && ws.prevFlyableCount !== undefined && ws.flyableCount !== ws.prevFlyableCount && (() => {
+                            const diff = ws.flyableCount - ws.prevFlyableCount;
+                            const improved = diff > 0;
+                            return (
+                              <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${improved ? (isDark ? "text-emerald-400" : "text-emerald-600") : (isDark ? "text-red-400" : "text-red-600")}`}>
+                                <span aria-hidden="true">{improved ? "\u25B2" : "\u25BC"}</span>
+                                {improved
+                                  ? tr("notifMgr.improved", { diff: `${diff}` })
+                                  : tr("notifMgr.worsened", { diff: `${diff}` })}
+                              </span>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>

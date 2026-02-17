@@ -26,6 +26,7 @@ type RuleRecord = {
   expires_at: string | null;
   last_state_hash: string | null;
   last_checked_at: string | null;
+  weather_summary?: Record<string, unknown> | null;
   subscriptions?: {
     endpoint: string;
     p256dh: string;
@@ -254,7 +255,7 @@ Deno.serve(async (req) => {
   const { data: rules, error } = await supabase
     .from("rules")
     .select(
-      "id, subscription_id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_state_hash, last_checked_at, subscriptions (endpoint, p256dh, auth, disabled_at)",
+      "id, subscription_id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_state_hash, last_checked_at, weather_summary, subscriptions (endpoint, p256dh, auth, disabled_at)",
     )
     .gt("expires_at", nowIso);
 
@@ -348,7 +349,7 @@ Deno.serve(async (req) => {
           .from("rules")
           .update({
             last_checked_at: new Date().toISOString(),
-            weather_summary: { status: "awaiting-forecast", percent: 0, flyableCount: 0, totalCount: 0 },
+            weather_summary: { status: "awaiting-forecast", percent: 0, flyableCount: 0, totalCount: 0, prevFlyableCount: null },
           })
           .eq("id", rule.id),
       );
@@ -472,11 +473,16 @@ Deno.serve(async (req) => {
       ? { ...criteriaRaw, ruleType: "standard" }
       : undefined;
 
+    const prevFlyable = typeof rule.weather_summary?.flyableCount === "number"
+      ? rule.weather_summary.flyableCount as number
+      : null;
+
     const weatherSummary = {
       status,
       percent,
       flyableCount: flyableSlots.length,
       totalCount: relevantSlots.length,
+      prevFlyableCount: prevFlyable,
     };
 
     updates.push(
