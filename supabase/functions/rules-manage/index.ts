@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
       .select("id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_checked_at, created_at, weather_summary")
       .eq("subscription_id", subscriptionId)
       .gt("expires_at", now)
-      .order("created_at", { ascending: false });
+      .order("start_date", { ascending: true });
 
     if (error) {
       return new Response(JSON.stringify({ error: "Failed to list rules" }), {
@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
       .select("id, lat, lon, start_date, end_date, hour_from, hour_to, criteria, notify_on, expires_at, last_checked_at, created_at, weather_summary")
       .eq("subscription_id", subscriptionId)
       .gt("expires_at", now)
-      .order("created_at", { ascending: false });
+      .order("start_date", { ascending: true });
 
     if (error) {
       return new Response(JSON.stringify({ error: "Failed to list rules" }), {
