@@ -156,8 +156,7 @@
       "notifMgr.statusNoData": "אין נתונים",
       "notifMgr.statusAwaiting": "ממתין לתחזית",
       "notifMgr.flyableHours": "{flyable}/{total} שעות מתאימות",
-      "notifMgr.improved": "שיפור (+{diff})",
-      "notifMgr.worsened": "הרעה ({diff})",
+      "notifMgr.changed": "היו {prev} ← {now}",
       "notifMgr.goToLocation": "הצג במפה",
 
       // === components.js — RealtimePanel ===
@@ -441,8 +440,7 @@
       "notifMgr.statusNoData": "No data",
       "notifMgr.statusAwaiting": "Awaiting forecast",
       "notifMgr.flyableHours": "{flyable}/{total} flyable hours",
-      "notifMgr.improved": "Improved (+{diff})",
-      "notifMgr.worsened": "Worsened ({diff})",
+      "notifMgr.changed": "was {prev} → now {now}",
       "notifMgr.goToLocation": "Show on map",
 
       // === components.js — FutureDateTrackingModal ===

@@ -409,15 +409,10 @@ Deno.serve(async (req) => {
         ? `${flyableHours[0]}–${flyableHours[flyableHours.length - 1]}`
         : "";
 
-      // Build change description comparing to previous check
+      // Build "was → now" change description
       let changeDesc = "";
       if (prevFlyableForNotif !== null && prevFlyableForNotif !== flyableSlots.length) {
-        const diff = flyableSlots.length - prevFlyableForNotif;
-        if (diff > 0) {
-          changeDesc = ` (שיפור: +${diff} שעות)`;
-        } else {
-          changeDesc = ` (הרעה: ${diff} שעות)`;
-        }
+        changeDesc = ` (היו ${prevFlyableForNotif} ← ${flyableSlots.length})`;
       }
 
       const locationPrefix = locationName ? `${locationName} — ` : "";
@@ -428,7 +423,7 @@ Deno.serve(async (req) => {
         // Special "forecast now available" notification
         if (flyableSlots.length > 0) {
           title = `🟢 ${locationPrefix}תחזית זמינה — ${dateLabel}`;
-          body = `התאריך נכנס לטווח התחזית! שעות מתאימות: ${flyableRange}`;
+          body = `התאריך נכנס לטווח התחזית! ${flyableSlots.length}/${relevantSlots.length} שעות מתאימות: ${flyableRange}`;
         } else {
           title = `🔴 ${locationPrefix}תחזית זמינה — ${dateLabel}`;
           body = "התאריך נכנס לטווח התחזית. אין שעות מתאימות.";
@@ -441,7 +436,7 @@ Deno.serve(async (req) => {
         body = `${flyableSlots.length}/${relevantSlots.length} שעות מתאימות: ${flyableRange}${changeDesc}`;
       } else if (status === "no-fly") {
         title = `🔴 ${locationPrefix}לא מתאים לטיסה — ${dateLabel}`;
-        body = `0/${relevantSlots.length} שעות מתאימות לטיסה${changeDesc}`;
+        body = `0/${relevantSlots.length} שעות מתאימות${changeDesc}`;
       } else {
         title = `${locationPrefix}עדכון תחזית — ${dateLabel}`;
         body = "לא הצלחנו לקבל תחזית עדכנית. נסה שוב מאוחר יותר.";

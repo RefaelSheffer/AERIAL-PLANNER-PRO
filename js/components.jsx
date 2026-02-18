@@ -1348,14 +1348,11 @@ const NotificationManagerModal = ({
                             </span>
                           )}
                           {ws.prevFlyableCount !== null && ws.prevFlyableCount !== undefined && ws.flyableCount !== ws.prevFlyableCount && (() => {
-                            const diff = ws.flyableCount - ws.prevFlyableCount;
-                            const improved = diff > 0;
+                            const improved = ws.flyableCount > ws.prevFlyableCount;
                             return (
                               <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${improved ? (isDark ? "text-emerald-400" : "text-emerald-600") : (isDark ? "text-red-400" : "text-red-600")}`}>
                                 <span aria-hidden="true">{improved ? "\u25B2" : "\u25BC"}</span>
-                                {improved
-                                  ? tr("notifMgr.improved", { diff: `${diff}` })
-                                  : tr("notifMgr.worsened", { diff: `${diff}` })}
+                                {tr("notifMgr.changed", { prev: `${ws.prevFlyableCount}`, now: `${ws.flyableCount}` })}
                               </span>
                             );
                           })()}
