@@ -384,6 +384,11 @@ Deno.serve(async (req) => {
       rule.notify_on === "always" ||
       (stateChanged && rule.notify_on !== "disabled");
 
+    // Compute previous flyable count before building notification
+    const prevFlyableForNotif = typeof rule.weather_summary?.flyableCount === "number"
+      ? rule.weather_summary.flyableCount as number
+      : null;
+
     if (shouldNotify && subscription?.endpoint) {
       const dayQuery = encodeURIComponent(rule.start_date);
       const url = `${appBasePath}/?${DAY_QUERY_PARAM}=${dayQuery}`;
@@ -404,6 +409,17 @@ Deno.serve(async (req) => {
         ? `${flyableHours[0]}–${flyableHours[flyableHours.length - 1]}`
         : "";
 
+      // Build change description comparing to previous check
+      let changeDesc = "";
+      if (prevFlyableForNotif !== null && prevFlyableForNotif !== flyableSlots.length) {
+        const diff = flyableSlots.length - prevFlyableForNotif;
+        if (diff > 0) {
+          changeDesc = ` (שיפור: +${diff} שעות)`;
+        } else {
+          changeDesc = ` (הרעה: ${diff} שעות)`;
+        }
+      }
+
       const locationPrefix = locationName ? `${locationName} — ` : "";
       let title: string;
       let body: string;
@@ -419,13 +435,13 @@ Deno.serve(async (req) => {
         }
       } else if (status === "fly") {
         title = `🟢 ${locationPrefix}מתאים לטיסה — ${dateLabel}`;
-        body = `התחזית השתנתה. שעות טיסה מתאימות: ${flyableRange}`;
+        body = `${flyableSlots.length}/${relevantSlots.length} שעות מתאימות: ${flyableRange}${changeDesc}`;
       } else if (status === "risk") {
         title = `🟠 ${locationPrefix}שינוי בתחזית — ${dateLabel}`;
-        body = `חלק מהשעות מתאימות לטיסה: ${flyableRange}`;
+        body = `${flyableSlots.length}/${relevantSlots.length} שעות מתאימות: ${flyableRange}${changeDesc}`;
       } else if (status === "no-fly") {
         title = `🔴 ${locationPrefix}לא מתאים לטיסה — ${dateLabel}`;
-        body = "התחזית השתנתה. אין שעות מתאימות לטיסה ביום זה.";
+        body = `0/${relevantSlots.length} שעות מתאימות לטיסה${changeDesc}`;
       } else {
         title = `${locationPrefix}עדכון תחזית — ${dateLabel}`;
         body = "לא הצלחנו לקבל תחזית עדכנית. נסה שוב מאוחר יותר.";
