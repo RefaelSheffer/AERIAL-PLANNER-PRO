@@ -117,7 +117,7 @@ const fetchWeatherSlots = async (
   url.searchParams.set("end_date", endDate);
   url.searchParams.set("timeformat", "iso8601");
   url.searchParams.set("timezone", timezone);
-  url.searchParams.set("windspeed_unit", "ms");
+  url.searchParams.set("windspeed_unit", "kmh");
   url.searchParams.set("models", openMeteoModels);
 
   console.info(

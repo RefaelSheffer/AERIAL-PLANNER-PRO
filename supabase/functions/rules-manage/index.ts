@@ -34,7 +34,7 @@ const fetchWeatherSlots = async (
   url.searchParams.set("end_date", endDate);
   url.searchParams.set("timeformat", "iso8601");
   url.searchParams.set("timezone", "UTC");
-  url.searchParams.set("windspeed_unit", "ms");
+  url.searchParams.set("windspeed_unit", "kmh");
 
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Weather API error ${res.status}`);
