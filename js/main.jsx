@@ -3045,9 +3045,13 @@ const App = () => {
         </div>
       )}
       {showSettings && (
-        <div className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 z-[2000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowSettings(false)}
+        >
           <div
             className={`relative rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4 ${settingsTheme.modal}`}
+            onClick={(event) => event.stopPropagation()}
           >
             <button
               type="button"
